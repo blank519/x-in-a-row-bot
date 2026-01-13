@@ -1,7 +1,7 @@
 import numpy as np
 from x_in_a_row_env import XInARowEnv
 # Suppose you created the environment
-env = XInARowEnv(height=3, width=3, win_con=3, p1="X", p2="O", render_mode="human")
+env = XInARowEnv(height=8, width=6, win_con=4, p1="X", p2="O", render_mode="human")
 
 # Reset the environment
 obs, info = env.reset()

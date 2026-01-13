@@ -43,9 +43,12 @@ class XInARowEnv(AECEnv):
         self._agent_selector = agent_selector.agent_selector(self.agents)
 
         # Rendering
+        self.window_size = 800
+        self.bg_color = (240, 240, 240)
+        self.grid_color = (0, 0, 0)
+        self.token_color = (0, 0, 0)
         self.window = None
         self.clock = None
-
         self.render_mode = render_mode
 
     def reset(self, seed=None, options=None):
@@ -70,8 +73,8 @@ class XInARowEnv(AECEnv):
         self.current_step += 1
 
         # Place piece
-        row = action//self.height
-        col = action%self.height
+        row = action//self.width
+        col = action%self.width
 
         if self.board[row][col] == None: # Should implement some sort of failsafe in case it tries to put a piece on an actual spot
             self.board[row][col] = agent
@@ -142,54 +145,54 @@ class XInARowEnv(AECEnv):
         if self.render_mode is None:
             return
 
-        cell_size = 80
-        margin = 50
-        width = self.width * cell_size
-        height = self.height * cell_size
-
-        if self.window is None:
+        if not hasattr(self, "screen"):
             pygame.init()
-            pygame.display.init()
-            self.window = pygame.display.set_mode((width, height))
+            self.screen = pygame.display.set_mode((self.window_size, self.window_size))
             pygame.display.set_caption("X In A Row")
             self.clock = pygame.time.Clock()
+        
+        self.screen.fill(self.bg_color)
 
-        canvas = pygame.Surface((width, height))
-        canvas.fill((255, 255, 255))
+        rows = self.height
+        cols = self.width
+        board_cells = max(rows, cols)
+        cell_size = self.window_size//board_cells
 
-        # Draw grid lines
-        for r in range(self.height):
-            for c in range(self.width):
-                rect = pygame.Rect(c * cell_size, r * cell_size, cell_size, cell_size)
-                pygame.draw.rect(canvas, (0, 0, 0), rect, width=3)
+        # Compute padding to center board
+        total_board_width = cols * cell_size
+        total_board_height = rows * cell_size
+
+        pad_x = (self.window_size - total_board_width) // 2
+        pad_y = (self.window_size - total_board_height) // 2
+
+        # Draw grid
+        for r in range(rows):
+            for c in range(cols):
+                rect = pygame.Rect(
+                    pad_x + c * cell_size,
+                    pad_y + r * cell_size,
+                    cell_size,
+                    cell_size
+                )
+                pygame.draw.rect(self.screen, self.grid_color, rect, 3)
 
                 val = self.board[r][c]
                 if val is None:
                     continue
 
-                center = (c * cell_size + cell_size // 2, r * cell_size + cell_size // 2)
+                # Draw token text
+                font_size = int(cell_size * 0.6)
+                font = pygame.font.SysFont("arial", font_size, bold=True)
 
-                # Draw player token text
-                font = pygame.font.SysFont("arial", 48, bold=True)
+                text_surface = font.render(str(val), True, self.token_color)
+                text_rect = text_surface.get_rect(center=rect.center)
 
-                text_surface = font.render(str(val), True, (0, 0, 0))
-                text_rect = text_surface.get_rect(
-                    center=(c * cell_size + cell_size // 2, r * cell_size + cell_size // 2)
-                )
+                self.screen.blit(text_surface, text_rect)
 
-                canvas.blit(text_surface, text_rect)
-
-        self.window.blit(canvas, canvas.get_rect())
-        pygame.display.update()
+        pygame.display.flip()
 
         if self.render_mode == "human":
-            self.clock.tick(10)
-
-        # Support rgb_array render mode
-        if self.render_mode == "rgb_array":
-            return np.transpose(
-                np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
-            )
+            self.clock.tick(5)
         
     def close(self):
         if self.window is not None:
