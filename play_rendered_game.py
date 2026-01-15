@@ -9,17 +9,17 @@ def main():
     width = 3
     win_con = 3
 
+    opponent_model = MaskablePPO.load("self_play_snapshots/opponent_snapshot_20")
+    model = MaskablePPO.load("ppo_tic_tac_toe")
     env = SingleAgentSelfPlayEnv(
         height=height,
         width=width,
         win_con=win_con,
-        learner_symbol="X",
-        opponent_symbol="O",
+        p1_symbol="X",
+        p2_symbol="O",
         render_mode="human",
-        opponent_policy="random",
-    )
-
-    model = MaskablePPO.load("ppo_x_in_a_row")
+        opponent_policy=opponent_model,
+    )    
 
     n_episodes = 3
     for episode in range(n_episodes):

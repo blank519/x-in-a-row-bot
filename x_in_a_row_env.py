@@ -82,23 +82,27 @@ class XInARowEnv(AECEnv):
         row = action//self.width
         col = action%self.width
 
-        if self.board[row][col] == None: # Should implement some sort of failsafe in case it tries to put a piece on an actual spot
+        if self.board[row][col] == None: # Legal move: proceed as normal
             self.board[row][col] = agent
-        
-        # Check victory/termination and assign reward
-        if self.is_victory(agent, row, col):
-            # Simple reward system: -1 for loss, +1 for win, 0 for draw
-            for a in self.agents:
-                if a == agent:
-                    self.rewards[a] = 1
-                else:
-                    self.rewards[a] = -1
+            # Check victory/termination and assign reward
+            if self.is_victory(agent, row, col):
+                # Simple reward system: -1 for loss, +1 for win, 0 for draw
+                for a in self.agents:
+                    if a == agent:
+                        self.rewards[a] = 1
+                    else:
+                        self.rewards[a] = -1
 
-                self.terminations[a] = True
-        # Check truncation (board completely full)
-        if self.current_step >= self.max_steps:
+                    self.terminations[a] = True
+            # Check truncation (board completely full)
+            elif self.current_step >= self.max_steps:
+                for a in self.agents:
+                    self.rewards[a] = 0.1
+                    self.truncations[a] = True
+        else: # Failsafe: heavy penalty for illegal move
+            self.rewards[agent] = -2
             for a in self.agents:
-                self.truncations[a] = True
+                self.terminations[a] = True
         self._accumulate_rewards()
 
         # Immediately end episode if terminated/truncated
@@ -110,6 +114,9 @@ class XInARowEnv(AECEnv):
             self.agent_selection = self._agent_selector.next()
 
     def is_victory(self, agent, row, col):
+        if self.board[row][col] != agent:
+            return False
+        
         # Checks whether the agent that just played a piece in (row, col) has won
         directions = [(1, 0), (0, 1), (1, 1), (1, -1)] # Vertical, horizontal, and both diagonals
         for direction in directions:
