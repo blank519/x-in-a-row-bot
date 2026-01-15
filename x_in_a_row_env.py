@@ -5,6 +5,8 @@ import numpy as np
 import pygame
 
 class XInARowEnv(AECEnv):
+    metadata = {"is_parallelizable":True}
+    
     def __init__(self, height, width, win_con, p1, p2, render_mode=None):
         """
         Creates an x-in-a-row board game
@@ -29,7 +31,10 @@ class XInARowEnv(AECEnv):
 
         # Observation space
         self.observation_spaces = {
-            agent:spaces.MultiBinary([2, height, width]) # 2 channels: one for your pieces, one for opponent pieces
+            agent:spaces.Dict({
+                "observation":spaces.MultiBinary([2, height, width]), # 2 channels: one for your pieces, one for opponent pieces
+                "action_mask":spaces.MultiBinary(height*width),
+            })
             for agent in self.possible_agents
         }
 
@@ -57,10 +62,11 @@ class XInARowEnv(AECEnv):
         
         self.board = [[None for _j in range(self.width)] for _i in range(self.height)]
 
+        self.cumulative_rewards = {agent: 0.0 for agent in self.agents}
         self.rewards = {agent:0 for agent in self.agents}
         self.terminations = {agent:False for agent in self.agents}
         self.truncations = {agent: False for agent in self.agents}
-        self.infos = {agent:{"action_mask":[1 for cell in range(self.height * self.width)]} for agent in self.agents}
+        self.infos = {}
 
         self._agent_selector = agent_selector.agent_selector(self.agents)
         self.agent_selection = self._agent_selector.next()
@@ -68,7 +74,7 @@ class XInARowEnv(AECEnv):
         return self.observe(self.agent_selection), self.infos
     
     def step(self, action):
-        # self._clear_rewards()
+        self._clear_rewards()
         agent = self.agent_selection
         self.current_step += 1
 
@@ -78,9 +84,6 @@ class XInARowEnv(AECEnv):
 
         if self.board[row][col] == None: # Should implement some sort of failsafe in case it tries to put a piece on an actual spot
             self.board[row][col] = agent
-            # Update information: mask cell for agents as illegal move
-            for a in self.agents:
-                self.infos[a]["action_mask"][action] = 0
         
         # Check victory/termination and assign reward
         if self.is_victory(agent, row, col):
@@ -96,7 +99,7 @@ class XInARowEnv(AECEnv):
         if self.current_step >= self.max_steps:
             for a in self.agents:
                 self.truncations[a] = True
-        # self._accumulate_rewards()
+        self._accumulate_rewards()
 
         # Immediately end episode if terminated/truncated
         if all(self.terminations.values()) or all(self.truncations.values()):
@@ -131,15 +134,26 @@ class XInARowEnv(AECEnv):
                     return True
         return False
     
+    def _clear_rewards(self):
+        for agent in self.agents:
+            self.rewards[agent] = 0.0
+
+    def _accumulate_rewards(self):
+        for agent in self.agents:
+            self.cumulative_rewards[agent] += self.rewards[agent]
+
     def observe(self, agent):
         obs = np.zeros((2, self.height, self.width))
+        mask = np.ones(self.height*self.width)
         for row in range(self.height):
             for col in range(self.width):
                 if self.board[row][col] == agent:
                     obs[0, row, col] = 1
+                    mask[row*self.width + col] = 0
                 elif self.board[row][col] in self.agents:
                     obs[1, row, col] = 1
-        return obs
+                    mask[row*self.width + col] = 0
+        return {"observation": obs, "action_mask": mask}
     
     def render(self):
         if self.render_mode is None:
@@ -199,3 +213,9 @@ class XInARowEnv(AECEnv):
             pygame.display.quit()
             pygame.quit()
             self.window = None
+
+    def observation_space(self, agent):
+        return self.observation_spaces[agent]
+    
+    def action_space(self, agent):
+        return self.action_spaces[agent]
