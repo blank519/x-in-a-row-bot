@@ -82,12 +82,16 @@ class SingleAgentSelfPlayEnv(gym.Env):
         # Ensure we start on learner turn.
         if self._env.agent_selection != self.learner_symbol:
             self._play_opponent_until_learner_turn()
+            if self.render_mode == "human":
+                self._env.render()
 
         obs = self._observe_for_learner()
         info = {}
         return obs, info
 
     def _play_opponent_until_learner_turn(self):
+        if self.render_mode == "human":
+            self._env.render()
         while self._env.agents and self._env.agent_selection == self.opponent_symbol:
             opp_obs = self._env.observe(self.opponent_symbol)
             mask = np.asarray(opp_obs["action_mask"], dtype=np.int8)
@@ -108,6 +112,7 @@ class SingleAgentSelfPlayEnv(gym.Env):
                 opp_action = int(self.np_random.choice(legal))
 
             if mask[int(opp_action)] == 0:
+                print("Illegal move detected")
                 opp_action = int(self.np_random.choice(legal))
 
             self._env.step(opp_action)
@@ -142,6 +147,9 @@ class SingleAgentSelfPlayEnv(gym.Env):
         if not terminated:
             self._play_opponent_until_learner_turn()
             terminated = not self._env.agents
+
+            if terminated:
+                reward = float(self._env.rewards.get(self.learner_symbol, 0.0))
 
         if terminated:
             truncated = bool(self._env.truncations.get(self.learner_symbol, False))

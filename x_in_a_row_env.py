@@ -3,11 +3,12 @@ from gymnasium import spaces
 from pettingzoo.utils import AECEnv, agent_selector
 import numpy as np
 import pygame
+import time
 
 class XInARowEnv(AECEnv):
     metadata = {"is_parallelizable":True}
     
-    def __init__(self, height, width, win_con, p1, p2, render_mode=None):
+    def __init__(self, height, width, win_con, p1, p2, render_mode=None, render_delay = 0.5):
         """
         Creates an x-in-a-row board game
         
@@ -55,6 +56,7 @@ class XInARowEnv(AECEnv):
         self.window = None
         self.clock = None
         self.render_mode = render_mode
+        self.render_delay = render_delay
 
     def reset(self, seed=None, options=None):
         self.current_step = 0
@@ -97,7 +99,7 @@ class XInARowEnv(AECEnv):
             # Check truncation (board completely full)
             elif self.current_step >= self.max_steps:
                 for a in self.agents:
-                    self.rewards[a] = 0.1
+                    self.rewards[a] = 0 # Small reward for draw maybe?
                     self.truncations[a] = True
         else: # Failsafe: heavy penalty for illegal move
             self.rewards[agent] = -2
@@ -212,8 +214,8 @@ class XInARowEnv(AECEnv):
 
         pygame.display.flip()
 
-        if self.render_mode == "human":
-            self.clock.tick(5)
+        if self.render_delay > 0:
+            time.sleep(self.render_delay)
         
     def close(self):
         if self.window is not None:
