@@ -2,7 +2,7 @@ import time
 import numpy as np
 from sb3_contrib import MaskablePPO
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
-from heuristic_policy import WinBlockRandomPolicy
+from heuristic_policy import XInARowHeuristicPolicy
 
 def test_model(env, model, n_episodes):
     for episode in range(n_episodes):
@@ -27,7 +27,7 @@ def main():
     win_con = 3
 
     model = MaskablePPO.load("ppo_tic_tac_toe")
-    heuristic = WinBlockRandomPolicy(height=height, width=width, win_con=win_con)
+    heuristic = XInARowHeuristicPolicy(height=height, width=width, win_con=win_con)
 
     print("Test 1: player 1 plays with model, player 2 plays with heuristic")
     env = SingleAgentSelfPlayEnv(
@@ -53,7 +53,7 @@ def main():
     env.opponent_symbol = "O"
     env.set_opponent(MaskablePPO.load("ppo_tic_tac_toe"))
     
-    test_model(env, model, 5)
+    test_model(env, model, 2)
     env.close()
 
 

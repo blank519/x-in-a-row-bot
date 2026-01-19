@@ -12,7 +12,7 @@ from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
-from heuristic_policy import WinBlockRandomPolicy
+from heuristic_policy import GomokuHeuristicPolicy
 
 
 class BoardCnnExtractor(BaseFeaturesExtractor):
@@ -58,7 +58,7 @@ class OpponentPoolPolicy:
         self.p_heuristic = float(p_heuristic)
 
         self.heuristic_enabled = False
-        self.heuristic = WinBlockRandomPolicy(height=self.height, width=self.width, win_con=self.win_con)
+        self.heuristic = GomokuHeuristicPolicy()
         self.snapshot_models: list = []
 
     def set_snapshots(self, snapshot_models):
@@ -196,12 +196,12 @@ def make_env(height: int, width: int, win_con: int):
 
 
 def main():
-    height = 3
-    width = 3
-    win_con = 3
+    height = 15
+    width = 15
+    win_con = 5
 
     snapshot_dir = "self_play_snapshots"
-    snapshot_freq = 25_000
+    snapshot_freq = 250_000
 
     n_envs = 8
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
@@ -214,12 +214,12 @@ def main():
             "features_extractor_class": BoardCnnExtractor,
             "features_extractor_kwargs": {"features_dim": 256},
         },
-        n_steps=64,
-        batch_size=256,
-        learning_rate=3e-4,
+        n_steps=512,
+        batch_size=1024,
+        learning_rate=1e-4,
         gamma=0.99,
         gae_lambda=0.95,
-        ent_coef=0.01,
+        ent_coef=0.005,
         clip_range=0.2,
     )
 
@@ -230,7 +230,7 @@ def main():
         height=height,
         width=width,
         win_con=win_con,
-        k=20,
+        k=50,
         warmup_steps=50_000,
         heuristic_start_steps=100_000,
         p_random=0.25,
