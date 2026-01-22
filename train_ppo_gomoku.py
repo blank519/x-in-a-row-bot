@@ -22,9 +22,20 @@ class BoardCnnExtractor(BaseFeaturesExtractor):
 
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=3, padding=1),
+            nn.Conv2d(n_input_channels, 64, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Flatten(),
         )
@@ -34,7 +45,9 @@ class BoardCnnExtractor(BaseFeaturesExtractor):
             n_flatten = self.cnn(sample).shape[1]
 
         self.linear = nn.Sequential(
-            nn.Linear(n_flatten, features_dim),
+            nn.Linear(n_flatten, 512),
+            nn.ReLU(),
+            nn.Linear(512, features_dim),
             nn.ReLU(),
         )
 

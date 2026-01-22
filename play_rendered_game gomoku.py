@@ -26,7 +26,7 @@ def main():
     width = 15
     win_con = 5
 
-    #model = MaskablePPO.load("ppo_tic_tac_toe")
+    model = MaskablePPO.load("ppo_gomoku")
     heuristic = GomokuHeuristicPolicy()
 
     print("Test 1: player 1 plays with model, player 2 plays with heuristic")
@@ -40,21 +40,21 @@ def main():
         opponent_policy=heuristic,
     )    
 
-    for episode in range(5):
-        obs, _info = env.reset()
-        terminated = False
-        truncated = False
-        episode_reward = 0.0
+    test_model(env, model, 5)
+    
+    print("\nTest 2: player 1 plays with heuristic, player 2 plays with model")
+    env.learner_symbol = "O"
+    env.opponent_symbol = "X"
+    
+    test_model(env, model, 5)
 
-        while not (terminated or truncated):
-            action_masks = env.action_masks()
-            action = heuristic(obs, action_masks, env.np_random)
-            obs, reward, terminated, truncated, _info = env.step(int(action))
-            episode_reward += float(reward)
-            env.render()
-
-        print(f"Episode {episode + 1}/{5}: reward={episode_reward}")
-        time.sleep(2) #Longer pause at end of game
+    print("\nTest 3: both players play with model")
+    env.learner_symbol = "X"
+    env.opponent_symbol = "O"
+    env.set_opponent(MaskablePPO.load("ppo_gomoku"))
+    
+    test_model(env, model, 2)
+    env.close()
 
 
 if __name__ == "__main__":

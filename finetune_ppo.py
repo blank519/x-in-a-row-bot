@@ -40,7 +40,7 @@ def main():
     model = MaskablePPO.load(
         base_model_path,
         env=env,
-        custom_objects={"ent_coef": 0.001, "clip_range": 0.1, "learning_rate": 5e-5},
+        custom_objects={"verbose":0, "ent_coef": 0.001, "clip_range": 0.1, "learning_rate": 5e-5},
     )
 
     # Fine-tune: no random warmup; opponent mix is heuristic + snapshots only.
@@ -54,10 +54,12 @@ def main():
         width=width,
         win_con=win_con,
         k=20,
-        random_warmup_steps=0,
-        mixed_warmup_steps=0,
+        warmup_steps=0,
+        heuristic_start_steps=0,
         p_random=0.1,
-        p_heuristic=0.7,
+        p_heuristic=0.5,
+        eval_games_per_side=50,
+        best_model_path="best vs heuristic",
         verbose=1,
     )
 

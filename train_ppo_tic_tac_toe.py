@@ -13,6 +13,7 @@ from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
 from heuristic_policy import XInARowHeuristicPolicy
+from vs_heuristic_eval import HeuristicEvaluator
 
 
 class BoardCnnExtractor(BaseFeaturesExtractor):
@@ -118,6 +119,8 @@ class SelfPlaySnapshotCallback(BaseCallback):
         heuristic_start_steps = 100_000,
         p_random = 0.20,
         p_heuristic = 0.25,
+        eval_games_per_side: int = 50,
+        best_model_path: str = "best_vs_heuristic",
         verbose = 0,
     ):
         super().__init__(verbose=verbose)
@@ -139,6 +142,18 @@ class SelfPlaySnapshotCallback(BaseCallback):
         )
         self._snapshot_models: list = []
         self._pool_installed = False
+
+        self._best_saver = HeuristicEvaluator(
+            height=height,
+            width=width,
+            win_con=win_con,
+            heuristic=XInARowHeuristicPolicy(height=height, width=width, win_con=win_con),
+            n_games_per_side=eval_games_per_side,
+            best_model_path=best_model_path,
+            deterministic=True,
+            seed=0,
+            verbose=verbose,
+        )
 
         os.makedirs(self.snapshot_dir, exist_ok=True)
 
@@ -175,6 +190,8 @@ class SelfPlaySnapshotCallback(BaseCallback):
 
         if self.verbose > 0:
             print(f"[SelfPlay] Updated opponent from snapshot: {snapshot_path}.zip")
+
+        self._best_saver.maybe_save(self.model, self.num_timesteps)
 
         return True
 
@@ -233,8 +250,10 @@ def main():
         k=20,
         warmup_steps=50_000,
         heuristic_start_steps=100_000,
-        p_random=0.25,
-        p_heuristic=0.25,
+        p_random=0.2,
+        p_heuristic=0.3,
+        eval_games_per_side=50,
+        best_model_path="best_vs_heuristic",
         verbose=1,
     )
 
