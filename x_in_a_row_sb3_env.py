@@ -90,7 +90,7 @@ class SingleAgentSelfPlayEnv(gym.Env):
         return obs, info
 
     def _play_opponent_until_learner_turn(self):
-        if self.render_mode == "human":
+        if self.render_mode == "human" or self.render_mode == "rgb_array":
             self._env.render()
         while self._env.agents and self._env.agent_selection == self.opponent_symbol:
             opp_obs = self._env.observe(self.opponent_symbol)

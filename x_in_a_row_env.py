@@ -170,9 +170,12 @@ class XInARowEnv(AECEnv):
 
         if not hasattr(self, "screen"):
             pygame.init()
-            self.screen = pygame.display.set_mode((self.window_size, self.window_size))
-            pygame.display.set_caption("X In A Row")
-            self.clock = pygame.time.Clock()
+            if self.render_mode == "rgb_array":
+                self.screen = pygame.Surface((self.window_size, self.window_size))
+            else:
+                self.screen = pygame.display.set_mode((self.window_size, self.window_size))
+                pygame.display.set_caption("X In A Row")
+                self.clock = pygame.time.Clock()
         
         self.screen.fill(self.bg_color)
 
@@ -212,16 +215,23 @@ class XInARowEnv(AECEnv):
 
                 self.screen.blit(text_surface, text_rect)
 
+        if self.render_mode == "rgb_array":
+            frame = pygame.surfarray.array3d(self.screen)
+            frame = np.transpose(frame, (1, 0, 2))
+            return frame
+
         pygame.display.flip()
 
-        if self.render_delay > 0:
+        if self.render_mode == "human" and self.render_delay > 0:
             time.sleep(self.render_delay)
         
     def close(self):
-        if self.window is not None:
-            pygame.display.quit()
-            pygame.quit()
-            self.window = None
+        if hasattr(self, "screen"):
+            try:
+                pygame.display.quit()
+            finally:
+                pygame.quit()
+            delattr(self, "screen")
 
     def observation_space(self, agent):
         return self.observation_spaces[agent]
