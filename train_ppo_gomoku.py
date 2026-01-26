@@ -12,7 +12,8 @@ from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
-from heuristic_policy import GomokuHeuristicPolicy
+from heuristic_policy import XInARowHeuristicPolicy, GomokuHeuristicPolicy
+from vs_heuristic_eval import HeuristicEvaluator
 
 
 class BoardCnnExtractor(BaseFeaturesExtractor):
@@ -62,17 +63,22 @@ class OpponentPoolPolicy:
         width,
         win_con,
         p_random = 0.25,
-        p_heuristic = 0.25,
+        p_heuristics = None,
+        heuristics = None,
     ):
         self.height = height
         self.width = width
         self.win_con = win_con
 
         self.p_random = p_random
-        self.p_heuristic = p_heuristic
+        self.p_heuristics = list(p_heuristics) if p_heuristics is not None else [0.25]
 
         self.heuristic_enabled = False
-        self.heuristic = GomokuHeuristicPolicy()
+        self.heuristics = list(heuristics) if heuristics is not None else [XInARowHeuristicPolicy(height, width, win_con)]
+        if len(self.p_heuristics) != len(self.heuristics):
+            raise ValueError(
+                f"p_heuristics and heuristics must have the same length, got {len(self.p_heuristics)} and {len(self.heuristics)}"
+            )
         self.snapshot_models: list = []
 
     def set_snapshots(self, snapshot_models):
@@ -91,21 +97,21 @@ class OpponentPoolPolicy:
         use_heuristic = self.heuristic_enabled
 
         p_random = self.p_random
-        p_heuristic = self.p_heuristic if use_heuristic else 0.0
-        p_snap = max(0.0, 1.0 - (p_random + p_heuristic)) if available_snapshots else 0.0
+        p_heuristic_total = float(sum(self.p_heuristics)) if use_heuristic else 0.0
+        p_snap = max(0.0, 1.0 - (p_random + p_heuristic_total)) if available_snapshots else 0.0
 
-        total = p_random + p_heuristic + p_snap
-        if total <= 0:
-            return int(rng.choice(legal))
+        total = p_random + p_heuristic_total + p_snap
 
         r = float(rng.random()) * total
         if r < p_random:
             return int(rng.choice(legal))
         r -= p_random
 
-        if r < p_heuristic:
-            return int(self.heuristic(obs, mask, rng))
-        r -= p_heuristic
+        if use_heuristic:
+            for i in range(len(self.p_heuristics)):
+                if r < self.p_heuristics[i]:
+                    return int(self.heuristics[i](obs, mask, rng))
+                r -= self.p_heuristics[i]
 
         if available_snapshots and r <= p_snap:
             opponent_model = self.snapshot_models[int(rng.integers(0, len(self.snapshot_models)))]
@@ -129,11 +135,13 @@ class SelfPlaySnapshotCallback(BaseCallback):
         win_con,
         k = 20,
         random_warmup_steps = 1_000_000,
-        mixed_warmup_steps = 500_000,
-        mixed_p_random = 0.1, # p(random) during mixed warmup
-        mixed_p_heuristic = 0.9, # p(heuristic) during mixed warmup
-        p_random = 0.20,
-        p_heuristic = 0.25,
+        mixed_warmup_steps = 1_000_000,
+        mixed_p_random = 0.3, # p(random) during mixed warmup
+        mixed_p_heuristic = 0.7, # p(heuristic) during mixed warmup
+        p_random = 0.1,
+        p_heuristics = [0.2, 0.2], # p_random + p_heuristics should be <= 1. Remaining probability is snapshot pool.
+        eval_games_per_side = 50,
+        best_model_path = "best_vs_heuristic",
         verbose = 0,
     ):
         super().__init__(verbose=verbose)
@@ -156,10 +164,26 @@ class SelfPlaySnapshotCallback(BaseCallback):
             width=width,
             win_con=win_con,
             p_random=p_random,
-            p_heuristic=p_heuristic,
+            p_heuristics=p_heuristics,
+            # SET HEURISTICS HERE
+            heuristics=[XInARowHeuristicPolicy(height=height, width=width, win_con=win_con), 
+                        GomokuHeuristicPolicy(height=height, width=width, win_con=win_con),
+                        ],
         )
         self._snapshot_models: list = []
         self._pool_installed = False
+ 
+        self._best_saver = HeuristicEvaluator(
+            height=height,
+            width=width,
+            win_con=win_con,
+            heuristic=GomokuHeuristicPolicy(),
+            n_games_per_side=eval_games_per_side,
+            best_model_path=best_model_path,
+            deterministic=True,
+            seed=0,
+            verbose=verbose,
+        )
 
         os.makedirs(self.snapshot_dir, exist_ok=True)
 
@@ -172,7 +196,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
                     width=self.pool.width,
                     win_con=self.pool.win_con,
                     p_random=1.0,
-                    p_heuristic=0.0,
+                    p_heuristics=[0.0],
                 )
                 warmup_opponent.enable_heuristic(False)
                 warmup_opponent.set_snapshots([])
@@ -188,7 +212,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
                     width=self.pool.width,
                     win_con=self.pool.win_con,
                     p_random=self.mixed_p_random,
-                    p_heuristic=self.mixed_p_heuristic,
+                    p_heuristics=[self.mixed_p_heuristic],
+                    # Use weaker heuristic policy
+                    heuristics=[XInARowHeuristicPolicy(height=self.pool.height, width=self.pool.width, win_con=self.pool.win_con)]
                 )
                 warmup_opponent.enable_heuristic(True)
                 warmup_opponent.set_snapshots([])
@@ -207,6 +233,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         if self.snapshot_freq <= 0:
             return True
 
+        # Skip snapshots if not on snapshot frequency
         if self.num_timesteps % self.snapshot_freq != 0:
             return True
 
@@ -225,6 +252,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
 
         if self.verbose > 0:
             print(f"[SelfPlay] Updated opponent from snapshot: {snapshot_path}.zip")
+
+        # Evaluate and save best model when snapshot is taken
+        self._best_saver.maybe_save(self.model, self.num_timesteps)
 
         return True
 
@@ -282,15 +312,17 @@ def main():
         win_con=win_con,
         k=50,
         random_warmup_steps=1_000_000,
-        mixed_warmup_steps=500_000,
-        mixed_p_random=0.5,
-        mixed_p_heuristic=0.5,
-        p_random=0.25,
-        p_heuristic=0.25,
+        mixed_warmup_steps=1_000_000,
+        mixed_p_random=0.3,
+        mixed_p_heuristic=0.7,
+        p_random=0.1,
+        p_heuristics=[0.2, 0.2],
+        eval_games_per_side=50,
+        best_model_path="best_vs_heuristic",
         verbose=1,
     )
 
-    model.learn(total_timesteps=2_000_000, callback=self_play_cb)
+    model.learn(total_timesteps=5_000_000, callback=self_play_cb)
     model.save("ppo_gomoku")
 
 

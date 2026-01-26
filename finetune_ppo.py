@@ -59,7 +59,7 @@ def main():
         p_random=0.1,
         p_heuristic=0.5,
         eval_games_per_side=50,
-        best_model_path="best vs heuristic",
+        best_model_path="best_vs_heuristic",
         verbose=1,
     )
 

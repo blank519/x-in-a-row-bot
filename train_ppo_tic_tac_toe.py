@@ -119,8 +119,8 @@ class SelfPlaySnapshotCallback(BaseCallback):
         heuristic_start_steps = 100_000,
         p_random = 0.20,
         p_heuristic = 0.25,
-        eval_games_per_side: int = 50,
-        best_model_path: str = "best_vs_heuristic",
+        eval_games_per_side = 50,
+        best_model_path = "best_vs_heuristic",
         verbose = 0,
     ):
         super().__init__(verbose=verbose)
