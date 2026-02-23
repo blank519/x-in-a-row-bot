@@ -167,7 +167,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
             p_heuristics=p_heuristics,
             # SET HEURISTICS HERE
             heuristics=[XInARowHeuristicPolicy(height=height, width=width, win_con=win_con), 
-                        GomokuHeuristicPolicy(height=height, width=width, win_con=win_con),
+                        GomokuHeuristicPolicy(),
                         ],
         )
         self._snapshot_models: list = []
@@ -281,7 +281,7 @@ def main():
     win_con = 5
 
     snapshot_dir = "self_play_snapshots"
-    snapshot_freq = 250_000
+    snapshot_freq = 249_856 # Close to 250k, multiple of batch_size * n_environments
 
     n_envs = 8
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
@@ -311,8 +311,8 @@ def main():
         width=width,
         win_con=win_con,
         k=50,
-        random_warmup_steps=1_000_000,
-        mixed_warmup_steps=1_000_000,
+        random_warmup_steps=999_424, # Close to 1M, multiple of batch_size * n_environments
+        mixed_warmup_steps=999_424,
         mixed_p_random=0.3,
         mixed_p_heuristic=0.7,
         p_random=0.1,
@@ -322,7 +322,7 @@ def main():
         verbose=1,
     )
 
-    model.learn(total_timesteps=5_000_000, callback=self_play_cb)
+    model.learn(total_timesteps=4_997_120, callback=self_play_cb)
     model.save("ppo_gomoku")
 
 

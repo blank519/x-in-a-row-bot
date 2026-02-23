@@ -1,0 +1,12 @@
+numpy>=1.24
+
+stable-baselines3>=2.2
+sb3-contrib>=2.2
+
+gymnasium>=0.29
+pettingzoo>=1.24
+
+pygame>=2.5
+
+imageio>=2.31
+imageio-ffmpeg>=0.4

@@ -1,0 +1,17 @@
+.git
+.gitignore
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.venv/
+venv/
+
+docs/
+
+self_play_snapshots/
+self_play_snapshots_finetune/
+
+*.gif
