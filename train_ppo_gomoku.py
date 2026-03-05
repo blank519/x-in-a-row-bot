@@ -134,8 +134,8 @@ class SelfPlaySnapshotCallback(BaseCallback):
         width,
         win_con,
         k = 20,
-        random_warmup_steps = 1_000_000,
-        mixed_warmup_steps = 1_000_000,
+        random_warmup_steps = 999_424,
+        mixed_warmup_steps = 999_424,
         mixed_p_random = 0.3, # p(random) during mixed warmup
         mixed_p_heuristic = 0.7, # p(heuristic) during mixed warmup
         p_random = 0.1,

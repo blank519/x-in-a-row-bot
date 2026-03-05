@@ -1,8 +1,10 @@
+import os
+import re
+
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 from sb3_contrib import MaskablePPO
 
-# Import from correct file
 from train_ppo_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfPlaySnapshotCallback
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
 
@@ -23,6 +25,35 @@ def make_env(height: int, width: int, win_con: int):
     return _thunk
 
 
+_SNAPSHOT_RE = re.compile(r"^opponent_snapshot_(\d+)\.zip$")
+
+
+def load_snapshot_pool(snapshot_dir: str, k: int):
+    if not os.path.isdir(snapshot_dir):
+        return [], 0
+
+    snapshots = []
+    max_idx = 0
+    for fname in os.listdir(snapshot_dir):
+        m = _SNAPSHOT_RE.match(fname)
+        if not m:
+            continue
+        idx = int(m.group(1))
+        max_idx = max(max_idx, idx)
+        stem = os.path.join(snapshot_dir, fname[:-4])
+        snapshots.append((idx, stem))
+
+    snapshots.sort(key=lambda t: t[0])
+    if k is not None and k > 0:
+        snapshots = snapshots[-k:]
+
+    models = []
+    for _idx, stem in snapshots:
+        models.append(MaskablePPO.load(stem))
+
+    return models, max_idx
+
+
 def main():
     height = 15
     width = 15
@@ -40,12 +71,10 @@ def main():
     model = MaskablePPO.load(
         base_model_path,
         env=env,
-        #custom_objects={"verbose":0, "ent_coef": 0.001, "clip_range": 0.1, "learning_rate": 5e-5},
     )
 
-    # Fine-tune: no random warmup; opponent mix is heuristic + snapshots only.
-    # By setting p_random=0, once snapshots exist the pool will
-    # automatically use snapshots as the remaining probability mass.
+    k = 50
+
     self_play_cb = SelfPlaySnapshotCallback(
         vec_env=env,
         snapshot_dir=snapshot_dir,
@@ -53,7 +82,7 @@ def main():
         height=height,
         width=width,
         win_con=win_con,
-        k=20,
+        k=k,
         random_warmup_steps=0,
         mixed_warmup_steps=0,
         mixed_p_random=0.0,
@@ -65,7 +94,12 @@ def main():
         verbose=1,
     )
 
-    model.learn(total_timesteps=4_997_120, callback=self_play_cb)
+    os.makedirs(snapshot_dir, exist_ok=True)
+    snapshot_models, max_idx = load_snapshot_pool(snapshot_dir=snapshot_dir, k=k)
+    self_play_cb._snapshot_models = snapshot_models
+    self_play_cb._snapshot_idx = max_idx
+
+    model.learn(total_timesteps=1_999_616, callback=self_play_cb)
     model.save(finetuned_model_path)
 
 
