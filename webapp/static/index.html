@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tic-Tac-Toe vs AI</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Tic-Tac-Toe vs Trained AI</h1>
+
+      <div class="controls">
+        <label for="symbol-select">Play as:</label>
+        <select id="symbol-select">
+          <option value="X" selected>X (go first)</option>
+          <option value="O">O (AI goes first)</option>
+        </select>
+        <button id="new-game-btn">New Game</button>
+      </div>
+
+      <p id="status">Loading...</p>
+
+      <section id="board" class="board" aria-label="Tic-tac-toe board"></section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

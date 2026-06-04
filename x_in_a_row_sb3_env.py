@@ -6,17 +6,8 @@ from x_in_a_row_env import XInARowEnv
 
 
 class SingleAgentSelfPlayEnv(gym.Env):
-    def __init__(
-        self,
-        height,
-        width,
-        win_con,
-        p1_symbol = "X",
-        p2_symbol = "O",
-        render_mode = None,
-        opponent_policy = "random",
-        randomize_learner = False,
-    ):
+    def __init__(self, height, width, win_con, p1_symbol = "X", p2_symbol = "O", render_mode = None, 
+                 opponent_policy = "random", randomize_learner = False):
         super().__init__()
         self.height = height
         self.width = width

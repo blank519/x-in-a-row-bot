@@ -59,11 +59,11 @@ def main():
     width = 15
     win_con = 5
 
-    base_model_path = "ppo_gomoku"
+    base_model_path = "ppo_gomoku_finetuned"
     finetuned_model_path = "ppo_gomoku_finetuned"
 
     snapshot_dir = "self_play_snapshots_finetune"
-    snapshot_freq = 249_424
+    snapshot_freq = 249_856
 
     n_envs = 8
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
@@ -88,7 +88,7 @@ def main():
         mixed_p_random=0.0,
         mixed_p_heuristic=0.0,
         p_random=0.1,
-        p_heuristics=[0.1, 0.25],
+        p_heuristics=[0.2, 0.2],
         eval_games_per_side=100,
         best_model_path="best_vs_heuristic_finetune",
         verbose=1,
@@ -99,7 +99,9 @@ def main():
     self_play_cb._snapshot_models = snapshot_models
     self_play_cb._snapshot_idx = max_idx
 
-    model.learn(total_timesteps=1_999_616, callback=self_play_cb)
+    self_play_cb._best_saver.maybe_save(model, 0)
+
+    model.learn(total_timesteps=snapshot_freq * 10, callback=self_play_cb)
     model.save(finetuned_model_path)
 
 
