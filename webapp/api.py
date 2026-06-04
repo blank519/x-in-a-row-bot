@@ -53,6 +53,8 @@ class GameSession:
     turn: Literal["player", "ai"]
     status: Literal["in_progress", "draw", "player_won", "ai_won"]
     winner: str | None = None
+    num_turns: int = 0
+    max_turns: int = HEIGHT * WIDTH
 
 
 class NewGameRequest(BaseModel):
@@ -78,6 +80,7 @@ class GameResponse(BaseModel):
     status: Literal["in_progress", "draw", "player_won", "ai_won"]
     winner: str | None
     ai_move: Move | None = None
+    num_turns: int = 0
 
 
 app = FastAPI(title="Tic-Tac-Toe AI Service")
@@ -116,12 +119,8 @@ def _winner(board: list[list[str | None]]) -> str | None:
     return None
 
 
-def _is_draw(board: list[list[str | None]]) -> bool:
-    for row in board:
-        for cell in row:
-            if cell is None:
-                return False
-    return True
+def is_draw(num_turns: int, max_turns: int) -> bool:
+    return num_turns >= max_turns
 
 
 def _build_observation(board: list[list[str | None]], learner_symbol: str, opponent_symbol: str) -> np.ndarray:
@@ -155,6 +154,7 @@ def _make_response(session: GameSession, ai_move: Move | None = None) -> GameRes
         status=session.status,
         winner=session.winner,
         ai_move=ai_move,
+        num_turns=session.num_turns,
     )
 
 
@@ -166,7 +166,7 @@ def _apply_terminal_state(session: GameSession) -> None:
         session.turn = "player"
         return
 
-    if _is_draw(session.board):
+    if is_draw(session.num_turns, session.max_turns):
         session.winner = None
         session.status = "draw"
         session.turn = "player"
@@ -194,6 +194,7 @@ def _run_ai_turn(session: GameSession) -> Move | None:
     row = action // WIDTH
     col = action % WIDTH
     session.board[row][col] = session.ai_symbol
+    session.num_turns += 1
 
     _apply_terminal_state(session)
     if session.status == "in_progress":
@@ -224,6 +225,8 @@ def create_game(payload: NewGameRequest) -> GameResponse:
         ai_symbol=ai_symbol,
         turn="player" if player_symbol == "X" else "ai",
         status="in_progress",
+        num_turns=0,
+        max_turns=HEIGHT * WIDTH,
     )
 
     ai_move: Move | None = None
@@ -267,6 +270,7 @@ def player_move(game_id: str, payload: MoveRequest) -> GameResponse:
         raise HTTPException(status_code=400, detail="Illegal move: cell is already occupied")
 
     session.board[row][col] = session.player_symbol
+    session.num_turns += 1
     _apply_terminal_state(session)
 
     ai_move: Move | None = None

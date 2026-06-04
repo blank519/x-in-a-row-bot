@@ -4,6 +4,7 @@ from pettingzoo.utils import AECEnv, agent_selector
 import numpy as np
 import pygame
 import time
+import game_utils as utils
 
 class XInARowEnv(AECEnv):
     metadata = {"is_parallelizable":True}
@@ -28,7 +29,7 @@ class XInARowEnv(AECEnv):
         self.agents = self.possible_agents[:]
 
         # Set the board
-        self.board = [[None for _j in range(width)] for _i in range(height)]
+        self.board = utils.new_board(self.height, self.width)
 
         # Observation space
         self.observation_spaces = {
@@ -62,7 +63,7 @@ class XInARowEnv(AECEnv):
         self.current_step = 0
         self.agents = self.possible_agents[:]
         
-        self.board = [[None for _j in range(self.width)] for _i in range(self.height)]
+        self.board = utils.new_board(self.height, self.width)
 
         self.cumulative_rewards = {agent: 0.0 for agent in self.agents}
         self.rewards = {agent:0 for agent in self.agents}
@@ -87,7 +88,7 @@ class XInARowEnv(AECEnv):
         if self.board[row][col] == None: # Legal move: proceed as normal
             self.board[row][col] = agent
             # Check victory/termination and assign reward
-            if self.is_victory(agent, row, col):
+            if utils.check_winner(self.board, agent, row, col, self.win_con):
                 # Simple reward system: -1 for loss, +1 for win, 0 for draw
                 for a in self.agents:
                     if a == agent:
@@ -96,8 +97,8 @@ class XInARowEnv(AECEnv):
                         self.rewards[a] = -1
 
                     self.terminations[a] = True
-            # Check truncation (board completely full)
-            elif self.current_step >= self.max_steps:
+            # Check truncation/draw (board completely full)
+            elif utils.is_draw(self.current_step, self.max_steps):
                 for a in self.agents:
                     self.rewards[a] = 0 # Small reward for draw maybe?
                     self.truncations[a] = True
@@ -114,34 +115,6 @@ class XInARowEnv(AECEnv):
         self.agent_selection = self._agent_selector.next()
         while self.terminations[self.agent_selection] or self.truncations[self.agent_selection]:
             self.agent_selection = self._agent_selector.next()
-
-    def is_victory(self, agent, row, col):
-        if self.board[row][col] != agent:
-            return False
-        
-        # Checks whether the agent that just played a piece in (row, col) has won
-        directions = [(1, 0), (0, 1), (1, 1), (1, -1)] # Vertical, horizontal, and both diagonals
-        for direction in directions:
-            num_in_a_row = 1
-            # Check on both sides of the recently played cell 
-            current_row = row + direction[0]
-            current_col = col + direction[1]
-            while 0 <= current_row < self.height and 0 <= current_col < self.width and self.board[current_row][current_col] == agent:
-                num_in_a_row += 1
-                current_row += direction[0]
-                current_col += direction[1]
-                if num_in_a_row == self.win_con:
-                    return True
-
-            current_row = row - direction[0]
-            current_col = col - direction[1]
-            while 0 <= current_row < self.height and 0 <= current_col < self.width and self.board[current_row][current_col] == agent:
-                num_in_a_row += 1
-                current_row -= direction[0]
-                current_col -= direction[1]
-                if num_in_a_row == self.win_con:
-                    return True
-        return False
     
     def _clear_rewards(self):
         for agent in self.agents:
@@ -152,16 +125,9 @@ class XInARowEnv(AECEnv):
             self.cumulative_rewards[agent] += self.rewards[agent]
 
     def observe(self, agent):
-        obs = np.zeros((2, self.height, self.width))
-        mask = np.ones(self.height*self.width)
-        for row in range(self.height):
-            for col in range(self.width):
-                if self.board[row][col] == agent:
-                    obs[0, row, col] = 1
-                    mask[row*self.width + col] = 0
-                elif self.board[row][col] in self.agents:
-                    obs[1, row, col] = 1
-                    mask[row*self.width + col] = 0
+        other_agent = self.agents[0] if agent == self.agents[1] else self.agents[1]
+        obs = utils.build_observation(self.board, agent, other_agent, self.height, self.width)
+        mask = utils.action_mask(self.board, self.height, self.width)
         return {"observation": obs, "action_mask": mask}
     
     def render(self):
