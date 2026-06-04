@@ -12,6 +12,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sb3_contrib import MaskablePPO
 
+import game_utils as utils
+
 # Keep these imports available so SB3 can deserialize models trained with this repo's classes.
 from train_ppo_tic_tac_toe import BoardCnnExtractor, MaskableActorCriticPolicy  # noqa: F401
 
@@ -91,59 +93,6 @@ SESSIONS: dict[str, GameSession] = {}
 SESSIONS_LOCK = threading.Lock()
 
 
-WIN_LINES = [
-    [(0, 0), (0, 1), (0, 2)],
-    [(1, 0), (1, 1), (1, 2)],
-    [(2, 0), (2, 1), (2, 2)],
-    [(0, 0), (1, 0), (2, 0)],
-    [(0, 1), (1, 1), (2, 1)],
-    [(0, 2), (1, 2), (2, 2)],
-    [(0, 0), (1, 1), (2, 2)],
-    [(0, 2), (1, 1), (2, 0)],
-]
-
-
-def _new_board() -> list[list[str | None]]:
-    return [[None for _ in range(WIDTH)] for _ in range(HEIGHT)]
-
-
-def _flatten_index(row: int, col: int) -> int:
-    return row * WIDTH + col
-
-
-def _winner(board: list[list[str | None]]) -> str | None:
-    for line in WIN_LINES:
-        values = [board[r][c] for r, c in line]
-        if values[0] is not None and values[0] == values[1] == values[2]:
-            return values[0]
-    return None
-
-
-def is_draw(num_turns: int, max_turns: int) -> bool:
-    return num_turns >= max_turns
-
-
-def _build_observation(board: list[list[str | None]], learner_symbol: str, opponent_symbol: str) -> np.ndarray:
-    obs = np.zeros((2, HEIGHT, WIDTH), dtype=np.int8)
-    for r in range(HEIGHT):
-        for c in range(WIDTH):
-            cell = board[r][c]
-            if cell == learner_symbol:
-                obs[0, r, c] = 1
-            elif cell == opponent_symbol:
-                obs[1, r, c] = 1
-    return obs
-
-
-def _action_mask(board: list[list[str | None]]) -> np.ndarray:
-    mask = np.ones(HEIGHT * WIDTH, dtype=np.int8)
-    for r in range(HEIGHT):
-        for c in range(WIDTH):
-            if board[r][c] is not None:
-                mask[_flatten_index(r, c)] = 0
-    return mask
-
-
 def _make_response(session: GameSession, ai_move: Move | None = None) -> GameResponse:
     return GameResponse(
         game_id=session.game_id,
@@ -158,15 +107,15 @@ def _make_response(session: GameSession, ai_move: Move | None = None) -> GameRes
     )
 
 
-def _apply_terminal_state(session: GameSession) -> None:
-    winner = _winner(session.board)
-    if winner is not None:
-        session.winner = winner
-        session.status = "player_won" if winner == session.player_symbol else "ai_won"
-        session.turn = "player"
-        return
+def _apply_terminal_state(session: GameSession, symbol: str, last_move: Move | None = None) -> None:
+    if last_move is not None:
+        if utils.check_winner(session.board, symbol, last_move.row, last_move.col, WIN_CON):
+            session.winner = symbol
+            session.status = "player_won" if symbol == session.player_symbol else "ai_won"
+            session.turn = "player"
+            return
 
-    if is_draw(session.num_turns, session.max_turns):
+    if utils.is_draw(session.num_turns, session.max_turns):
         session.winner = None
         session.status = "draw"
         session.turn = "player"
@@ -176,11 +125,12 @@ def _run_ai_turn(session: GameSession) -> Move | None:
     if session.status != "in_progress" or session.turn != "ai":
         return None
 
-    obs = _build_observation(session.board, learner_symbol=session.ai_symbol, opponent_symbol=session.player_symbol)
-    mask = _action_mask(session.board)
+    obs = utils.build_observation(session.board, learner_symbol=session.ai_symbol, opponent_symbol=session.player_symbol, height=HEIGHT, width=WIDTH)
+    mask = utils.action_mask(session.board, HEIGHT, WIDTH)
 
     if not mask.any():
-        _apply_terminal_state(session)
+        # Apply draw logic
+        _apply_terminal_state(session, session.ai_symbol, None)
         return None
 
     with MODEL_LOCK:
@@ -196,7 +146,8 @@ def _run_ai_turn(session: GameSession) -> Move | None:
     session.board[row][col] = session.ai_symbol
     session.num_turns += 1
 
-    _apply_terminal_state(session)
+    #Check if AI won
+    _apply_terminal_state(session, session.ai_symbol, Move(row=row, col=col))
     if session.status == "in_progress":
         session.turn = "player"
 
@@ -220,7 +171,7 @@ def create_game(payload: NewGameRequest) -> GameResponse:
 
     session = GameSession(
         game_id=str(uuid.uuid4()),
-        board=_new_board(),
+        board=utils.new_board(HEIGHT, WIDTH),
         player_symbol=player_symbol,
         ai_symbol=ai_symbol,
         turn="player" if player_symbol == "X" else "ai",
@@ -271,7 +222,8 @@ def player_move(game_id: str, payload: MoveRequest) -> GameResponse:
 
     session.board[row][col] = session.player_symbol
     session.num_turns += 1
-    _apply_terminal_state(session)
+    # Check if player won
+    _apply_terminal_state(session, session.player_symbol, Move(row=row, col=col))
 
     ai_move: Move | None = None
     if session.status == "in_progress":
