@@ -4,6 +4,7 @@ const symbolSelect = document.getElementById("symbol-select");
 const newGameBtn = document.getElementById("new-game-btn");
 
 let game = null;
+let movePending = false;
 
 function statusText(current) {
   if (!current) {
@@ -28,6 +29,7 @@ function statusText(current) {
 function canClickCell(r, c) {
   return (
     game &&
+    !movePending &&
     game.status === "in_progress" &&
     game.turn === "player" &&
     game.board[r][c] === null
@@ -60,7 +62,12 @@ async function playMove(row, col) {
     return;
   }
 
-  statusEl.textContent = "Submitting move...";
+  const previousGame = structuredClone(game);
+  game.board[row][col] = game.player_symbol;
+  game.turn = "ai";
+  movePending = true;
+  statusEl.textContent = "AI is thinking...";
+  render();
 
   const response = await fetch(`/games/${game.game_id}/move`, {
     method: "POST",
@@ -70,11 +77,15 @@ async function playMove(row, col) {
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
+    game = previousGame;
+    movePending = false;
+    render();
     statusEl.textContent = payload.detail || "Move failed.";
     return;
   }
 
   game = await response.json();
+  movePending = false;
   render();
 }
 
