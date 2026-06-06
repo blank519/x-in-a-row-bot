@@ -59,8 +59,8 @@ def main():
     width = 15
     win_con = 5
 
-    base_model_path = "ppo_gomoku_finetuned"
-    finetuned_model_path = "ppo_gomoku_finetuned"
+    base_model_path = "outputs/ppo_gomoku_finetuned"
+    finetuned_model_path = "outputs/ppo_gomoku_finetuned"
 
     snapshot_dir = "self_play_snapshots_finetune"
     snapshot_freq = 249_856
@@ -90,7 +90,7 @@ def main():
         p_random=0.1,
         p_heuristics=[0.2, 0.2],
         eval_games_per_side=100,
-        best_model_path="best_vs_heuristic_finetune",
+        best_model_path="outputs/best_vs_heuristic_finetune",
         verbose=1,
     )
 

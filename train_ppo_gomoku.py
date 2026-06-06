@@ -318,12 +318,12 @@ def main():
         p_random=0.1,
         p_heuristics=[0.2, 0.2],
         eval_games_per_side=50,
-        best_model_path="best_vs_heuristic",
+        best_model_path="outputs/best_vs_heuristic",
         verbose=1,
     )
 
     model.learn(total_timesteps=4_997_120, callback=self_play_cb)
-    model.save("ppo_gomoku")
+    model.save("outputs/ppo_gomoku")
 
 
 if __name__ == "__main__":

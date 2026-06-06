@@ -27,7 +27,7 @@ WIN_CON = 3
 
 
 def _resolve_model_path() -> Path:
-    configured = os.getenv("MODEL_PATH", "ppo_tic_tac_toe_baseline3.zip")
+    configured = os.getenv("MODEL_PATH", "outputs/ppo_tic_tac_toe_baseline3.zip")
     model_path = Path(configured)
     if model_path.exists():
         return model_path

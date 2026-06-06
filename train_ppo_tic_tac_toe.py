@@ -253,12 +253,12 @@ def main():
         p_random=0.2,
         p_heuristic=0.3,
         eval_games_per_side=50,
-        best_model_path="best_vs_heuristic",
+        best_model_path="outputs/best_vs_heuristic",
         verbose=1,
     )
 
     model.learn(total_timesteps=500_000, callback=self_play_cb)
-    model.save("ppo_tic_tac_toe")
+    model.save("outputs/ppo_tic_tac_toe")
 
 
 if __name__ == "__main__":
