@@ -1,5 +1,6 @@
 const boardEl = document.getElementById("board");
 const statusEl = document.getElementById("status");
+const gameSelect = document.getElementById("game-select");
 const symbolSelect = document.getElementById("symbol-select");
 const newGameBtn = document.getElementById("new-game-btn");
 
@@ -41,7 +42,10 @@ async function createGame() {
   const response = await fetch("/games", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ player_symbol: symbolSelect.value }),
+    body: JSON.stringify({
+      game_type: gameSelect.value,
+      player_symbol: symbolSelect.value,
+    }),
   });
 
   if (!response.ok) {
@@ -92,8 +96,16 @@ async function playMove(row, col) {
 function render() {
   boardEl.innerHTML = "";
 
-  for (let r = 0; r < 3; r += 1) {
-    for (let c = 0; c < 3; c += 1) {
+  if (!game) {
+    statusEl.textContent = "No game loaded.";
+    return;
+  }
+
+  boardEl.style.gridTemplateColumns = `repeat(${game.width}, minmax(0, 1fr))`;
+  boardEl.classList.toggle("board--large", game.width > 6);
+
+  for (let r = 0; r < game.height; r += 1) {
+    for (let c = 0; c < game.width; c += 1) {
       const cell = document.createElement("button");
       cell.className = "cell";
       cell.textContent = game.board[r][c] || "";
@@ -109,6 +121,10 @@ function render() {
 }
 
 newGameBtn.addEventListener("click", () => {
+  createGame();
+});
+
+gameSelect.addEventListener("change", () => {
   createGame();
 });
 

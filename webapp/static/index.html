@@ -3,15 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tic-Tac-Toe vs AI</title>
+    <title>Board Games vs AI</title>
     <link rel="stylesheet" href="/static/styles.css" />
     <link rel="icon" href="/static/favicon.ico" />
   </head>
   <body>
     <main class="app">
-      <h1>Tic-Tac-Toe vs Trained AI</h1>
+      <h1>Board Games vs AI</h1>
 
       <div class="controls">
+        <label for="game-select">Game:</label>
+        <select id="game-select">
+          <option value="tic_tac_toe" selected>Tic-Tac-Toe (3x3)</option>
+          <option value="gomoku">Gomoku (15x15)</option>
+        </select>
+
         <label for="symbol-select">Play as:</label>
         <select id="symbol-select">
           <option value="X" selected>X (go first)</option>
@@ -22,7 +28,7 @@
 
       <p id="status">Loading...</p>
 
-      <section id="board" class="board" aria-label="Tic-tac-toe board"></section>
+      <section id="board" class="board" aria-label="Game board"></section>
     </main>
 
     <script src="/static/app.js"></script>

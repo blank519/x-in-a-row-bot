@@ -13,8 +13,9 @@ Training methodology:
 3. **(Optional) Fine-tuning**: Continued training similar to step 2, but with modified hyperparameters and a lower likelihood of training against the random move policy. This stage is unnecessary for a game as simple as Tic-Tac-Toe.
 
 ## Web App
-Locally hosted web app that allows users to play against the trained model. Currently only the tic-tac-toe model is supported.  
+Trained models are connected to a web app that allows users to play against the trained model. Currently only the tic-tac-toe model is supported.  
 To run the web app locally, navigate to the root directory and run `uvicorn webapp.api:app --reload`.
+The web app is also hosted on Render, at https://erics-ai-portfolio.onrender.com/
 
 ## Future Work
 - Connect 4
