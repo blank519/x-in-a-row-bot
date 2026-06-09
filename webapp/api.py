@@ -1,6 +1,9 @@
+import base64
+import json
 import os
 import threading
 import uuid
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -9,6 +12,8 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from google.cloud import storage
+from google.oauth2 import service_account
 from pydantic import BaseModel, Field
 from sb3_contrib import MaskablePPO
 
@@ -34,15 +39,39 @@ def _resolve_model_path() -> Path:
 
     if model_path.suffix != ".zip":
         with_zip = Path(f"{configured}.zip")
-        if with_zip.exists():
-            return with_zip
+        return with_zip
 
-    raise FileNotFoundError(
-        f"Could not find model file '{configured}'. Set MODEL_PATH to a valid .zip file path."
-    )
+    return model_path
 
 
-MODEL = MaskablePPO.load(str(_resolve_model_path()))
+def _download_model_from_gcs(target_path: Path) -> None:
+    encoded_sa = os.getenv("GCP_SERVICE_ACCOUNT_JSON_B64")
+    bucket_name = os.getenv("GCS_BUCKET")
+    object_name = os.getenv("GCS_OBJECT")
+
+    if not encoded_sa or not bucket_name or not object_name:
+        raise RuntimeError(
+            "Model file is missing locally and GCS download is not configured. "
+            "Set GCP_SERVICE_ACCOUNT_JSON_B64, GCS_BUCKET, and GCS_OBJECT."
+        )
+
+    try:
+        sa_info = json.loads(base64.b64decode(encoded_sa).decode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError("Failed to decode GCP_SERVICE_ACCOUNT_JSON_B64.") from exc
+
+    credentials = service_account.Credentials.from_service_account_info(sa_info)
+    project = os.getenv("GCP_PROJECT") or sa_info.get("project_id")
+    client = storage.Client(project=project, credentials=credentials)
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(object_name)
+    blob.download_to_filename(str(target_path))
+    print("Model downloaded from GCS")
+
+
+MODEL: MaskablePPO | None = None
 MODEL_LOCK = threading.Lock()
 
 
@@ -85,7 +114,26 @@ class GameResponse(BaseModel):
     num_turns: int = 0
 
 
-app = FastAPI(title="Tic-Tac-Toe AI Service")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global MODEL
+
+    model_path = _resolve_model_path()
+    if not model_path.exists():
+        print("Model not found locally, downloading from GCS...")
+        _download_model_from_gcs(model_path)
+
+    with MODEL_LOCK:
+        MODEL = MaskablePPO.load(str(model_path))
+        print("Model loaded successfully")
+
+    yield
+
+    with MODEL_LOCK:
+        MODEL = None
+
+
+app = FastAPI(title="Tic-Tac-Toe AI Service", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
@@ -134,6 +182,8 @@ def _run_ai_turn(session: GameSession) -> Move | None:
         return None
 
     with MODEL_LOCK:
+        if MODEL is None:
+            raise RuntimeError("Model is not loaded yet.")
         action, _state = MODEL.predict(obs, action_masks=mask, deterministic=True)
 
     action = int(action)

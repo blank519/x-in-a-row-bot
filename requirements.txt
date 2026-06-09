@@ -13,3 +13,4 @@ imageio-ffmpeg>=0.4
 
 fastapi>=0.111
 uvicorn>=0.30
+google-cloud-storage>=2.16
