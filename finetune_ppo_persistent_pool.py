@@ -5,6 +5,8 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 from sb3_contrib import MaskablePPO
 
+import mlflow
+
 from train_ppo_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfPlaySnapshotCallback
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
 
@@ -68,41 +70,71 @@ def main():
     n_envs = 8
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
 
-    model = MaskablePPO.load(
-        base_model_path,
-        env=env,
-    )
-
     k = 50
+    num_timesteps = snapshot_freq * 10
 
-    self_play_cb = SelfPlaySnapshotCallback(
-        vec_env=env,
-        snapshot_dir=snapshot_dir,
-        snapshot_freq=snapshot_freq,
-        height=height,
-        width=width,
-        win_con=win_con,
-        k=k,
-        random_warmup_steps=0,
-        mixed_warmup_steps=0,
-        mixed_p_random=0.0,
-        mixed_p_heuristic=0.0,
-        p_random=0.1,
-        p_heuristics=[0.2, 0.2],
-        eval_games_per_side=100,
-        best_model_path="outputs/best_vs_heuristic_finetune",
-        verbose=1,
-    )
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns"))
+    mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "ppo-gomoku-finetune-persistent"))
 
-    os.makedirs(snapshot_dir, exist_ok=True)
-    snapshot_models, max_idx = load_snapshot_pool(snapshot_dir=snapshot_dir, k=k)
-    self_play_cb._snapshot_models = snapshot_models
-    self_play_cb._snapshot_idx = max_idx
+    with mlflow.start_run():
+        mlflow.log_params({
+            "base_model_path": base_model_path,
+            "finetuned_model_path": finetuned_model_path,
+            "height": height,
+            "width": width,
+            "win_con": win_con,
+            "n_envs": n_envs,
+            "snapshot_dir": snapshot_dir,
+            "snapshot_freq": snapshot_freq,
+            "num_timesteps": num_timesteps,
+            "k": k,
+            "random_warmup_steps": 0,
+            "mixed_warmup_steps": 0,
+            "mixed_p_random": 0.0,
+            "mixed_p_heuristic": 0.0,
+            "p_random": 0.1,
+            "p_heuristics": "[0.2, 0.2]",
+            "eval_games_per_side": 100,
+        })
 
-    self_play_cb._best_saver.maybe_save(model, 0)
+        model = MaskablePPO.load(
+            base_model_path,
+            env=env,
+        )
 
-    model.learn(total_timesteps=snapshot_freq * 10, callback=self_play_cb)
-    model.save(finetuned_model_path)
+        self_play_cb = SelfPlaySnapshotCallback(
+            vec_env=env,
+            snapshot_dir=snapshot_dir,
+            snapshot_freq=snapshot_freq,
+            height=height,
+            width=width,
+            win_con=win_con,
+            k=k,
+            random_warmup_steps=0,
+            mixed_warmup_steps=0,
+            mixed_p_random=0.0,
+            mixed_p_heuristic=0.0,
+            p_random=0.1,
+            p_heuristics=[0.2, 0.2],
+            eval_games_per_side=100,
+            best_model_path="outputs/best_vs_heuristic_finetune",
+            verbose=1,
+        )
+
+        os.makedirs(snapshot_dir, exist_ok=True)
+        snapshot_models, max_idx = load_snapshot_pool(snapshot_dir=snapshot_dir, k=k)
+        self_play_cb._snapshot_models = snapshot_models
+        self_play_cb._snapshot_idx = max_idx
+        mlflow.log_params({
+            "loaded_snapshot_count": len(snapshot_models),
+            "loaded_snapshot_max_idx": max_idx,
+        })
+
+        self_play_cb._best_saver.maybe_save(model, 0)
+
+        model.learn(total_timesteps=num_timesteps, callback=self_play_cb)
+        model.save(finetuned_model_path)
+        mlflow.log_artifact(f"{finetuned_model_path}.zip", artifact_path="models")
 
 
 if __name__ == "__main__":

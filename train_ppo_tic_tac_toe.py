@@ -15,6 +15,7 @@ from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
 from heuristic_policy import XInARowHeuristicPolicy
 from vs_heuristic_eval import HeuristicEvaluator
 
+import mlflow
 
 class BoardCnnExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space, features_dim: int = 256):
@@ -191,7 +192,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
         if self.verbose > 0:
             print(f"[SelfPlay] Updated opponent from snapshot: {snapshot_path}.zip")
 
-        self._best_saver.maybe_save(self.model, self.num_timesteps)
+        improved, metrics = self._best_saver.maybe_save(self.model, self.num_timesteps)
+        mlflow.log_metrics({f"eval/{k}": float(v) for k, v in metrics.items()}, step=self.num_timesteps)
+        mlflow.log_metric("eval/improved", int(improved), step=self.num_timesteps)
 
         return True
 
@@ -219,46 +222,65 @@ def main():
 
     snapshot_dir = "self_play_snapshots"
     snapshot_freq = 25_000
+    num_timesteps = 500_000
 
     n_envs = 8
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
 
-    model = MaskablePPO(
-        policy=MaskableActorCriticPolicy,
-        env=env,
-        verbose=1,
-        policy_kwargs={
-            "features_extractor_class": BoardCnnExtractor,
-            "features_extractor_kwargs": {"features_dim": 256},
-        },
-        n_steps=64,
-        batch_size=256,
-        learning_rate=3e-4,
-        gamma=0.99,
-        gae_lambda=0.95,
-        ent_coef=0.01,
-        clip_range=0.2,
-    )
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns"))
+    mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "ppo-tic-tac-toe"))
 
-    self_play_cb = SelfPlaySnapshotCallback(
-        vec_env=env,
-        snapshot_dir=snapshot_dir,
-        snapshot_freq=snapshot_freq,
-        height=height,
-        width=width,
-        win_con=win_con,
-        k=20,
-        warmup_steps=50_000,
-        heuristic_start_steps=100_000,
-        p_random=0.2,
-        p_heuristic=0.3,
-        eval_games_per_side=50,
-        best_model_path="outputs/best_vs_heuristic",
-        verbose=1,
-    )
+    with mlflow.start_run():
+        mlflow.log_params({
+            "n_envs": n_envs,
+            "n_steps": 64,
+            "batch_size": 256,
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "gae_lambda": 0.95,
+            "ent_coef": 0.01,
+            "clip_range": 0.2,
+            "snapshot_freq": snapshot_freq,
+        })
 
-    model.learn(total_timesteps=500_000, callback=self_play_cb)
-    model.save("outputs/ppo_tic_tac_toe")
+        model = MaskablePPO(
+            policy=MaskableActorCriticPolicy,
+            env=env,
+            verbose=1,
+            policy_kwargs={
+                "features_extractor_class": BoardCnnExtractor,
+                "features_extractor_kwargs": {"features_dim": 256},
+            },
+            n_steps=64,
+            batch_size=256,
+            learning_rate=3e-4,
+            gamma=0.99,
+            gae_lambda=0.95,
+            ent_coef=0.01,
+            clip_range=0.2,
+        )
+
+        self_play_cb = SelfPlaySnapshotCallback(
+            vec_env=env,
+            snapshot_dir=snapshot_dir,
+            snapshot_freq=snapshot_freq,
+            height=height,
+            width=width,
+            win_con=win_con,
+            k=20,
+            warmup_steps=50_000,
+            heuristic_start_steps=100_000,
+            p_random=0.2,
+            p_heuristic=0.3,
+            eval_games_per_side=50,
+            best_model_path="outputs/best_vs_heuristic",
+            verbose=1,
+        )
+
+        model.learn(total_timesteps=num_timesteps, callback=self_play_cb)
+        model.save("outputs/ppo_tic_tac_toe")
+        final_model_zip = "outputs/ppo_tic_tac_toe.zip"
+        mlflow.log_artifact(final_model_zip, artifact_path="models")
 
 
 if __name__ == "__main__":

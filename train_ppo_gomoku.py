@@ -15,6 +15,7 @@ from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
 from heuristic_policy import XInARowHeuristicPolicy, GomokuHeuristicPolicy
 from vs_heuristic_eval import HeuristicEvaluator
 
+import mlflow
 
 class BoardCnnExtractor(BaseFeaturesExtractor):
     # Requires expansion for Gomoku
@@ -254,7 +255,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
             print(f"[SelfPlay] Updated opponent from snapshot: {snapshot_path}.zip")
 
         # Evaluate and save best model when snapshot is taken
-        self._best_saver.maybe_save(self.model, self.num_timesteps)
+        improved, metrics = self._best_saver.maybe_save(self.model, self.num_timesteps)
+        mlflow.log_metrics({f"eval/{k}": float(v) for k, v in metrics.items()}, step=self.num_timesteps)
+        mlflow.log_metric("eval/improved", int(improved), step=self.num_timesteps)
 
         return True
 
@@ -286,44 +289,62 @@ def main():
     n_envs = 8
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
 
-    model = MaskablePPO(
-        policy=MaskableActorCriticPolicy,
-        env=env,
-        verbose=1,
-        policy_kwargs={
-            "features_extractor_class": BoardCnnExtractor,
-            "features_extractor_kwargs": {"features_dim": 512},
-        },
-        n_steps=512,
-        batch_size=512,
-        learning_rate=1e-4,
-        gamma=0.995,
-        gae_lambda=0.95,
-        ent_coef=0.005,
-        clip_range=0.1,
-    )
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns"))
+    mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "ppo-gomoku"))
 
-    self_play_cb = SelfPlaySnapshotCallback(
-        vec_env=env,
-        snapshot_dir=snapshot_dir,
-        snapshot_freq=snapshot_freq,
-        height=height,
-        width=width,
-        win_con=win_con,
-        k=50,
-        random_warmup_steps=999_424, # Close to 1M, multiple of batch_size * n_environments
-        mixed_warmup_steps=999_424,
-        mixed_p_random=0.3,
-        mixed_p_heuristic=0.7,
-        p_random=0.1,
-        p_heuristics=[0.2, 0.2],
-        eval_games_per_side=50,
-        best_model_path="outputs/best_vs_heuristic",
-        verbose=1,
-    )
+    with mlflow.start_run():
+        mlflow.log_params({
+            "n_envs": n_envs,
+            "n_steps": 64,
+            "batch_size": 256,
+            "learning_rate": 3e-4,
+            "gamma": 0.99,
+            "gae_lambda": 0.95,
+            "ent_coef": 0.01,
+            "clip_range": 0.2,
+            "snapshot_freq": snapshot_freq,
+        })
 
-    model.learn(total_timesteps=4_997_120, callback=self_play_cb)
-    model.save("outputs/ppo_gomoku")
+        model = MaskablePPO(
+            policy=MaskableActorCriticPolicy,
+            env=env,
+            verbose=1,
+            policy_kwargs={
+                "features_extractor_class": BoardCnnExtractor,
+                "features_extractor_kwargs": {"features_dim": 512},
+            },
+            n_steps=512,
+            batch_size=512,
+            learning_rate=1e-4,
+            gamma=0.995,
+            gae_lambda=0.95,
+            ent_coef=0.005,
+            clip_range=0.1,
+        )
+
+        self_play_cb = SelfPlaySnapshotCallback(
+            vec_env=env,
+            snapshot_dir=snapshot_dir,
+            snapshot_freq=snapshot_freq,
+            height=height,
+            width=width,
+            win_con=win_con,
+            k=50,
+            random_warmup_steps=999_424, # Close to 1M, multiple of batch_size * n_environments
+            mixed_warmup_steps=999_424,
+            mixed_p_random=0.3,
+            mixed_p_heuristic=0.7,
+            p_random=0.1,
+            p_heuristics=[0.2, 0.2],
+            eval_games_per_side=50,
+            best_model_path="outputs/best_vs_heuristic",
+            verbose=1,
+        )
+
+        model.learn(total_timesteps=4_997_120, callback=self_play_cb)
+        model.save("outputs/ppo_gomoku")
+        final_model_zip = "outputs/ppo_gomoku.zip"
+        mlflow.log_artifact(final_model_zip, artifact_path="models")
 
 
 if __name__ == "__main__":
