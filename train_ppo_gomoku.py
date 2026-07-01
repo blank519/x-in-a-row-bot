@@ -17,6 +17,50 @@ from vs_heuristic_eval import HeuristicEvaluator
 
 import mlflow
 
+
+def apply_local_move_mask(
+    action_mask: np.ndarray,
+    obs: np.ndarray,
+    height: int,
+    width: int,
+    radius: int | None,
+    min_stones_before_mask: int = 1,
+) -> np.ndarray:
+    """Restrict legal moves to cells within Chebyshev radius of existing stones.
+
+    Falls back to the original mask if the filtered mask is empty.
+    """
+    base_mask = np.asarray(action_mask, dtype=np.int8)
+    if radius is None or radius < 0:
+        return base_mask
+
+    # Ignore local mask if the dimensions are too small
+    obs_arr = np.asarray(obs)
+    if obs_arr.ndim != 3 or obs_arr.shape[0] < 2:
+        return base_mask
+
+    # Ignore local mask if there are not enough stones on the board (by default < 1)
+    occupied = (obs_arr[0] + obs_arr[1]) > 0
+    if int(occupied.sum()) < int(min_stones_before_mask):
+        return base_mask
+
+    candidate = np.zeros((height, width), dtype=bool)
+    occupied_coords = np.argwhere(occupied)
+#    if occupied_coords.size == 0:
+#        return base_mask
+
+    for r, c in occupied_coords:
+        r0 = max(0, int(r) - radius)
+        r1 = min(height, int(r) + radius + 1)
+        c0 = max(0, int(c) - radius)
+        c1 = min(width, int(c) + radius + 1)
+        candidate[r0:r1, c0:c1] = True
+
+    masked = (base_mask.astype(bool) & candidate.reshape(-1))
+    if masked.any():
+        return masked.astype(np.int8)
+    return base_mask
+
 class BoardCnnExtractor(BaseFeaturesExtractor):
     # Requires expansion for Gomoku
     def __init__(self, observation_space, features_dim: int = 256):
@@ -66,6 +110,8 @@ class OpponentPoolPolicy:
         p_random = 0.25,
         p_heuristics = None,
         heuristics = None,
+        local_move_radius: int | None = None,
+        local_mask_enabled: bool = False,
     ):
         self.height = height
         self.width = width
@@ -81,6 +127,8 @@ class OpponentPoolPolicy:
                 f"p_heuristics and heuristics must have the same length, got {len(self.p_heuristics)} and {len(self.heuristics)}"
             )
         self.snapshot_models: list = []
+        self.local_move_radius = local_move_radius
+        self.local_mask_enabled = bool(local_mask_enabled)
 
     def set_snapshots(self, snapshot_models):
         self.snapshot_models = list(snapshot_models)
@@ -88,8 +136,19 @@ class OpponentPoolPolicy:
     def enable_heuristic(self, enabled):
         self.heuristic_enabled = bool(enabled)
 
+    def set_local_mask_enabled(self, enabled):
+        self.local_mask_enabled = bool(enabled)
+
     def __call__(self, obs, action_mask, rng):
         mask = np.asarray(action_mask, dtype=np.int8)
+        if self.local_mask_enabled:
+            mask = apply_local_move_mask(
+                action_mask=mask,
+                obs=np.asarray(obs, dtype=np.int8),
+                height=self.height,
+                width=self.width,
+                radius=self.local_move_radius,
+            )
         legal = np.flatnonzero(mask.astype(bool)).astype(np.int64)
         if legal.size == 0:
             return 0
@@ -124,6 +183,26 @@ class OpponentPoolPolicy:
 
         return int(rng.choice(legal))
 
+class CurriculumMaskedSelfPlayEnv(SingleAgentSelfPlayEnv):
+    """Single-agent self-play env with optional learner locality masking."""
+
+    def __init__(self, *args, learner_local_mask_radius: int | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._learner_local_mask_radius = learner_local_mask_radius
+
+    def set_learner_local_mask_radius(self, radius: int | None):
+        self._learner_local_mask_radius = None if radius is None else int(radius)
+
+    def action_masks(self) -> np.ndarray:
+        base_mask = super().action_masks()
+        return apply_local_move_mask(
+            action_mask=base_mask,
+            obs=self._env.observe(self.learner_symbol)["observation"],
+            height=self.height,
+            width=self.width,
+            radius=self._learner_local_mask_radius,
+        )
+
 
 class SelfPlaySnapshotCallback(BaseCallback):
     def __init__(
@@ -141,7 +220,10 @@ class SelfPlaySnapshotCallback(BaseCallback):
         mixed_p_heuristic = 0.7, # p(heuristic) during mixed warmup
         p_random = 0.1,
         p_heuristics = [0.2, 0.2], # p_random + p_heuristics should be <= 1. Remaining probability is snapshot pool.
-        eval_games_per_side = 50,
+        local_mask_radius: int | None = 2,
+        mask_learner_until_steps: int | None = None,
+        mask_opponent_until_steps: int | None = None,
+        eval_games_per_side = 100,
         best_model_path = "best_vs_heuristic",
         verbose = 0,
     ):
@@ -156,9 +238,15 @@ class SelfPlaySnapshotCallback(BaseCallback):
         self.mixed_warmup_steps = mixed_warmup_steps
         self.mixed_p_random = mixed_p_random
         self.mixed_p_heuristic = mixed_p_heuristic
+        self.local_mask_radius = local_mask_radius
+        warmup_total = int(self.random_warmup_steps + self.mixed_warmup_steps)
+        self.mask_learner_until_steps = warmup_total if mask_learner_until_steps is None else int(mask_learner_until_steps)
+        self.mask_opponent_until_steps = warmup_total if mask_opponent_until_steps is None else int(mask_opponent_until_steps)
 
         self._random_warmup_installed = False
         self._mixed_warmup_installed = False
+        self._learner_mask_active = False
+        self._learner_mask_removed = False
 
         self.pool = OpponentPoolPolicy(
             height=height,
@@ -170,6 +258,8 @@ class SelfPlaySnapshotCallback(BaseCallback):
             heuristics=[XInARowHeuristicPolicy(height=height, width=width, win_con=win_con), 
                         GomokuHeuristicPolicy(),
                         ],
+            local_move_radius=self.local_mask_radius,
+            local_mask_enabled=False,
         )
         self._snapshot_models: list = []
         self._pool_installed = False
@@ -189,6 +279,23 @@ class SelfPlaySnapshotCallback(BaseCallback):
         os.makedirs(self.snapshot_dir, exist_ok=True)
 
     def _on_step(self) -> bool:
+        learner_mask_should_be_on = (
+            self.local_mask_radius is not None
+            and self.num_timesteps < self.mask_learner_until_steps
+        )
+        if learner_mask_should_be_on and not self._learner_mask_active:
+            self.vec_env.env_method("set_learner_local_mask_radius", self.local_mask_radius)
+            self._learner_mask_active = True
+            self._learner_mask_removed = False
+        elif (not learner_mask_should_be_on) and self._learner_mask_active and not self._learner_mask_removed:
+            self.vec_env.env_method("set_learner_local_mask_radius", None)
+            self._learner_mask_removed = True
+
+        opponent_mask_enabled = (
+            self.local_mask_radius is not None
+            and self.num_timesteps < self.mask_opponent_until_steps
+        )
+
         # Stage 1 warmup: opponent is purely random (no heuristic, no snapshots)
         if self.num_timesteps < self.random_warmup_steps:
             if not self._random_warmup_installed:
@@ -198,6 +305,8 @@ class SelfPlaySnapshotCallback(BaseCallback):
                     win_con=self.pool.win_con,
                     p_random=1.0,
                     p_heuristics=[0.0],
+                    local_move_radius=self.local_mask_radius,
+                    local_mask_enabled=opponent_mask_enabled,
                 )
                 warmup_opponent.enable_heuristic(False)
                 warmup_opponent.set_snapshots([])
@@ -215,7 +324,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
                     p_random=self.mixed_p_random,
                     p_heuristics=[self.mixed_p_heuristic],
                     # Use weaker heuristic policy
-                    heuristics=[XInARowHeuristicPolicy(height=self.pool.height, width=self.pool.width, win_con=self.pool.win_con)]
+                    heuristics=[XInARowHeuristicPolicy(height=self.pool.height, width=self.pool.width, win_con=self.pool.win_con)],
+                    local_move_radius=self.local_mask_radius,
+                    local_mask_enabled=opponent_mask_enabled,
                 )
                 warmup_opponent.enable_heuristic(True)
                 warmup_opponent.set_snapshots([])
@@ -225,6 +336,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
 
         # After warmup, enable heuristic in the main pool.
         self.pool.enable_heuristic(True)
+        self.pool.set_local_mask_enabled(opponent_mask_enabled)
 
         if not self._pool_installed:
             self.pool.set_snapshots(self._snapshot_models)
@@ -264,7 +376,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
 
 def make_env(height: int, width: int, win_con: int):
     def _thunk():
-        return SingleAgentSelfPlayEnv(
+        return CurriculumMaskedSelfPlayEnv(
             height=height,
             width=width,
             win_con=win_con,
@@ -273,6 +385,7 @@ def make_env(height: int, width: int, win_con: int):
             render_mode=None,
             opponent_policy="random",
             randomize_learner=True,
+            learner_local_mask_radius=None,
         )
 
     return _thunk
@@ -284,10 +397,17 @@ def main():
     win_con = 5
 
     snapshot_dir = "self_play_snapshots"
-    snapshot_freq = 249_856 # Close to 250k, multiple of batch_size * n_environments
+    snapshot_freq = 256_000 # Close to 250k, multiple of batch_size * n_environments
 
-    n_envs = 8
+    n_envs = 16
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
+    device = "cuda" if th.cuda.is_available() else "cpu"
+
+    print(
+        f"[Train] device={device} "
+        f"cuda_available={th.cuda.is_available()} "
+        f"torch_version={th.__version__}"
+    )
 
     mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns"))
     mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "ppo-gomoku"))
@@ -303,6 +423,7 @@ def main():
             "ent_coef": 0.01,
             "clip_range": 0.2,
             "snapshot_freq": snapshot_freq,
+            "device": device,
         })
 
         model = MaskablePPO(
@@ -320,6 +441,7 @@ def main():
             gae_lambda=0.95,
             ent_coef=0.005,
             clip_range=0.1,
+            device=device,
         )
 
         self_play_cb = SelfPlaySnapshotCallback(
@@ -330,18 +452,21 @@ def main():
             width=width,
             win_con=win_con,
             k=50,
-            random_warmup_steps=999_424, # Close to 1M, multiple of batch_size * n_environments
-            mixed_warmup_steps=999_424,
+            random_warmup_steps=2_048_000, # ~2M for tactical bootstrapping with random play
+            mixed_warmup_steps=2_048_000, # ~2M for guided play before full self-play
             mixed_p_random=0.3,
             mixed_p_heuristic=0.7,
             p_random=0.1,
             p_heuristics=[0.2, 0.2],
+            local_mask_radius=3,
+            mask_learner_until_steps=4_096_000, # mask learner during warmup only
+            mask_opponent_until_steps=5_120_000, # keep opponent local slightly longer than learner
             eval_games_per_side=50,
             best_model_path="outputs/best_vs_heuristic",
             verbose=1,
         )
 
-        model.learn(total_timesteps=4_997_120, callback=self_play_cb)
+        model.learn(total_timesteps=10_240_000, callback=self_play_cb)
         model.save("outputs/ppo_gomoku")
         final_model_zip = "outputs/ppo_gomoku.zip"
         mlflow.log_artifact(final_model_zip, artifact_path="models")
