@@ -15,7 +15,7 @@ Training methodology:
 ## Web App
 Trained models are connected to a web app that allows users to play against the trained model. Currently only the tic-tac-toe model is supported.  
 To run the web app locally, navigate to the root directory and run `uvicorn webapp.api:app --reload`.
-The web app is also hosted on Render, at https://erics-ai-portfolio.onrender.com/
+The web app is also hosted on Render, at https://erics-ai-portfolio.onrender.com/, where trained models are available for play and deployed through Google Cloud Storage.
 
 ## Future Work
 - Connect 4
