@@ -12,7 +12,8 @@ class HeuristicEvaluator:
         height,
         width,
         win_con,
-        heuristic,
+        heuristic = None,
+        heuristics = None,
         n_games_per_side = 50,
         best_model_path = "best_vs_heuristic",
         deterministic = True,
@@ -28,7 +29,18 @@ class HeuristicEvaluator:
         self.seed = seed
         self.verbose = verbose
 
-        self.heuristic = heuristic
+        # Accept either a single heuristic or a list; the model is evaluated
+        # against every heuristic and selected on the worst-case outcome.
+        if heuristics is not None:
+            self.heuristics = list(heuristics)
+        elif heuristic is not None:
+            self.heuristics = [heuristic]
+        else:
+            raise ValueError("Provide either `heuristic` or `heuristics`.")
+        if len(self.heuristics) == 0:
+            raise ValueError("`heuristics` must contain at least one policy.")
+
+        self.heuristic_names = self._build_heuristic_names(self.heuristics)
 
         self.eval_num = 0
         self.best_eval_num = 0
@@ -44,8 +56,22 @@ class HeuristicEvaluator:
         self.p2_env.learner_symbol = "O"
         self.p2_env.opponent_symbol = "X"
 
-        self.p1_env.set_opponent(self.heuristic)
-        self.p2_env.set_opponent(self.heuristic)
+        self.p1_env.set_opponent(self.heuristics[0])
+        self.p2_env.set_opponent(self.heuristics[0])
+
+    @staticmethod
+    def _build_heuristic_names(heuristics):
+        names = []
+        seen = {}
+        for h in heuristics:
+            base = type(h).__name__
+            if base in seen:
+                seen[base] += 1
+                names.append(f"{base}_{seen[base]}")
+            else:
+                seen[base] = 0
+                names.append(base)
+        return names
 
     def _make_env(self):
         return SingleAgentSelfPlayEnv(
@@ -55,7 +81,7 @@ class HeuristicEvaluator:
             p1_symbol="X",
             p2_symbol="O",
             render_mode=None,
-            opponent_policy=self.heuristic,
+            opponent_policy=self.heuristics[0],
             randomize_learner=False,
         )
 
@@ -85,11 +111,6 @@ class HeuristicEvaluator:
         else:
             rng = np.random.default_rng(int(self.seed))
 
-        results = {
-            "X": {"win": 0, "draw": 0, "loss": 0},
-            "O": {"win": 0, "draw": 0, "loss": 0},
-        }
-
         def outcome_from_reward(r: float):
             if r > 0.5:
                 return "win"
@@ -97,45 +118,54 @@ class HeuristicEvaluator:
                 return "loss"
             return "draw"
 
-        for _ in range(self.n_games_per_side):
-            r = self._play_one(model, learner_symbol="X", rng=rng)
-            results["X"][outcome_from_reward(r)] += 1
+        metrics = {}
+        # (win_rate, draw_rate, loss_rate) for every (heuristic, side) pairing.
+        side_rates = []
+        agg = {"win": 0, "draw": 0, "loss": 0}
 
-        for _ in range(self.n_games_per_side):
-            r = self._play_one(model, learner_symbol="O", rng=rng)
-            results["O"][outcome_from_reward(r)] += 1
+        for h, name in zip(self.heuristics, self.heuristic_names):
+            self.p1_env.set_opponent(h)
+            self.p2_env.set_opponent(h)
 
-        wins = results["X"]["win"] + results["O"]["win"]
-        draws = results["X"]["draw"] + results["O"]["draw"]
-        losses = results["X"]["loss"] + results["O"]["loss"]
+            results = {
+                "X": {"win": 0, "draw": 0, "loss": 0},
+                "O": {"win": 0, "draw": 0, "loss": 0},
+            }
 
-        x_win_rate = results["X"]["win"] / self.n_games_per_side
-        x_draw_rate = results["X"]["draw"] / self.n_games_per_side
-        x_loss_rate = results["X"]["loss"] / self.n_games_per_side
+            for _ in range(self.n_games_per_side):
+                r = self._play_one(model, learner_symbol="X", rng=rng)
+                results["X"][outcome_from_reward(r)] += 1
 
-        o_win_rate = results["O"]["win"] / self.n_games_per_side
-        o_draw_rate = results["O"]["draw"] / self.n_games_per_side
-        o_loss_rate = results["O"]["loss"] / self.n_games_per_side
+            for _ in range(self.n_games_per_side):
+                r = self._play_one(model, learner_symbol="O", rng=rng)
+                results["O"][outcome_from_reward(r)] += 1
 
-        worst_loss_rate = max(x_loss_rate, o_loss_rate)
-        worst_win_rate = min(x_win_rate, o_win_rate)
-        worst_draw_rate = min(x_draw_rate, o_draw_rate)
+            for side in ("X", "O"):
+                win_rate = results[side]["win"] / self.n_games_per_side
+                draw_rate = results[side]["draw"] / self.n_games_per_side
+                loss_rate = results[side]["loss"] / self.n_games_per_side
+                metrics[f"{name}/{side.lower()}_win_rate"] = win_rate
+                metrics[f"{name}/{side.lower()}_draw_rate"] = draw_rate
+                metrics[f"{name}/{side.lower()}_loss_rate"] = loss_rate
+                side_rates.append((win_rate, draw_rate, loss_rate))
 
-        total_games = 2 * self.n_games_per_side
-        metrics = {
-            "win_rate": wins / total_games,
-            "draw_rate": draws / total_games,
-            "loss_rate": losses / total_games,
-            "x_win_rate": x_win_rate,
-            "x_draw_rate": x_draw_rate,
-            "x_loss_rate": x_loss_rate,
-            "o_win_rate": o_win_rate,
-            "o_draw_rate": o_draw_rate,
-            "o_loss_rate": o_loss_rate,
-            "worst_loss_rate": worst_loss_rate,
-            "worst_win_rate": worst_win_rate,
-            "worst_draw_rate": worst_draw_rate,
-        }
+                for outcome in ("win", "draw", "loss"):
+                    agg[outcome] += results[side][outcome]
+
+        total_games = 2 * self.n_games_per_side * len(self.heuristics)
+
+        # Worst-case across every (heuristic, side) pairing so a saved model must
+        # be robust against all opponents, not just the easiest one.
+        worst_loss_rate = max(lr for _, _, lr in side_rates)
+        worst_win_rate = min(wr for wr, _, _ in side_rates)
+        worst_draw_rate = min(dr for _, dr, _ in side_rates)
+
+        metrics["win_rate"] = agg["win"] / total_games
+        metrics["draw_rate"] = agg["draw"] / total_games
+        metrics["loss_rate"] = agg["loss"] / total_games
+        metrics["worst_loss_rate"] = worst_loss_rate
+        metrics["worst_win_rate"] = worst_win_rate
+        metrics["worst_draw_rate"] = worst_draw_rate
 
         # Selection priority:
         # 1. Minimize the worst-side loss rate (avoid models that are good as X but blunder as O, or vice versa)
@@ -169,8 +199,8 @@ class HeuristicEvaluator:
             tag = "BEST" if improved else "keep"
             print(
                 f"[VsHeuristicEval] {tag} eval number {self.best_eval_num} @ {num_timesteps} steps | "
-                f"(X: wr={metrics['x_win_rate']:.3f}, dr={metrics['x_draw_rate']:.3f}, lr={metrics['x_loss_rate']:.3f})"
-                f"(O: wr={metrics['o_win_rate']:.3f}, dr={metrics['o_draw_rate']:.3f}, lr={metrics['o_loss_rate']:.3f})"
+                f"overall (wr={metrics['win_rate']:.3f}, dr={metrics['draw_rate']:.3f}, lr={metrics['loss_rate']:.3f}) "
+                f"worst-case (wr={metrics['worst_win_rate']:.3f}, dr={metrics['worst_draw_rate']:.3f}, lr={metrics['worst_loss_rate']:.3f})"
             )
 
         return improved, metrics

@@ -7,12 +7,13 @@ import torch.nn as nn
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from stable_baselines3.common.utils import set_random_seed
 
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
-from heuristic_policy import XInARowHeuristicPolicy, GomokuHeuristicPolicy
+from heuristic_policy import XInARowHeuristicPolicy, GomokuDefensiveHeuristicPolicy, GomokuOffensiveHeuristicPolicy
 from vs_heuristic_eval import HeuristicEvaluator
 
 import mlflow
@@ -256,7 +257,8 @@ class SelfPlaySnapshotCallback(BaseCallback):
             p_heuristics=p_heuristics,
             # SET HEURISTICS HERE
             heuristics=[XInARowHeuristicPolicy(height=height, width=width, win_con=win_con), 
-                        GomokuHeuristicPolicy(),
+                        GomokuDefensiveHeuristicPolicy(),
+                        GomokuOffensiveHeuristicPolicy(),
                         ],
             local_move_radius=self.local_mask_radius,
             local_mask_enabled=False,
@@ -268,7 +270,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
             height=height,
             width=width,
             win_con=win_con,
-            heuristic=GomokuHeuristicPolicy(),
+            heuristics=[XInARowHeuristicPolicy(height=height, width=width, win_con=win_con),
+                        GomokuDefensiveHeuristicPolicy(),
+                        GomokuOffensiveHeuristicPolicy()],
             n_games_per_side=eval_games_per_side,
             best_model_path=best_model_path,
             deterministic=True,
@@ -322,9 +326,12 @@ class SelfPlaySnapshotCallback(BaseCallback):
                     width=self.pool.width,
                     win_con=self.pool.win_con,
                     p_random=self.mixed_p_random,
-                    p_heuristics=[self.mixed_p_heuristic],
-                    # Use weaker heuristic policy
-                    heuristics=[XInARowHeuristicPolicy(height=self.pool.height, width=self.pool.width, win_con=self.pool.win_con)],
+                    # Split the heuristic mass between the weak baseline and the
+                    # offensive attacker so the learner starts seeing threats early.
+                    p_heuristics=[self.mixed_p_heuristic * 0.5, self.mixed_p_heuristic * 0.2, self.mixed_p_heuristic * 0.3],
+                    heuristics=[XInARowHeuristicPolicy(height=self.pool.height, width=self.pool.width, win_con=self.pool.win_con),
+                                GomokuDefensiveHeuristicPolicy(),
+                                GomokuOffensiveHeuristicPolicy()],
                     local_move_radius=self.local_mask_radius,
                     local_mask_enabled=opponent_mask_enabled,
                 )
@@ -396,11 +403,15 @@ def main():
     width = 15
     win_con = 5
 
+    seed = int(os.getenv("SEED", "42"))
+    set_random_seed(seed, using_cuda=th.cuda.is_available())
+
     snapshot_dir = "self_play_snapshots"
     snapshot_freq = 256_000 # Close to 250k, multiple of batch_size * n_environments
 
     n_envs = 16
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
+    env.seed(seed)
     device = "cuda" if th.cuda.is_available() else "cpu"
 
     print(
@@ -409,8 +420,8 @@ def main():
         f"torch_version={th.__version__}"
     )
 
-    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns"))
-    mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "ppo-gomoku"))
+    mlflow.set_tracking_uri("file:./mlruns")
+    mlflow.set_experiment("ppo-gomoku-smaller-mask-radius-new-heuristic")
 
     with mlflow.start_run():
         mlflow.log_params({
@@ -423,6 +434,16 @@ def main():
             "ent_coef": 0.01,
             "clip_range": 0.2,
             "snapshot_freq": snapshot_freq,
+            "random_warmup_steps": 2_048_000, # ~1.5M for tactical bootstrapping with random play
+            "mixed_warmup_steps": 2_048_000, # ~1.5M for guided play before full self-play
+            "mixed_p_random": 0.3,
+            "mixed_p_heuristic": 0.7,
+            "p_random": 0.1,
+            "p_heuristics": [0.1, 0.15, 0.15],
+            "local_mask_radius": 2,
+            "mask_learner_until_steps": 4_096_000, # mask learner during warmup only
+            "mask_opponent_until_steps": 5_120_000,
+            "total_timesteps": 10_240_000,
             "device": device,
         })
 
@@ -442,6 +463,7 @@ def main():
             ent_coef=0.005,
             clip_range=0.1,
             device=device,
+            seed=seed,
         )
 
         self_play_cb = SelfPlaySnapshotCallback(
@@ -457,8 +479,9 @@ def main():
             mixed_p_random=0.3,
             mixed_p_heuristic=0.7,
             p_random=0.1,
-            p_heuristics=[0.2, 0.2],
-            local_mask_radius=3,
+            # [weak, defensive (block-3s), offensive (build-5s)]; remainder -> snapshot pool
+            p_heuristics=[0.1, 0.15, 0.15],
+            local_mask_radius=2,
             mask_learner_until_steps=4_096_000, # mask learner during warmup only
             mask_opponent_until_steps=5_120_000, # keep opponent local slightly longer than learner
             eval_games_per_side=50,
@@ -467,8 +490,8 @@ def main():
         )
 
         model.learn(total_timesteps=10_240_000, callback=self_play_cb)
-        model.save("outputs/ppo_gomoku")
-        final_model_zip = "outputs/ppo_gomoku.zip"
+        model.save("outputs/ppo_gomoku_smaller_mask_new_heuristic")
+        final_model_zip = "outputs/ppo_gomoku_smaller_mask_new_heuristic.zip"
         mlflow.log_artifact(final_model_zip, artifact_path="models")
 
 
