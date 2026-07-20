@@ -2,7 +2,7 @@ import time
 import numpy as np
 from sb3_contrib import MaskablePPO
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
-from heuristic_policy import XInARowHeuristicPolicy, GomokuHeuristicPolicy
+from heuristic_policy import XInARowHeuristicPolicy, GomokuOffensiveHeuristicPolicy
 
 def test_model(env, model, n_episodes):
     for episode in range(n_episodes):
@@ -26,8 +26,8 @@ def main():
     width = 15
     win_con = 5
 
-    model = MaskablePPO.load("ppo_gomoku")
-    heuristic = GomokuHeuristicPolicy()
+    model = MaskablePPO.load("outputs/ppo_gomoku_more_heuristic")
+    heuristic = GomokuOffensiveHeuristicPolicy()
 
     print("Test 1: player 1 plays with model, player 2 plays with heuristic")
     env = SingleAgentSelfPlayEnv(

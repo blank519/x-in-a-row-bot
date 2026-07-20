@@ -18,6 +18,7 @@ from vs_heuristic_eval import HeuristicEvaluator
 
 import mlflow
 
+import datetime as dt
 
 def apply_local_move_mask(
     action_mask: np.ndarray,
@@ -218,7 +219,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         random_warmup_steps = 999_424,
         mixed_warmup_steps = 999_424,
         mixed_p_random = 0.3, # p(random) during mixed warmup
-        mixed_p_heuristic = 0.7, # p(heuristic) during mixed warmup
+        mixed_p_heuristics = [0.7], # p(heuristic) during mixed warmup
         p_random = 0.1,
         p_heuristics = [0.2, 0.2], # p_random + p_heuristics should be <= 1. Remaining probability is snapshot pool.
         local_mask_radius: int | None = 2,
@@ -226,6 +227,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         mask_opponent_until_steps: int | None = None,
         eval_games_per_side = 100,
         best_model_path = "best_vs_heuristic",
+        latest_model_path = "outputs/latest_model",
         verbose = 0,
     ):
         super().__init__(verbose=verbose)
@@ -238,7 +240,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         self.random_warmup_steps = random_warmup_steps
         self.mixed_warmup_steps = mixed_warmup_steps
         self.mixed_p_random = mixed_p_random
-        self.mixed_p_heuristic = mixed_p_heuristic
+        self.mixed_p_heuristics = mixed_p_heuristics
         self.local_mask_radius = local_mask_radius
         warmup_total = int(self.random_warmup_steps + self.mixed_warmup_steps)
         self.mask_learner_until_steps = warmup_total if mask_learner_until_steps is None else int(mask_learner_until_steps)
@@ -265,7 +267,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
         )
         self._snapshot_models: list = []
         self._pool_installed = False
- 
+
+        self.latest_model_path = latest_model_path
+
         self._best_saver = HeuristicEvaluator(
             height=height,
             width=width,
@@ -300,6 +304,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
             and self.num_timesteps < self.mask_opponent_until_steps
         )
 
+        # Whether this step lands on an evaluation/snapshot boundary.
+        on_snapshot_step = self.snapshot_freq > 0 and (self.num_timesteps % self.snapshot_freq == 0)
+
         # Stage 1 warmup: opponent is purely random (no heuristic, no snapshots)
         if self.num_timesteps < self.random_warmup_steps:
             if not self._random_warmup_installed:
@@ -316,10 +323,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
                 warmup_opponent.set_snapshots([])
                 self.vec_env.env_method("set_opponent", warmup_opponent)
                 self._random_warmup_installed = True
-            return True
 
         # Stage 2 warmup: opponent is a fixed mixture of random + heuristic (no snapshots)
-        if self.num_timesteps < (self.random_warmup_steps + self.mixed_warmup_steps):
+        elif self.num_timesteps < (self.random_warmup_steps + self.mixed_warmup_steps):
             if not self._mixed_warmup_installed:
                 warmup_opponent = OpponentPoolPolicy(
                     height=self.pool.height,
@@ -328,7 +334,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
                     p_random=self.mixed_p_random,
                     # Split the heuristic mass between the weak baseline and the
                     # offensive attacker so the learner starts seeing threats early.
-                    p_heuristics=[self.mixed_p_heuristic * 0.5, self.mixed_p_heuristic * 0.2, self.mixed_p_heuristic * 0.3],
+                    p_heuristics=self.mixed_p_heuristics,
                     heuristics=[XInARowHeuristicPolicy(height=self.pool.height, width=self.pool.width, win_con=self.pool.win_con),
                                 GomokuDefensiveHeuristicPolicy(),
                                 GomokuOffensiveHeuristicPolicy()],
@@ -339,46 +345,53 @@ class SelfPlaySnapshotCallback(BaseCallback):
                 warmup_opponent.set_snapshots([])
                 self.vec_env.env_method("set_opponent", warmup_opponent)
                 self._mixed_warmup_installed = True
-            return True
 
-        # After warmup, enable heuristic in the main pool.
-        self.pool.enable_heuristic(True)
-        self.pool.set_local_mask_enabled(opponent_mask_enabled)
+        else:
+            # After warmup, enable heuristic in the main pool.
+            self.pool.enable_heuristic(True)
+            self.pool.set_local_mask_enabled(opponent_mask_enabled)
 
-        if not self._pool_installed:
-            self.pool.set_snapshots(self._snapshot_models)
-            self.vec_env.env_method("set_opponent", self.pool)
-            self._pool_installed = True
+            if not self._pool_installed:
+                self.pool.set_snapshots(self._snapshot_models)
+                self.vec_env.env_method("set_opponent", self.pool)
+                self._pool_installed = True
 
-        if self.snapshot_freq <= 0:
-            return True
+            # Freeze a snapshot into the opponent pool on snapshot boundaries.
+            if on_snapshot_step:
+                self._snapshot_idx += 1
+                snapshot_path = f"{self.snapshot_dir}/opponent_snapshot_{self._snapshot_idx}"
 
-        # Skip snapshots if not on snapshot frequency
-        if self.num_timesteps % self.snapshot_freq != 0:
-            return True
+                self.model.save(snapshot_path)
+                opponent_model = MaskablePPO.load(snapshot_path)
 
-        self._snapshot_idx += 1
-        snapshot_path = f"{self.snapshot_dir}/opponent_snapshot_{self._snapshot_idx}"
+                self._snapshot_models.append(opponent_model)
+                if len(self._snapshot_models) > self.k:
+                    self._snapshot_models = self._snapshot_models[-self.k :]
 
-        self.model.save(snapshot_path)
-        opponent_model = MaskablePPO.load(snapshot_path)
+                self.pool.set_snapshots(self._snapshot_models)
+                self.vec_env.env_method("set_opponent", self.pool)
 
-        self._snapshot_models.append(opponent_model)
-        if len(self._snapshot_models) > self.k:
-            self._snapshot_models = self._snapshot_models[-self.k :]
+                if self.verbose > 0:
+                    print(f"[SelfPlay] Updated opponent from snapshot: {snapshot_path}.zip")
 
-        self.pool.set_snapshots(self._snapshot_models)
-        self.vec_env.env_method("set_opponent", self.pool)
+        # Evaluate and save the most recent model on every snapshot boundary,
+        # regardless of which training stage we are currently in.
+        if on_snapshot_step:
+            self._evaluate_and_save()
 
-        if self.verbose > 0:
-            print(f"[SelfPlay] Updated opponent from snapshot: {snapshot_path}.zip")
+        return True
 
-        # Evaluate and save best model when snapshot is taken
+    def _evaluate_and_save(self) -> None:
+        # Always persist the most recent model so the latest checkpoint is
+        # available even when it is not the best-scoring one.
+        if self.latest_model_path:
+            os.makedirs(os.path.dirname(self.latest_model_path) or ".", exist_ok=True)
+            self.model.save(self.latest_model_path)
+
+        # Evaluate against the heuristics and save the best model if improved.
         improved, metrics = self._best_saver.maybe_save(self.model, self.num_timesteps)
         mlflow.log_metrics({f"eval/{k}": float(v) for k, v in metrics.items()}, step=self.num_timesteps)
         mlflow.log_metric("eval/improved", int(improved), step=self.num_timesteps)
-
-        return True
 
 
 def make_env(height: int, width: int, win_con: int):
@@ -403,7 +416,7 @@ def main():
     width = 15
     win_con = 5
 
-    seed = int(os.getenv("SEED", "42"))
+    seed = 42
     set_random_seed(seed, using_cuda=th.cuda.is_available())
 
     snapshot_dir = "self_play_snapshots"
@@ -420,30 +433,56 @@ def main():
         f"torch_version={th.__version__}"
     )
 
-    mlflow.set_tracking_uri("file:./mlruns")
-    mlflow.set_experiment("ppo-gomoku-smaller-mask-radius-new-heuristic")
+    # PPO parameters
+    n_steps=512
+    batch_size=512
+    learning_rate=lambda p: 1e-4 + p*(3e-4-1e-4) # p starts at 1 and goes to 0
+    gamma=0.995
+    gae_lambda=0.95
+    ent_coef=0.01
+    clip_range=0.1
 
-    with mlflow.start_run():
+    # Training schedule
+    total_timesteps = 10_240_000  # Entire run will be warmup
+    random_warmup_steps = 2_048_000
+    mixed_warmup_steps = 8_192_000
+
+    # Opponent pool parameters
+    mixed_p_random = 0.2
+    mixed_p_heuristics = [0.2, 0.3, 0.3]
+    p_random = 0.1
+    # [weak, defensive (block-3s), offensive (build-5s)]; remainder -> snapshot pool
+    p_heuristics = [0.1, 0.3, 0.3]
+    local_mask_radius = 2
+    mask_learner_until_steps = random_warmup_steps + mixed_warmup_steps  # mask learner during warmup only
+    mask_opponent_until_steps = mask_learner_until_steps + 0  # keep opponent local slightly longer than learner
+    eval_games_per_side = 100
+
+    mlflow.set_tracking_uri("file:./mlruns")
+    mlflow.set_experiment("ppo-gomoku")
+
+    with mlflow.start_run(run_name=f"ppo-gomoku-all-heuristic-games-{dt.datetime.now().strftime('%Y-%m-%d-%H:%M')}"):
         mlflow.log_params({
             "n_envs": n_envs,
-            "n_steps": 64,
-            "batch_size": 256,
-            "learning_rate": 3e-4,
-            "gamma": 0.99,
-            "gae_lambda": 0.95,
-            "ent_coef": 0.01,
-            "clip_range": 0.2,
+            "n_steps": n_steps,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "gamma": gamma,
+            "gae_lambda": gae_lambda,
+            "ent_coef": ent_coef,
+            "clip_range": clip_range,
             "snapshot_freq": snapshot_freq,
-            "random_warmup_steps": 2_048_000, # ~1.5M for tactical bootstrapping with random play
-            "mixed_warmup_steps": 2_048_000, # ~1.5M for guided play before full self-play
-            "mixed_p_random": 0.3,
-            "mixed_p_heuristic": 0.7,
-            "p_random": 0.1,
-            "p_heuristics": [0.1, 0.15, 0.15],
-            "local_mask_radius": 2,
-            "mask_learner_until_steps": 4_096_000, # mask learner during warmup only
-            "mask_opponent_until_steps": 5_120_000,
-            "total_timesteps": 10_240_000,
+            "random_warmup_steps": random_warmup_steps, # ~2M for tactical bootstrapping with random play
+            "mixed_warmup_steps": mixed_warmup_steps, # ~8M for guided play before full self-play
+            "mixed_p_random": mixed_p_random,
+            "mixed_p_heuristics": mixed_p_heuristics,
+            "p_random": p_random,
+            "p_heuristics": p_heuristics,
+            "local_mask_radius": local_mask_radius,
+            "mask_learner_until_steps": mask_learner_until_steps, # mask learner during warmup only
+            "mask_opponent_until_steps": mask_opponent_until_steps, # keep opponent local slightly longer than learner
+            "eval_games_per_side": eval_games_per_side,
+            "total_timesteps": total_timesteps, # Entire run will be warmup
             "device": device,
         })
 
@@ -455,13 +494,13 @@ def main():
                 "features_extractor_class": BoardCnnExtractor,
                 "features_extractor_kwargs": {"features_dim": 512},
             },
-            n_steps=512,
-            batch_size=512,
-            learning_rate=1e-4,
-            gamma=0.995,
-            gae_lambda=0.95,
-            ent_coef=0.005,
-            clip_range=0.1,
+            n_steps=n_steps,
+            batch_size=batch_size,
+            learning_rate=learning_rate,
+            gamma=gamma,
+            gae_lambda=gae_lambda,
+            ent_coef=ent_coef,
+            clip_range=clip_range,
             device=device,
             seed=seed,
         )
@@ -474,24 +513,24 @@ def main():
             width=width,
             win_con=win_con,
             k=50,
-            random_warmup_steps=2_048_000, # ~2M for tactical bootstrapping with random play
-            mixed_warmup_steps=2_048_000, # ~2M for guided play before full self-play
-            mixed_p_random=0.3,
-            mixed_p_heuristic=0.7,
-            p_random=0.1,
-            # [weak, defensive (block-3s), offensive (build-5s)]; remainder -> snapshot pool
-            p_heuristics=[0.1, 0.15, 0.15],
-            local_mask_radius=2,
-            mask_learner_until_steps=4_096_000, # mask learner during warmup only
-            mask_opponent_until_steps=5_120_000, # keep opponent local slightly longer than learner
-            eval_games_per_side=50,
+            random_warmup_steps=random_warmup_steps, # ~2M for tactical bootstrapping with random play
+            mixed_warmup_steps=mixed_warmup_steps, # ~3M for guided play before full self-play
+            mixed_p_random=mixed_p_random,
+            mixed_p_heuristics=mixed_p_heuristics,
+            p_random=p_random,
+            p_heuristics=p_heuristics,
+            local_mask_radius=local_mask_radius,
+            mask_learner_until_steps=mask_learner_until_steps, # mask learner during warmup only
+            mask_opponent_until_steps=mask_opponent_until_steps, # keep opponent local slightly longer than learner
+            eval_games_per_side=eval_games_per_side,
             best_model_path="outputs/best_vs_heuristic",
+            latest_model_path="outputs/latest_vs_heuristic",
             verbose=1,
         )
 
-        model.learn(total_timesteps=10_240_000, callback=self_play_cb)
-        model.save("outputs/ppo_gomoku_smaller_mask_new_heuristic")
-        final_model_zip = "outputs/ppo_gomoku_smaller_mask_new_heuristic.zip"
+        model.learn(total_timesteps=total_timesteps, callback=self_play_cb)
+        model.save("outputs/ppo_gomoku_all_heuristic")
+        final_model_zip = "outputs/ppo_gomoku_all_heuristic.zip"
         mlflow.log_artifact(final_model_zip, artifact_path="models")
 
 

@@ -20,4 +20,3 @@ The web app is also hosted on Render, at https://erics-ai-portfolio.onrender.com
 ## Future Work
 - Connect 4
 - 5-In-A-Row
-- Stochastic game settings

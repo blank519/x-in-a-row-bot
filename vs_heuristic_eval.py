@@ -142,31 +142,26 @@ class HeuristicEvaluator:
 
             for side in ("X", "O"):
                 win_rate = results[side]["win"] / self.n_games_per_side
-                draw_rate = results[side]["draw"] / self.n_games_per_side
                 loss_rate = results[side]["loss"] / self.n_games_per_side
                 metrics[f"{name}/{side.lower()}_win_rate"] = win_rate
-                metrics[f"{name}/{side.lower()}_draw_rate"] = draw_rate
                 metrics[f"{name}/{side.lower()}_loss_rate"] = loss_rate
-                side_rates.append((win_rate, draw_rate, loss_rate))
+                side_rates.append((win_rate, loss_rate))
 
-                for outcome in ("win", "draw", "loss"):
+                for outcome in ("win", "loss"):
                     agg[outcome] += results[side][outcome]
 
         total_games = 2 * self.n_games_per_side * len(self.heuristics)
 
         # Worst-case across every (heuristic, side) pairing so a saved model must
         # be robust against all opponents, not just the easiest one.
-        worst_loss_rate = max(lr for _, _, lr in side_rates)
-        worst_win_rate = min(wr for wr, _, _ in side_rates)
-        worst_draw_rate = min(dr for _, dr, _ in side_rates)
-
-        metrics["win_rate"] = agg["win"] / total_games
-        metrics["draw_rate"] = agg["draw"] / total_games
-        metrics["loss_rate"] = agg["loss"] / total_games
+        worst_loss_rate = max(lr for _, lr in side_rates)
+        worst_win_rate = min(wr for wr, _ in side_rates)
+        
+        metrics["average_win_rate"] = agg["win"] / total_games
+        metrics["average_loss_rate"] = agg["loss"] / total_games
         metrics["worst_loss_rate"] = worst_loss_rate
         metrics["worst_win_rate"] = worst_win_rate
-        metrics["worst_draw_rate"] = worst_draw_rate
-
+        
         # Selection priority:
         # 1. Minimize the worst-side loss rate (avoid models that are good as X but blunder as O, or vice versa)
         # 2. Maximize the worst-side win rate
@@ -175,11 +170,10 @@ class HeuristicEvaluator:
         # 4. Minimize overall loss rate
         # 5. Maximize overall win rate
         key = (
+            -metrics["average_loss_rate"],
+            metrics["average_win_rate"],
             -metrics["worst_loss_rate"],
             metrics["worst_win_rate"],
-            metrics["worst_draw_rate"],
-            -metrics["loss_rate"],
-            metrics["win_rate"],
         )
         return key, metrics
 
@@ -199,8 +193,8 @@ class HeuristicEvaluator:
             tag = "BEST" if improved else "keep"
             print(
                 f"[VsHeuristicEval] {tag} eval number {self.best_eval_num} @ {num_timesteps} steps | "
-                f"overall (wr={metrics['win_rate']:.3f}, dr={metrics['draw_rate']:.3f}, lr={metrics['loss_rate']:.3f}) "
-                f"worst-case (wr={metrics['worst_win_rate']:.3f}, dr={metrics['worst_draw_rate']:.3f}, lr={metrics['worst_loss_rate']:.3f})"
+                f"overall (wr={metrics['average_win_rate']:.3f}, lr={metrics['average_loss_rate']:.3f}) "
+                f"worst-case (wr={metrics['worst_win_rate']:.3f}, lr={metrics['worst_loss_rate']:.3f})"
             )
 
         return improved, metrics
