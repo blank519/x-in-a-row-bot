@@ -25,16 +25,35 @@ def _check_win(pieces: np.ndarray, win_con: int, r: int, c: int) -> bool:
 
 
 class XInARowHeuristicPolicy:
-    def __init__(self, height: int, width: int, win_con: int):
+    def __init__(self, height: int, width: int, win_con: int, mistake_rate: float = 0.0):
         self.height = int(height)
         self.width = int(width)
         self.win_con = int(win_con)
+        # Probability of ignoring the heuristic on a given turn and playing a
+        # uniformly random legal move instead. Intended to be annealed toward 0
+        # over training so early opponents are beatable. Wiring the schedule
+        # into the training loop is deliberately left to the caller.
+        self.mistake_rate = float(mistake_rate)
+
+    def set_mistake_rate(self, mistake_rate: float) -> None:
+        self.mistake_rate = float(mistake_rate)
+
+    def _maybe_random_mistake(self, legal_actions: np.ndarray, rng: np.random.Generator):
+        # Returns a random legal action with probability ``mistake_rate``,
+        # otherwise None (meaning: proceed with the heuristic).
+        if self.mistake_rate > 0.0 and float(rng.random()) < self.mistake_rate:
+            return int(rng.choice(legal_actions))
+        return None
 
     def __call__(self, obs: np.ndarray, action_mask: np.ndarray, rng: np.random.Generator) -> int:
         mask = np.asarray(action_mask, dtype=np.int8)
         legal_actions = np.flatnonzero(mask.astype(bool)).astype(np.int64)
         if legal_actions.size == 0:
             return 0
+
+        mistake = self._maybe_random_mistake(legal_actions, rng)
+        if mistake is not None:
+            return mistake
 
         obs = np.asarray(obs, dtype=np.int8)
         my_pieces = obs[0]
@@ -65,8 +84,8 @@ class XInARowHeuristicPolicy:
         return int(rng.choice(legal_actions))
 
 class GomokuOffensiveHeuristicPolicy(XInARowHeuristicPolicy):
-    def __init__(self):
-        super().__init__(height=15, width=15, win_con=5)
+    def __init__(self, mistake_rate: float = 0.0):
+        super().__init__(height=15, width=15, win_con=5, mistake_rate=mistake_rate)
 
     def _offensive_score(self, pieces: np.ndarray, r: int, c: int) -> float:
         # Score a hypothetical move at (r, c) by how strongly it extends our own
@@ -111,6 +130,10 @@ class GomokuOffensiveHeuristicPolicy(XInARowHeuristicPolicy):
         legal_actions = np.flatnonzero(mask.astype(bool)).astype(np.int64)
         if legal_actions.size == 0:
             return 0
+
+        mistake = self._maybe_random_mistake(legal_actions, rng)
+        if mistake is not None:
+            return mistake
 
         obs = np.asarray(obs, dtype=np.int8)
         my_pieces = obs[0]
@@ -161,8 +184,8 @@ class GomokuOffensiveHeuristicPolicy(XInARowHeuristicPolicy):
 
 
 class GomokuDefensiveHeuristicPolicy(XInARowHeuristicPolicy):
-    def __init__(self):
-        super().__init__(height=15, width=15, win_con=5)
+    def __init__(self, mistake_rate: float = 0.0):
+        super().__init__(height=15, width=15, win_con=5, mistake_rate=mistake_rate)
 
     def __call__(self, obs: np.ndarray, action_mask: np.ndarray, rng: np.random.Generator) -> int:
         # Same as XInARowHeuristic but with a new heuristic to block 4-in-a-row opportunities from opponent
@@ -170,6 +193,10 @@ class GomokuDefensiveHeuristicPolicy(XInARowHeuristicPolicy):
         legal_actions = np.flatnonzero(mask.astype(bool)).astype(np.int64)
         if legal_actions.size == 0:
             return 0
+
+        mistake = self._maybe_random_mistake(legal_actions, rng)
+        if mistake is not None:
+            return mistake
 
         obs = np.asarray(obs, dtype=np.int8)
         my_pieces = obs[0]

@@ -219,7 +219,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         random_warmup_steps = 999_424,
         mixed_warmup_steps = 999_424,
         mixed_p_random = 0.3, # p(random) during mixed warmup
-        mixed_p_heuristics = [0.7], # p(heuristic) during mixed warmup
+        mixed_p_heuristic = 0.7, # p(heuristic) during mixed warmup
         p_random = 0.1,
         p_heuristics = [0.2, 0.2], # p_random + p_heuristics should be <= 1. Remaining probability is snapshot pool.
         local_mask_radius: int | None = 2,
@@ -240,7 +240,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         self.random_warmup_steps = random_warmup_steps
         self.mixed_warmup_steps = mixed_warmup_steps
         self.mixed_p_random = mixed_p_random
-        self.mixed_p_heuristics = mixed_p_heuristics
+        self.mixed_p_heuristic = mixed_p_heuristic
         self.local_mask_radius = local_mask_radius
         warmup_total = int(self.random_warmup_steps + self.mixed_warmup_steps)
         self.mask_learner_until_steps = warmup_total if mask_learner_until_steps is None else int(mask_learner_until_steps)
@@ -269,7 +269,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         self._pool_installed = False
 
         self.latest_model_path = latest_model_path
-
+ 
         self._best_saver = HeuristicEvaluator(
             height=height,
             width=width,
@@ -334,7 +334,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
                     p_random=self.mixed_p_random,
                     # Split the heuristic mass between the weak baseline and the
                     # offensive attacker so the learner starts seeing threats early.
-                    p_heuristics=self.mixed_p_heuristics,
+                    p_heuristics=[self.mixed_p_heuristic * 0.4, self.mixed_p_heuristic * 0.25, self.mixed_p_heuristic * 0.35],
                     heuristics=[XInARowHeuristicPolicy(height=self.pool.height, width=self.pool.width, win_con=self.pool.win_con),
                                 GomokuDefensiveHeuristicPolicy(),
                                 GomokuOffensiveHeuristicPolicy()],
@@ -394,7 +394,8 @@ class SelfPlaySnapshotCallback(BaseCallback):
         mlflow.log_metric("eval/improved", int(improved), step=self.num_timesteps)
 
 
-def make_env(height: int, width: int, win_con: int):
+def make_env(height: int, width: int, win_con: int,
+             reward_shaping_coef: float = 0.0, reward_shaping_gamma: float = 0.99):
     def _thunk():
         return CurriculumMaskedSelfPlayEnv(
             height=height,
@@ -406,6 +407,8 @@ def make_env(height: int, width: int, win_con: int):
             opponent_policy="random",
             randomize_learner=True,
             learner_local_mask_radius=None,
+            reward_shaping_coef=reward_shaping_coef,
+            reward_shaping_gamma=reward_shaping_gamma,
         )
 
     return _thunk
@@ -422,8 +425,21 @@ def main():
     snapshot_dir = "self_play_snapshots"
     snapshot_freq = 256_000 # Close to 250k, multiple of batch_size * n_environments
 
+    # Potential-based reward shaping to give a dense signal for building threats
+    # and blocking the opponent. Set to 0.0 to disable. reward_shaping_gamma
+    # should match the PPO gamma below for policy-invariant shaping.
+    reward_shaping_coef = 0.01
+    reward_shaping_gamma = 0.995
+
     n_envs = 16
-    env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
+    env = DummyVecEnv([
+        make_env(
+            height, width, win_con,
+            reward_shaping_coef=reward_shaping_coef,
+            reward_shaping_gamma=reward_shaping_gamma,
+        )
+        for _ in range(n_envs)
+    ])
     env.seed(seed)
     device = "cuda" if th.cuda.is_available() else "cpu"
 
@@ -436,23 +452,23 @@ def main():
     # PPO parameters
     n_steps=512
     batch_size=512
-    learning_rate=lambda p: 1e-4 + p*(3e-4-1e-4) # p starts at 1 and goes to 0
+    learning_rate= 1e-4 #lambda p: 1e-4 + p*(3e-4-1e-4) # p starts at 1 and goes to 0
     gamma=0.995
     gae_lambda=0.95
-    ent_coef=0.01
+    ent_coef=0.005
     clip_range=0.1
 
     # Training schedule
-    total_timesteps = 10_240_000  # Entire run will be warmup
+    total_timesteps = 8_192_000  # Compare results with finetune_ppo_persistent_pool.py
     random_warmup_steps = 2_048_000
-    mixed_warmup_steps = 8_192_000
+    mixed_warmup_steps = 6_144_000 #3_072_000
 
     # Opponent pool parameters
-    mixed_p_random = 0.2
-    mixed_p_heuristics = [0.2, 0.3, 0.3]
+    mixed_p_random = 0.3
+    mixed_p_heuristic = 0.7
     p_random = 0.1
     # [weak, defensive (block-3s), offensive (build-5s)]; remainder -> snapshot pool
-    p_heuristics = [0.1, 0.3, 0.3]
+    p_heuristics = [0.1, 0.2, 0.2]
     local_mask_radius = 2
     mask_learner_until_steps = random_warmup_steps + mixed_warmup_steps  # mask learner during warmup only
     mask_opponent_until_steps = mask_learner_until_steps + 0  # keep opponent local slightly longer than learner
@@ -461,7 +477,7 @@ def main():
     mlflow.set_tracking_uri("file:./mlruns")
     mlflow.set_experiment("ppo-gomoku")
 
-    with mlflow.start_run(run_name=f"ppo-gomoku-all-heuristic-games-{dt.datetime.now().strftime('%Y-%m-%d-%H:%M')}"):
+    with mlflow.start_run(run_name=f"ppo-gomoku-reward-shaping-{dt.datetime.now().strftime('%Y-%m-%d-%H:%M')}"):
         mlflow.log_params({
             "n_envs": n_envs,
             "n_steps": n_steps,
@@ -475,7 +491,7 @@ def main():
             "random_warmup_steps": random_warmup_steps, # ~2M for tactical bootstrapping with random play
             "mixed_warmup_steps": mixed_warmup_steps, # ~8M for guided play before full self-play
             "mixed_p_random": mixed_p_random,
-            "mixed_p_heuristics": mixed_p_heuristics,
+            "mixed_p_heuristic": mixed_p_heuristic,
             "p_random": p_random,
             "p_heuristics": p_heuristics,
             "local_mask_radius": local_mask_radius,
@@ -483,6 +499,8 @@ def main():
             "mask_opponent_until_steps": mask_opponent_until_steps, # keep opponent local slightly longer than learner
             "eval_games_per_side": eval_games_per_side,
             "total_timesteps": total_timesteps, # Entire run will be warmup
+            "reward_shaping_coef": reward_shaping_coef,
+            "reward_shaping_gamma": reward_shaping_gamma,
             "device": device,
         })
 
@@ -512,11 +530,11 @@ def main():
             height=height,
             width=width,
             win_con=win_con,
-            k=50,
+            k=50, # max snapshot pool size
             random_warmup_steps=random_warmup_steps, # ~2M for tactical bootstrapping with random play
             mixed_warmup_steps=mixed_warmup_steps, # ~3M for guided play before full self-play
             mixed_p_random=mixed_p_random,
-            mixed_p_heuristics=mixed_p_heuristics,
+            mixed_p_heuristic=mixed_p_heuristic,
             p_random=p_random,
             p_heuristics=p_heuristics,
             local_mask_radius=local_mask_radius,
@@ -529,8 +547,8 @@ def main():
         )
 
         model.learn(total_timesteps=total_timesteps, callback=self_play_cb)
-        model.save("outputs/ppo_gomoku_all_heuristic")
-        final_model_zip = "outputs/ppo_gomoku_all_heuristic.zip"
+        model.save("outputs/ppo_gomoku_reward_shaping")
+        final_model_zip = "outputs/ppo_gomoku_reward_shaping.zip"
         mlflow.log_artifact(final_model_zip, artifact_path="models")
 
 
