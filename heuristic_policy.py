@@ -255,3 +255,104 @@ class GomokuDefensiveHeuristicPolicy(XInARowHeuristicPolicy):
         #Otherwise random legal move
         #print("Random move")
         return int(rng.choice(legal_actions))
+
+class GomokuCombinedHeuristicPolicy(GomokuOffensiveHeuristicPolicy):
+    def __init__(self, mistake_rate: float = 0):
+        super().__init__(mistake_rate)
+
+    def __call__(self, obs: np.ndarray, action_mask: np.ndarray, rng: np.random.Generator) -> int:
+        """Prioritize defensive heuristic, then offensive heuristic, with a chance of a random move = mistake_rate"""
+        mask = np.asarray(action_mask, dtype=np.int8)
+        legal_actions = np.flatnonzero(mask.astype(bool)).astype(np.int64)
+        if legal_actions.size == 0:
+            return 0
+
+        # Priority 1: Check for random mistake 
+        mistake = self._maybe_random_mistake(legal_actions, rng)
+        if mistake is not None:
+            return mistake
+
+        obs = np.asarray(obs, dtype=np.int8)
+        my_pieces = obs[0]
+        opp_pieces = obs[1]
+
+        # Priority 2: Win immediately if possible
+        best_actions = []
+        for a in legal_actions:
+            r = a // self.width
+            c = a % self.width
+            test = my_pieces.copy()
+            test[r, c] = 1
+            if _check_win(test, self.win_con, r, c):
+                #print("Win detected")
+                best_actions.append(int(a))
+        # If there are winning moves, choose one randomly
+        if best_actions:
+            return int(rng.choice(best_actions))
+
+        # Priority 3: Block opponent's immediate win
+        for a in legal_actions:
+            r = a // self.width
+            c = a % self.width
+            test = opp_pieces.copy()
+            test[r, c] = 1
+            if _check_win(test, self.win_con, r, c):
+                #print("Block detected")
+                best_actions.append(int(a))
+        # If there are blocking moves, choose one randomly
+        if best_actions:
+            return int(rng.choice(best_actions))
+
+        # Priority 4: Block formation of open-4 chains from opponent (Defensive Heuristic)
+        for a in legal_actions:
+            r = a // self.width
+            c = a % self.width
+            test = opp_pieces.copy()
+            test[r, c] = 1
+            directions = ((1, 0), (0, 1), (1, 1), (1, -1))
+            for dr, dc in directions:
+                # Assumes that count will be less than 5, otherwise second heuristic would have triggered
+                count = 1
+                rr, cc = r + dr, c + dc
+                while 0 <= rr < self.height and 0 <= cc < self.width and test[rr, cc] == 1:
+                    count += 1
+                    rr += dr
+                    cc += dc
+                unblocked = (0 <= rr < self.height and 0 <= cc < self.width and my_pieces[rr, cc] == 0)
+
+                rr, cc = r - dr, c - dc
+                while 0 <= rr < self.height and 0 <= cc < self.width and test[rr, cc] == 1:
+                    count += 1
+                    rr -= dr
+                    cc -= dc
+                # Check if both ends are unblocked
+                unblocked &= (0 <= rr < self.height and 0 <= cc < self.width and my_pieces[rr, cc] == 0)
+
+                if count >= 4 and unblocked:
+                    #print("Block 4-in-a-row detected")
+                    best_actions.append(int(a))
+        # If there are blocking moves, choose one randomly
+        if best_actions:
+            return int(rng.choice(best_actions))
+
+        # Priority 5: Extend the longest chain in a row (Offensive heuristic)
+        #Offensive heuristic: pick the move that best extends our own runs
+        best_score = -1.0
+        for a in legal_actions:
+            r = a // self.width
+            c = a % self.width
+            test = my_pieces.copy()
+            test[r, c] = 1
+            score = self._offensive_score(test, r, c)
+            if score > best_score:
+                best_score = score
+                best_actions = [int(a)]
+            elif score == best_score:
+                best_actions.append(int(a))
+
+        if best_actions:
+            #print("Offensive move detected")
+            return int(rng.choice(best_actions))
+        
+        #If all else fails, choose a random legal move
+        return int(rng.choice(legal_actions))

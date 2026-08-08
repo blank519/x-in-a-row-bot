@@ -92,9 +92,9 @@ class XInARowEnv(AECEnv):
                 # Simple reward system: -1 for loss, +1 for win, 0 for draw
                 for a in self.agents:
                     if a == agent:
-                        self.rewards[a] = 1
+                        self.rewards[a] = 1.0
                     else:
-                        self.rewards[a] = -1
+                        self.rewards[a] = -1.0
 
                     self.terminations[a] = True
             # Check truncation/draw (board completely full)

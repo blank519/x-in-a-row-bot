@@ -3,8 +3,7 @@ import os
 import numpy as np
 
 from heuristic_policy import XInARowHeuristicPolicy
-from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
-
+from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv, CurriculumMaskedSelfPlayEnv
 
 class HeuristicEvaluator:
     def __init__(
@@ -74,7 +73,7 @@ class HeuristicEvaluator:
         return names
 
     def _make_env(self):
-        return SingleAgentSelfPlayEnv(
+        return CurriculumMaskedSelfPlayEnv(
             height=self.height,
             width=self.width,
             win_con=self.win_con,
@@ -83,6 +82,8 @@ class HeuristicEvaluator:
             render_mode=None,
             opponent_policy=self.heuristics[0],
             randomize_learner=False,
+            learner_local_mask_radius=2,
+            opponent_local_mask_radius=2,
         )
 
     def _play_one(self, model, learner_symbol, rng):
@@ -96,13 +97,19 @@ class HeuristicEvaluator:
         truncated = False
 
         last_reward = 0.0
+        total_reward = 0.0
+        steps = 0
         while not (terminated or truncated):
             action_masks = env.action_masks()
             action, _state = model.predict(obs, action_masks=action_masks, deterministic=self.deterministic)
             obs, reward, terminated, truncated, _info = env.step(int(action))
             last_reward = float(reward)
+            total_reward += float(reward)
+            steps += 1
 
-        return last_reward
+        # last_reward drives the win/loss/draw outcome; total_reward and steps
+        # feed the average-reward and average-episode-length diagnostics.
+        return last_reward, total_reward, steps
 
     def evaluate(self, model):
         self.eval_num += 1
@@ -132,19 +139,32 @@ class HeuristicEvaluator:
                 "O": {"win": 0, "draw": 0, "loss": 0},
             }
 
-            for _ in range(self.n_games_per_side):
-                r = self._play_one(model, learner_symbol="X", rng=rng)
-                results["X"][outcome_from_reward(r)] += 1
+            # Aggregated across both sides for this opponent.
+            length_sum = {"X": 0, "O": 0}
+            reward_sum = {"X": 0.0, "O": 0.0}
 
             for _ in range(self.n_games_per_side):
-                r = self._play_one(model, learner_symbol="O", rng=rng)
+                r, total_reward, steps = self._play_one(model, learner_symbol="X", rng=rng)
+                results["X"][outcome_from_reward(r)] += 1
+                length_sum["X"] += steps
+                reward_sum["X"] += total_reward
+
+            for _ in range(self.n_games_per_side):
+                r, total_reward, steps = self._play_one(model, learner_symbol="O", rng=rng)
                 results["O"][outcome_from_reward(r)] += 1
+                length_sum["O"] += steps
+                reward_sum["O"] += total_reward
+
+            games = 2 * self.n_games_per_side
 
             for side in ("X", "O"):
                 win_rate = results[side]["win"] / self.n_games_per_side
                 loss_rate = results[side]["loss"] / self.n_games_per_side
                 metrics[f"{name}/{side.lower()}_win_rate"] = win_rate
                 metrics[f"{name}/{side.lower()}_loss_rate"] = loss_rate
+
+                metrics[f"{name}/{side.lower()}_avg_episode_length"] = length_sum[side] / self.n_games_per_side
+                metrics[f"{name}/{side.lower()}_avg_reward_per_game"] = reward_sum[side] / self.n_games_per_side
                 side_rates.append((win_rate, loss_rate))
 
                 for outcome in ("win", "loss"):
