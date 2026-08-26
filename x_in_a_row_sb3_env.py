@@ -52,13 +52,10 @@ def _board_threat_potential(
     lines: list,
     win_con: int,
     weights: np.ndarray,
-    defense_weight: float = 1.0,
 ) -> float:
     """Calculate raw (uncoefficiented) potential = own threat mass minus opponent 
     threat mass, summed over every win_con-length window. Windows containing both
-    players' stones contribute nothing. ``defense_weight`` > 1 scales up the
-    opponent-threat term so that blocking (and not allowing threats) is rewarded
-    more strongly than building one's own."""
+    players' stones contribute nothing."""
     total = 0.0
     for idx in lines: # each "idx" is an array of indices representing a line
         own_line = own_flat[idx]
@@ -69,7 +66,7 @@ def _board_threat_potential(
         own_only = opp_counts == 0 # count number of windows where opponent has 0 stones
         opp_only = own_counts == 0 # count number of windows where own has 0 stones
         total += float(weights[own_counts[own_only]].sum())
-        total -= defense_weight * float(weights[opp_counts[opp_only]].sum())
+        total -= float(weights[opp_counts[opp_only]].sum())
     return total
 
 
@@ -100,7 +97,6 @@ class SingleAgentSelfPlayEnv(gym.Env):
     def __init__(self, height, width, win_con, p1_symbol = "X", p2_symbol = "O", render_mode = None, 
                  opponent_policy = "random", randomize_learner = False,
                  reward_shaping_coef = 0.0, reward_shaping_gamma = 0.99,
-                 reward_shaping_defense_weight = 1.0,
                  block_reward_coef = 0.0,
                  defensive_opening_prob = 0.0,
                  defensive_opening_neighbor_radius = 2):
@@ -145,8 +141,6 @@ class SingleAgentSelfPlayEnv(gym.Env):
         # opponent's. Disabled when reward_shaping_coef == 0.
         self._reward_shaping_coef = float(reward_shaping_coef)
         self._reward_shaping_gamma = float(reward_shaping_gamma)
-        # >1 emphasizes blocking the opponent over building one's own threats.
-        self._reward_shaping_defense_weight = float(reward_shaping_defense_weight)
         # Immediate (non-potential) reward for reducing the opponent's threat mass
         # with the learner's own move. Unlike potential-based shaping this DOES
         # change the optimal policy, so it directly incentivizes blocking.
@@ -163,7 +157,6 @@ class SingleAgentSelfPlayEnv(gym.Env):
         opp_flat = np.asarray(obs[1], dtype=np.float32).reshape(-1)
         raw = _board_threat_potential(
             own_flat, opp_flat, self._shaping_lines, self.win_con, self._shaping_weights,
-            defense_weight=self._reward_shaping_defense_weight,
         )
         return self._reward_shaping_coef * raw
 

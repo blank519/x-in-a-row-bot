@@ -6,8 +6,7 @@ from sb3_contrib import MaskablePPO
 
 import mlflow
 
-# Import from correct file
-from train_ppo_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfPlaySnapshotCallback
+from self_play_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfPlaySnapshotCallback
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
 
 

@@ -12,8 +12,8 @@ from sb3_contrib import MaskablePPO
 import mlflow
 import datetime as dt
 
-from train_ppo_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfPlaySnapshotCallback, CurriculumMaskedSelfPlayEnv
-from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
+from self_play_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfPlaySnapshotCallback
+from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv, CurriculumMaskedSelfPlayEnv
 
 def make_env(height: int, width: int, win_con: int):
     def _thunk():
