@@ -119,28 +119,9 @@ win rate) directly motivated adding the **defensive-opening curriculum** and the
 **block reward**. Reproduce that kind of reasoning: pair a per-opponent/side rate
 with its episode-length trajectory before concluding anything.
 
-### Reading `mlruns/` directly (no browser)
-
-You almost certainly **cannot open the MLflow web UI** (`mlflow ui` needs a
-browser you don't have). Don't rely on it. The MLflow store is just a plain
-directory tree of text files — read it directly with your normal file tools
-(`read`, `grep`, `find`, small scripts). The layout is:
-
-```
-mlruns/
-  <experiment_id>/                     # e.g. 510583218657647424 == "ppo-gomoku"
-    meta.yaml                          # experiment-level: has `name: ppo-gomoku`
-    <run_id>/
-      meta.yaml                        # run_name, start_time/end_time (ms epoch), status (3 = finished)
-      tags/mlflow.runName              # the run's descriptive name
-      params/<param_name>              # one file per param; contents = the value (e.g. params/block_reward_coef -> "0.2")
-      metrics/eval/<Heuristic>/<side>_<suffix>   # one file per metric (see below)
-      metrics/eval/average_win_rate    # aggregate metrics
-      metrics/train/mean_block_reward  # training diagnostics (average block reward, heuristic mistake rate)
-      artifacts/                       # logged model zips
-```
-
 **Finding runs to compare** (by name, date, params — no UI needed):
+
+Recall the section on reading '/mlruns' directly (`AGENTS.md`).
 
 - Resolve the experiment id by grepping the experiment `meta.yaml` files for the
   name (`grep -r "name: ppo-gomoku" mlruns/*/meta.yaml`). `ppo-gomoku` is
