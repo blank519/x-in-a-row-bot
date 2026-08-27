@@ -135,10 +135,10 @@ python play_rendered_game.py --gif out.gif --fps 2
 
 ### Reading `mlruns/` directly (no browser)
 
-You almost certainly **cannot open the MLflow web UI** (`mlflow ui` needs a
-browser you don't have). Don't rely on it. The MLflow store is just a plain
-directory tree of text files — read it directly with your normal file tools
-(`read`, `grep`, `find`, small scripts). The layout is:
+You almost certainly **cannot open the MLflow web UI** and do not need to.
+The MLflow store is just a plain directory tree of text files — you can read it 
+directly with your normal file tools (`read`, `grep`, `find`, small scripts). 
+The layout is:
 
 ```
 mlruns/
