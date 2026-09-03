@@ -1,4 +1,6 @@
 *.zip
 __pycache__/
+.pytest_cache/
 .venv/
 mlruns/
+artifacts/
