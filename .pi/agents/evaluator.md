@@ -37,8 +37,8 @@ reading `mlruns/`, `git diff`). Never edit code or change results to make it pas
 ## Output format (always)
 
 ## Evidence
-The concrete things you checked: test output summary, or the specific metric
-trajectories and baseline comparison (cite the numbers / run ids).
+The concrete things you checked: tests written, test output summary, or the specific
+metric trajectories and baseline comparison (cite the numbers / run ids).
 
 ## Assessment
 2-4 sentences: does the work meet **Done when**? Why or why not?

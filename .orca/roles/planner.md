@@ -38,7 +38,7 @@ One sentence: what this ticket accomplishes.
 
 ## Plan
 Numbered, atomic, ordered steps. Each step is something the implementer can do
-and the evaluator can check on its own.
+and the evaluator can test on its own.
 1. ...
 2. ...
 

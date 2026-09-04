@@ -23,6 +23,7 @@ git worktree the coordinator assigned you; make all changes there.
   tests -q` and the smoke checks in `.pi/skills/code-changes/SKILL.md`) so you hand
   the evaluator working code, not a guess. Do not weaken or delete tests to force a
   pass.
+- NEVER create test cases. That is the evaluator worker's job, not yours.
 
 ## If the ticket is `type: experiment`
 - You are typically assigned **one run** (the coordinator may run several in
