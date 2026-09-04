@@ -20,8 +20,8 @@ reading `mlruns/`, `git diff`). Never edit code or change results to make it pas
 ## If the ticket is `type: code`
 1. `git diff` to see what changed; read the modified files.
 2. Write a test script in the `tests/` directory to check that the implementation
-   fulfills the described basic functionality and possible edge cases, including the
-   **Done when** criteria.
+   fulfills the described basic functionality and possible edge cases, including 
+   but not limited to the **Done when** criteria.
 3. Run the test script and verify whether or not it passes.
 4. PASS only if the **Done when** criteria are met AND all tests are green.
 
@@ -38,8 +38,9 @@ reading `mlruns/`, `git diff`). Never edit code or change results to make it pas
 Store your output in `artifacts/<ticket_file_name>/evaluate_<attempt number>.md`.
 
 ## Evidence
-The concrete things you checked: test output summary, or the specific metric
-trajectories and baseline comparison (cite the numbers / run ids).
+The concrete things you checked: tests written and what they check, test output 
+summary, or the specific metric trajectories and baseline comparison (cite the 
+numbers / run ids).
 
 ## Assessment
 2-4 sentences: does the work meet **Done when**? Why or why not?

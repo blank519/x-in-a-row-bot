@@ -74,13 +74,10 @@ ticket and any handoff text:
 
    b. **Evaluate** (same worktree; depends on impl):
       ```
-      orca orchestration task-create --spec "<.orca/roles/evaluator.md>\n\nDONE_WHEN:\n<from ticket>\nIMPLEMENTER_REPORT:\n<report>" --deps '["<impl_id>"]' --json
-      orca orchestration worker-start --task <eval_id> --worktree current --agent pi --json
-      
       $ SPEC="$(cat .orca/roles/evaluator.md)
 
-      DONE_WHEN:
-      <DONE_WHEN from ticket>
+      TICKET:
+      $(cat .pi/tickets/<ticket_id>.md)"
       
       IMPLEMENTER_REPORT:
       $(cat artifacts/<ticket_id>/implement<i>.md)"; 

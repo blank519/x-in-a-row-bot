@@ -10,14 +10,14 @@ reference doc matching the ticket `type` (plain markdown):
   run-naming, the training-loop knobs)
 
 You receive:
-- The **ticket** and the **plan** from the planner.
+- The **goal** and the **plan** from the planner.
 - On a retry, the evaluator's **FEEDBACK** from the previous attempt — treat it as
   the priority list of what to fix.
 
 Execute the plan. Work autonomously using all available tools. You operate in a
 git worktree the coordinator assigned you; make all changes there.
 
-## If the ticket is `type: code`
+## If the plan is `type: code`
 - Make the changes described in the plan, matching existing style.
 - Before finishing, sanity-check with the repo's fast checks (`python -m pytest
   tests -q` and the smoke checks in `.pi/skills/code-changes/SKILL.md`) so you hand
@@ -25,7 +25,7 @@ git worktree the coordinator assigned you; make all changes there.
   pass.
 - NEVER create test cases. That is the evaluator worker's job, not yours.
 
-## If the ticket is `type: experiment`
+## If the plan is `type: experiment`
 - You are typically assigned **one run** (the coordinator may run several in
   parallel worktrees). Set the hyperparameters / reward / curriculum values in
   `train_ppo_gomoku.py::main()` (or the env), set the descriptive `run_name`, and

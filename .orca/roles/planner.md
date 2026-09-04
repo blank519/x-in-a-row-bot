@@ -15,7 +15,8 @@ produce a plan. You must **NOT** make any changes — only read, analyze, and pl
 The ticket declares a `type:` of either `code` or `experiment`. Branch on it.
 
 ## If `type: code`
-Produce a numbered list of small, independently-verifiable code changes.
+Produce a numbered list of small, independently-verifiable code changes. If files
+are to be created by the implementor, name them.
 
 ## If `type: experiment`
 Produce a numbered list of **training runs** to execute. Treat each run as one
