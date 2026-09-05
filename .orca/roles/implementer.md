@@ -36,7 +36,7 @@ git worktree the coordinator assigned you; make all changes there.
   status.
 
 ## Output format (always)
-Store your output in `artifacts/<ticket_file_name>/implement_<attempt number>.md`.
+Store your output in `artifacts/<ticket_name>/implement_<attempt number>.md`.
 
 ## Completed
 What you did, step by step.

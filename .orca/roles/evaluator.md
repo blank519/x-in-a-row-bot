@@ -35,7 +35,7 @@ reading `mlruns/`, `git diff`). Never edit code or change results to make it pas
    evidence. "The run finished" is not sufficient.
 
 ## Output format (always)
-Store your output in `artifacts/<ticket_file_name>/evaluate_<attempt number>.md`.
+Store your output in `artifacts/<ticket_name>/evaluate_<attempt number>.md`.
 
 ## Evidence
 The concrete things you checked: tests written and what they check, test output 

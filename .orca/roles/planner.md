@@ -16,7 +16,8 @@ The ticket declares a `type:` of either `code` or `experiment`. Branch on it.
 
 ## If `type: code`
 Produce a numbered list of small, independently-verifiable code changes. If files
-are to be created by the implementor, name them.
+are to be created by the implementor, name them. Do NOT tell the implementer to add
+tests - that is the evaluator's job.
 
 ## If `type: experiment`
 Produce a numbered list of **training runs** to execute. Treat each run as one
@@ -30,7 +31,7 @@ where practical. Independent runs may be executed in parallel by the coordinator
 so keep each run self-contained.
 
 ## Output format (always)
-Store your output in `artifacts/<ticket_file_name>/plan.md`.
+Store your output in `artifacts/<ticket_name>/plan.md`.
 ## Goal
 One sentence: what this ticket accomplishes.
 
