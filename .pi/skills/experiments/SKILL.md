@@ -84,6 +84,34 @@ Launching a training run **is** the core research activity here — do it freely
   `python -m pytest tests -q` and the smoke checks (see the `code-changes` skill)
   — don't burn GPU hours on a run that crashes at the first eval.
 
+### Readiness: when a run is evaluable (long runs)
+
+A run is only worth judging once its results have **stabilized**. Evaluate when
+**either** condition holds:
+
+- **The run has fully completed** — training reached `total_timesteps` (the
+  process exited normally / the final model was saved), **or**
+- **The target metrics show clear convergence** — the metrics the ticket's
+  **Done when** depends on (the relevant per-(heuristic, side) win rates,
+  `average_win_rate`, and paired episode lengths) have **plateaued**: over a
+  sustained recent window of eval checkpoints they fluctuate within a small band
+  with no sustained upward or downward trend.
+
+Do **not** evaluate while the target metrics are still **trending** (improving or
+degrading) — that is not convergence yet; keep waiting. Judge the trend from the
+data itself: in `mlruns/`, each eval metric file (e.g.
+`metrics/eval/average_win_rate`) has **one line per checkpoint** logged every
+`snapshot_freq` steps, so reading it top-to-bottom gives the trajectory. You need
+enough recent points to tell a real plateau from noise; a couple of points is not
+enough. (A ticket/plan may still specify its own `evidence_ready_condition`.)
+
+In the orchestration pipeline the **coordinator** owns this wait: it polls the
+run's eval trajectories in `mlruns/` and dispatches the evaluator only once the
+run has **converged or completed**. The evaluator (a one-shot worker) must not
+emit PASS/FAIL on a run that is still trending — it returns `HOLD` so the
+coordinator keeps waiting. A launched run that produced little/no data and is no
+longer alive is a real `FAIL`, not a `HOLD`.
+
 ## Analyzing & comparing runs
 
 **Do not diagnose a run from its final aggregate numbers.** A single

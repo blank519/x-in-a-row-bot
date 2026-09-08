@@ -71,6 +71,33 @@ ticket and any handoff text:
       orca orchestration worker-start --task <impl_id> --worktree current --agent pi --json
       ```
       Wait per the **Waiting** protocol (capture the report, release, then `--ack`).
+      For `type: code`, go straight to (b). For `type: experiment`, do (a.5) first.
+
+   a.5 **Monitor the run — EXPERIMENT TICKETS ONLY.** An experiment implementer
+      returns as soon as the run is *launched*, not finished. Do **NOT** dispatch
+      the evaluator yet: `mlruns/` has little/no eval data, so any verdict now is
+      premature (this is the bug this step prevents). **You** own the wait; the
+      evaluator stays one-shot and runs only once evidence exists. Loop:
+      - Inspect the run's eval **trajectories** directly (you have file tools):
+        read the target metric files under
+        `mlruns/<exp_id>/<run_id>/metrics/eval/...` (one line per checkpoint) and
+        look at the recent trend. Confirm the file is still growing / the training
+        PID is alive.
+      - **Keep waiting** (re-inspect each interval) while the target metrics are
+        still **trending** — the run is not yet converged. Use a blocking wait as
+        the timer; it times out with no messages, which is your cue to re-check
+        `mlruns/`:
+        ```
+        orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 3600000 --json
+        ```
+        Default 60 min; honor a ticket/plan `recheck_interval_minutes` if given.
+      - Proceed to (b) only once the run is **evaluable**: it has **fully
+        completed** (reached `total_timesteps`) OR its target metrics show **clear
+        convergence** (plateaued over a sustained recent window). See the
+        `experiments` skill's "Readiness" definition; a plan may set its own
+        `evidence_ready_condition`.
+      - If the run process **died with little/no data**, that is a real FAIL —
+        report it; do not wait forever.
 
    b. **Evaluate** (same worktree; depends on impl):
       ```
@@ -86,16 +113,23 @@ ticket and any handoff text:
       orca orchestration worker-start --task <eval_id> --worktree current --agent pi --json
       ```
       Wait per the **Waiting** protocol; read the evaluator's `worker_done` body for
-      the `VERDICT:` / `FEEDBACK:` block (last two lines). Release and `--ack`.
+      the `VERDICT:` block (`PASS` | `FAIL` | `HOLD`) and `FEEDBACK:`. Release and
+      `--ack`.
 
-   c. **Decision gate** on the verdict:
-      ```
-      orca orchestration gate-create --task <eval_id> --question "Does the work satisfy Done when?" --options '["pass","fail"]' --json
-      orca orchestration gate-resolve --id <gate_id> --resolution "<pass|fail + one-line reason>" --json
-      ```
-      - `PASS` -> mark the Run's objective met; go to step 5.
-      - `FAIL` -> record `FEEDBACK`, `i += 1`; if `i <= max_iterations` loop to (a)
-        with that feedback, else go to step 4.
+   c. **Act on the verdict:**
+      - `HOLD` (evaluator judged evidence still insufficient — e.g. run not mature
+        enough): do **NOT** create a gate and do **NOT** count an iteration. Go
+        back to (a.5) and keep monitoring, then re-dispatch the evaluator after the
+        next interval. Cap total HOLD waits (e.g. the run's expected duration) so a
+        stuck/dead run eventually escalates to the user instead of looping forever.
+      - `PASS` / `FAIL`: record the decision with a gate, then branch:
+        ```
+        orca orchestration gate-create --task <eval_id> --question "Does the work satisfy Done when?" --options '["pass","fail"]' --json
+        orca orchestration gate-resolve --id <gate_id> --resolution "<pass|fail + one-line reason>" --json
+        ```
+        - `PASS` -> mark the Run's objective met; go to step 5.
+        - `FAIL` -> record `FEEDBACK`, `i += 1`; if `i <= max_iterations` loop to
+          (a) with that feedback, else go to step 4.
 
 4. **Cap reached without PASS.** Do not loop forever. Stop and report the
    outstanding `FEEDBACK` so the user can intervene.
@@ -117,7 +151,7 @@ that batch.
 Per wait, do this in order:
 ```
 # 1. Wait for the next Delivery (note its `delivery_id` and messages):
-orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 900000 --json
+orca orchestration check --wait --types worker_done,escalation,question --timeout-ms <waiting time> --json
 # 2. Process every message in the batch:
 #    - question   -> orca orchestration reply --id <msg_id> --body "<answer>" --json
 #    - worker_done -> capture its body, then release the worker terminal:
@@ -126,12 +160,12 @@ orca orchestration worker-release --dispatch <dispatch_id> --json
 orca orchestration check --ack <delivery_id> --json
 ```
 You can fold steps 1 and 3 into one call — `check --ack <delivery_id> --wait
---types worker_done,escalation,question --timeout-ms 900000 --json` acknowledges
+--types worker_done,escalation,question --timeout-ms <waiting time> --json` acknowledges
 the current Delivery, then waits for the next — but never `--ack` a batch whose
 messages you have not fully processed.
 
 A `check --wait` timeout or `{count:0}` is a checkpoint, not a failure — training
-tasks can run 15-60 min; keep waiting unless you get `worker_done`/`escalation`,
+tasks can run for hours; keep waiting unless you get `worker_done`/`escalation`,
 the terminal dies, or the user stops you. If a worker proves `failed`, start a
 replacement with `worker-start --task <id> --retry-of <dispatch_id> ...`.
 

@@ -30,13 +30,32 @@ git worktree the coordinator assigned you; make all changes there.
   parallel worktrees). Set the hyperparameters / reward / curriculum values in
   `train_ppo_gomoku.py::main()` (or the env), set the descriptive `run_name`, and
   **verify the code first** (`python -m pytest tests -q`) before launching.
-- Launch the run. Training is long-running — start it in the **background** and
-  record the `run_name` and, once available, the `mlruns/` run id so the evaluator
-  can find it. Do not block forever waiting; report what you launched and its
-  status.
+- **Log to a file and capture the PID so the run stays monitorable.** After you
+  report, the coordinator will `worker-release` your terminal. A background `&` run
+  generally keeps running (bash does not `SIGHUP` background jobs on exit by
+  default), but its **console output is lost with the terminal**, and an
+  un-redirected process can hit write errors once the terminal closes. So redirect
+  output to a log file and record the **PID** + **log path** — the coordinator's
+  monitor uses them to check liveness and read progress. From the venv:
+  ```
+  nohup python train_ppo_gomoku.py > logs/<run_name>.log 2>&1 & echo $!
+  ```
+  (`nohup`/`setsid` are optional insurance for shells that do `SIGHUP` jobs; the
+  parts that matter are the **log redirect** and the **captured PID**.)
+  (or run it under `tmux`). Record the **PID**, the **log path**, the `run_name`,
+  and the `mlruns/` **run id** once it appears.
+- **Launching is NOT finishing.** Report as soon as the run shows *real* progress —
+  the `[Train]` banner + PPO iteration logs. 
+  Do **NOT** wait for the run to complete, and do **NOT** evaluate it: that is the
+  evaluator's job, later, after the coordinator has let it mature.
+- In your handoff give the coordinator/evaluator: run id, log path, PID, launch
+  time, the **baseline** run id to compare against, and a suggested first re-check
+  ETA (readiness = the target metrics converge or the run completes at
+  `total_timesteps`; e.g. "~2 h, or on completion").
 
 ## Output format (always)
-Store your output in `artifacts/<ticket_name>/implement_<attempt number>.md`.
+Any scripts or copies of scripts created should be found in the root directory of the project.
+Store all other outputs in `artifacts/<ticket_name>/implement_<attempt number>.md`.
 
 ## Completed
 What you did, step by step.

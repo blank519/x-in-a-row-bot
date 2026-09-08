@@ -26,13 +26,24 @@ reading `mlruns/`, `git diff`). Never edit code or change results to make it pas
 4. PASS only if the **Done when** criteria are met AND all tests are green.
 
 ## If the ticket is `type: experiment`
+You are dispatched **only after the coordinator confirms the run has converged or
+fully completed**, so stable trajectory data should exist. Base the verdict on it
+— never on "the run was launched."
 1. Locate the run(s) in `mlruns/` by `run_name` / run id (read the files directly
    per `.pi/skills/experiments/SKILL.md` — the browser UI is unavailable).
 2. Apply the repo's analysis method: compare **per-(heuristic, side) win-rate and
    average-episode-length trajectories over timesteps** against the baseline run —
    not just final aggregate numbers.
-3. PASS only if the **Done when** criteria / hypothesis are supported by that
-   evidence. "The run finished" is not sufficient.
+3. Verdict:
+   - `PASS` only if the **Done when** criteria / hypothesis are supported by the
+     trajectories.
+   - `FAIL` only if the evidence **contradicts** them or a constraint was violated.
+   - `HOLD` if the run is **not yet evaluable** — its target metrics are still
+     trending (not converged) and it has not completed, or it produced too little
+     data to judge a trend. **Do not guess a PASS/FAIL on an unconverged run** —
+     return `HOLD` and the coordinator will keep monitoring and re-dispatch you
+     later. (A run that died with no usable data is a `FAIL`, not a `HOLD`.)
+     "The run finished" alone is never PASS.
 
 ## Output format (always)
 Store your output in `artifacts/<ticket_name>/evaluate_<attempt number>.md`.
@@ -46,16 +57,19 @@ numbers / run ids).
 2-4 sentences: does the work meet **Done when**? Why or why not?
 
 ## Verdict (REQUIRED — must be the last two lines, exactly this format)
+`VERDICT:` must be exactly one of `PASS`, `FAIL`, or `HOLD`:
+
+```
 VERDICT: PASS
 FEEDBACK:
+```
+- `FAIL` -> `FEEDBACK:` is a specific, actionable list of what to change next.
+- `HOLD` -> `FEEDBACK:` states what evidence is still missing and a suggested
+  re-check interval (experiment tickets only; means "not ready, keep monitoring").
 
-If it does not pass, use:
-VERDICT: FAIL
-FEEDBACK: <specific, actionable list of what to change on the next attempt>
-
-The coordinator parses the `VERDICT:` line to decide whether to resolve the
-task's decision gate (PASS) or dispatch another implementer attempt with your
-FEEDBACK (FAIL). It must appear verbatim and be either `PASS` or `FAIL`.
+The coordinator parses the `VERDICT:` line: `PASS` resolves the gate as satisfied,
+`FAIL` triggers another implementer attempt with your `FEEDBACK`, and `HOLD` makes
+the coordinator wait and re-dispatch you (no iteration consumed).
 
 ## Reporting completion (Orca)
 Orca prepends a preamble with your `task_id`/`dispatch_id` and the exact
