@@ -65,18 +65,18 @@ def main():
     defensive_opening_prob = 0.3
 
     # PPO parameters
-    n_steps=512
-    batch_size=512
-    start_learning_rate=3e-4 # Default: 1e-4
-    final_learning_rate=1e-4  
-    gamma=0.995
-    gae_lambda=0.95
-    ent_coef=0.005
-    clip_range=0.1
+    n_steps = 512
+    batch_size = 512
+    start_learning_rate = 3e-4  
+    final_learning_rate = 1e-4
+    gamma = 0.995
+    gae_lambda = 0.95
+    ent_coef = 0.005
+    clip_range = 0.1
 
-    # Training schedule
-    total_timesteps = 10_240_000  # Compare results with finetune_ppo_persistent_pool.py
-    warmup_steps = 10_240_000 #Last value 8_192_000
+    # Training schedule: entire run is warmup phase (guided play)
+    total_timesteps = 10_240_000
+    warmup_steps = total_timesteps
 
     # Opponent pool parameters
     # For warmup: p_random + sum(p_heuristics) + p_snapshot should equal 1.0
@@ -90,7 +90,7 @@ def main():
     p_heuristics = [0.4]
     local_mask_radius = 2
     mask_learner_until_steps = warmup_steps  # mask learner during warmup only
-    mask_opponent_until_steps = mask_learner_until_steps + 0  # keep opponent local slightly longer than learner
+    mask_opponent_until_steps = mask_learner_until_steps  # same as learner once warmup done
     eval_games_per_side = 100
 
     n_envs = 16
@@ -137,8 +137,8 @@ def main():
             "p_random": p_random,
             "p_heuristics": p_heuristics,
             "local_mask_radius": local_mask_radius,
-            "mask_learner_until_steps": mask_learner_until_steps, # mask learner during warmup only
-            "mask_opponent_until_steps": mask_opponent_until_steps, # keep opponent local slightly longer than learner
+            "mask_learner_until_steps": mask_learner_until_steps,  # mask learner only during warmup
+            "mask_opponent_until_steps": mask_opponent_until_steps,  # same as learner after warmup
             "eval_games_per_side": eval_games_per_side,
             "total_timesteps": total_timesteps, # Entire run will be warmup
             "reward_shaping_coef": reward_shaping_coef,

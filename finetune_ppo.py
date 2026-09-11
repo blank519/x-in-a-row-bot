@@ -41,6 +41,9 @@ def main():
     n_envs = 8
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
 
+    p_random = 0.1
+    p_heuristics = [0.1, 0.25]
+
     mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns"))
     mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "ppo-gomoku-finetune"))
 
@@ -55,12 +58,8 @@ def main():
             "snapshot_freq": snapshot_freq,
             "num_timesteps": num_timesteps,
             "k": 20,
-            "random_warmup_steps": 0,
-            "mixed_warmup_steps": 0,
-            "mixed_p_random": 0.0,
-            "mixed_p_heuristic": 0.0,
-            "p_random": 0.1,
-            "p_heuristics": "[0.1, 0.25]",
+            "p_random": p_random,
+            "p_heuristics": p_heuristics,
             "eval_games_per_side": 100,
         })
 
@@ -71,8 +70,6 @@ def main():
         )
 
         # Fine-tune: no random warmup; opponent mix is heuristic + snapshots only.
-        # By setting p_random=0, once snapshots exist the pool will
-        # automatically use snapshots as the remaining probability mass.
         self_play_cb = SelfPlaySnapshotCallback(
             vec_env=env,
             snapshot_dir=snapshot_dir,
@@ -80,13 +77,9 @@ def main():
             height=height,
             width=width,
             win_con=win_con,
-            k=20,
-            random_warmup_steps=0,
-            mixed_warmup_steps=0,
-            mixed_p_random=0.0,
-            mixed_p_heuristic=0.0,
-            p_random=0.1,
-            p_heuristics=[0.1, 0.25],
+            k=k,  # max snapshot pool size
+            p_random=p_random,
+            p_heuristics=p_heuristics,
             eval_games_per_side=100,
             best_model_path="outputs/best_vs_heuristic_finetune",
             verbose=1,

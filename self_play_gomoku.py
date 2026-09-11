@@ -167,10 +167,12 @@ class SelfPlaySnapshotCallback(BaseCallback):
         win_con,
         k = 20,
         warmup_steps = 999_424,
-        warmup_p_random = 0.3, # p(random) during warmup
-        warmup_p_heuristics = [0.7], # p(heuristic) during warmup
-        start_mistake_rate = 0.0, # Initial chance of combined heuristic making a mistake
-        final_mistake_rate = 0.0, # Mistake rate at the end of the warmup anneal
+        random_warmup_steps: int | None = 0,  # if > 0: use pure random opponent for this many steps at start
+        mixed_warmup_steps: int | None = 3_072_000,  # after warmup_steps + random_warmup_steps, use mixed (heuristic+snapshot) until warmup_steps+mixed
+        warmup_p_random = 0.3, # p(random) during random warmup phase (first random_warmup_steps)
+        warmup_p_heuristics = [0.7], # p(heuristic) during warmup/mixed phases
+        start_mistake_rate = 0.0, # Initial chance of combined heuristic making a mistake during random warmup
+        final_mistake_rate = 0.0, # Mistake rate at the end of the mixed warmup anneal  
         p_random = 0.1,
         p_heuristics = [0.2, 0.2], # p_random + p_heuristics should be <= 1. Remaining probability is snapshot pool.
         local_mask_radius: int | None = 2,
@@ -189,14 +191,17 @@ class SelfPlaySnapshotCallback(BaseCallback):
 
         self.k = k
         self.warmup_steps = warmup_steps
+        self.mixed_warmup_steps = mixed_warmup_steps or int(warmup_steps)
+        self.heuristic_start_steps = (self.random_warmup_steps or 0) + self.mixed_warmup_steps
         self.warmup_p_random = warmup_p_random
         self.warmup_p_heuristics = warmup_p_heuristics
-        self.start_mistake_rate = start_mistake_rate
+        self.start_mistake_rate = start_mistake_rate  # annealed during mixed_warmup phase
         self.final_mistake_rate = final_mistake_rate
         self.local_mask_radius = local_mask_radius
-        warmup_total = int(self.warmup_steps)
-        self.mask_learner_until_steps = warmup_total if mask_learner_until_steps is None else int(mask_learner_until_steps)
-        self.mask_opponent_until_steps = warmup_total if mask_opponent_until_steps is None else int(mask_opponent_until_steps)
+        # Default learning masking to random_warmup_steps (learner disabled after)
+        self._learner_mask_until_steps = (self.random_warmup_steps or 0) + int(self.mixed_warmup_steps) if mask_learner_until_steps is None else int(mask_learner_until_steps)
+        # Default opponent masking: same as learner
+        self._opponent_mask_until_steps = self._learner_mask_until_steps if mask_opponent_until_steps is None else int(mask_opponent_until_steps)
 
         self._warmup_installed = False
         self._warmup_heuristic = None

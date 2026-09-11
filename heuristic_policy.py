@@ -188,7 +188,7 @@ class GomokuDefensiveHeuristicPolicy(XInARowHeuristicPolicy):
         super().__init__(height=15, width=15, win_con=5, mistake_rate=mistake_rate)
 
     def __call__(self, obs: np.ndarray, action_mask: np.ndarray, rng: np.random.Generator) -> int:
-        # Same as XInARowHeuristic but with a new heuristic to block 4-in-a-row opportunities from opponent
+        # Same as XInARowHeuristic but with a new heuristic to block open 3-in-a-rows from opponent
         mask = np.asarray(action_mask, dtype=np.int8)
         legal_actions = np.flatnonzero(mask.astype(bool)).astype(np.int64)
         if legal_actions.size == 0:
@@ -222,7 +222,7 @@ class GomokuDefensiveHeuristicPolicy(XInARowHeuristicPolicy):
                 #print("Block detected")
                 return int(a)
 
-        #New heuristic with priority over random move: block 4-in-a-row opportunities from opponent
+        #New heuristic with priority over random move: block open-3-in-a-rows from opponent
         #on at least 1 side to prevent unblockable win
         for a in legal_actions:
             r = a // self.width
