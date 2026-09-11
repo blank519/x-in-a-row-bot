@@ -26,10 +26,12 @@ git worktree the coordinator assigned you; make all changes there.
 - NEVER create test cases. That is the evaluator worker's job, not yours.
 
 ## If the plan is `type: experiment`
-- You are typically assigned **one run** (the coordinator may run several in
-  parallel worktrees). Set the hyperparameters / reward / curriculum values in
-  `train_ppo_gomoku.py::main()` (or the env), set the descriptive `run_name`, and
-  **verify the code first** (`python -m pytest tests -q`) before launching.
+- You are assigned **one run** (the coordinator may run several concurrently, each
+  a separate worker). Edit **your run's own copy** of `train_ppo_gomoku.py` (a
+  descriptively-named copy, per the plan) — never the shared original, so parallel
+  runs don't collide — setting its hyperparameters / reward / curriculum values
+  and a distinct `run_name`, and **verify the code first**
+  (`python -m pytest tests -q`) before launching.
 - **Log to a file and capture the PID so the run stays monitorable.** After you
   report, the coordinator will `worker-release` your terminal. A background `&` run
   generally keeps running (bash does not `SIGHUP` background jobs on exit by

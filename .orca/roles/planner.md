@@ -17,7 +17,9 @@ The ticket declares a `type:` of either `code` or `experiment`. Branch on it.
 ## If `type: code`
 Produce a numbered list of small, independently-verifiable code changes. If files
 are to be created by the implementor, name them. Do NOT tell the implementer to add
-tests - that is the evaluator's job.
+tests - that is the evaluator's job. **Mark which steps are independent** (touch
+disjoint files and have no ordering dependency) vs dependent, so the coordinator
+can parallelize the independent ones — see **Work units** below.
 
 ## If `type: experiment`
 Produce a numbered list of **training runs** to execute. Treat each run as one
@@ -27,8 +29,9 @@ or the env), a descriptive `run_name` following the repo convention, the baselin
 run in `mlruns/` to compare against, and the specific metric movement that would
 confirm the hypothesis (use the per-(heuristic, side) win-rate + episode-length
 methodology from `.pi/skills/experiments/SKILL.md`). Change one variable at a time
-where practical. Independent runs may be executed in parallel by the coordinator,
-so keep each run self-contained.
+where practical. Runs are independent and may run in parallel, so **each run must
+edit its OWN copy of `train_ppo_gomoku.py`** (a descriptively-named copy) with a
+distinct `run_name`, so concurrent runs never touch the same file.
 
 ## Output format (always)
 Store your output in `artifacts/<ticket_name>/plan.md`.
@@ -48,6 +51,17 @@ and the evaluator can test on its own.
 - For `code`: `path/to/file.py` — what to change, and how to verify it.
 - For `experiment`: per run — param changes, `run_name`, baseline run, expected
   metric movement.
+
+## Work units
+The dispatchable units the coordinator can parallelize. For each unit give:
+- `id` and a one-line description.
+- `independent: yes|no` — can it run concurrently with the other units with no
+  shared-file or ordering conflict?
+- CODE: the exact files it touches (must be disjoint from other parallel units;
+  group any dependent/ordered steps into a single unit).
+- EXPERIMENT: the `run_name` and the script copy it uses
+  (e.g. `train_ppo_gomoku_<name>.py`).
+If everything is inherently sequential, output a single unit — that is fine.
 
 ## Done when
 Restate the ticket's pass criteria, made concrete and checkable, so the evaluator

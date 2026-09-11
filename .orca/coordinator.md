@@ -34,6 +34,14 @@ ticket and any handoff text:
 - Workers cannot dispatch sub-workers (nested depth default = 1); each role does
   its own task. Do not route around this.
 
+## Concurrency policy
+- `max_parallel_workers` (default **2**) caps how many implementer workers run at
+  once. On a single GPU a small number overlaps the CPU-rollout / GPU-update
+  alternation of concurrent runs, but **VRAM is the hard cap** — every concurrent
+  run keeps its model + optimizer resident, so raise this only if the footprints
+  fit. Set it to **1** to force fully sequential execution. A ticket/plan may
+  override it.
+
 ## Procedure
 
 1. **Open the Run.**
@@ -57,59 +65,89 @@ ticket and any handoff text:
 
 3. **Loop** with counter `i` up to `max_iterations`:
 
-   a. **Implement** (same worktree; depends on the previous task):
+   a. **Implement — fan out the plan's independent units.** Read the plan's
+      **Work units** list. Each unit with `independent: yes` can run concurrently;
+      dependent/ordered work is grouped into a single unit by the planner. So:
+      - **1 unit** -> one implementer worker (the common code case).
+      - **N independent units** -> create one implementer task per unit up front,
+        then dispatch them in **concurrency-limited waves of at most
+        `max_parallel_workers`**: start that many workers; each time one settles
+        (worker_done -> release -> ack) start the next queued unit, until all are
+        done. This is how experiment tickets launch multiple runs, and how
+        independent code units run side by side.
+
+      Per unit, build the spec and start the worker:
       ```
       $ SPEC="$(cat .orca/roles/implementer.md)
 
-      PLAN:
-      $(cat artifacts/<ticket_id>/plan.md)
-      
+      PLAN (this unit):
+      $(cat artifacts/<ticket_id>/plan.md)   # scope the worker to its unit
+
       FEEDBACK <only if applicable>:
-      $(cat artifacts/<ticket_id>/feedback_<i-1>.md)"; 
-      
+      $(cat artifacts/<ticket_id>/feedback_<i-1>.md)"
+
       orca orchestration task-create --spec "$SPEC" --deps '["<prev_task_id>"]' --json
       orca orchestration worker-start --task <impl_id> --worktree current --agent pi --json
       ```
-      Wait per the **Waiting** protocol (capture the report, release, then `--ack`).
-      For `type: code`, go straight to (b). For `type: experiment`, do (a.5) first.
+      Placement: experiment runs and disjoint-file code units share the **active
+      worktree** (each experiment run uses its own script copy; each code unit
+      touches disjoint files) — see **Worktree & mlruns notes** below. Use a
+      separate `new-child` worktree only if two units would edit the same files.
 
-   a.5 **Monitor the run — EXPERIMENT TICKETS ONLY.** An experiment implementer
-      returns as soon as the run is *launched*, not finished. Do **NOT** dispatch
+      Wait per the **Waiting** protocol; a single Delivery may carry several
+      `worker_done` messages — process, release, and `--ack` them all. For
+      `type: code`, go to (b) once all units are done. For `type: experiment`, do
+      (a.5) for **every** launched run before (b).
+
+   a.5 **Monitor the run(s) — EXPERIMENT TICKETS ONLY.** An experiment implementer
+      returns as soon as its run is *launched*, not finished. Do **NOT** dispatch
       the evaluator yet: `mlruns/` has little/no eval data, so any verdict now is
       premature (this is the bug this step prevents). **You** own the wait; the
-      evaluator stays one-shot and runs only once evidence exists. Loop:
+      evaluator stays one-shot and runs only once evidence exists. Monitor **all**
+      launched runs together, and proceed only when **every** run is evaluable. Loop:
       - Inspect the run's eval **trajectories** directly (you have file tools):
         read the target metric files under
         `mlruns/<exp_id>/<run_id>/metrics/eval/...` (one line per checkpoint) and
         look at the recent trend. Confirm the file is still growing / the training
         PID is alive.
       - **Keep waiting** (re-inspect each interval) while the target metrics are
-        still **trending** — the run is not yet converged. Use a blocking wait as
-        the timer; it times out with no messages, which is your cue to re-check
-        `mlruns/`:
-        ```
-        orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 3600000 --json
-        ```
-        Default 60 min; honor a ticket/plan `recheck_interval_minutes` if given.
-      - Proceed to (b) only once the run is **evaluable**: it has **fully
+        still **trending** — the run is not yet converged. The training run is a
+        detached OS process, **not an Orca worker**, so it sends no messages during
+        this phase; either timer works:
+        - Plain `sleep <interval>` (e.g. `sleep 3600`) — simplest, and immune to
+          inbox state. Prefer this for single-run monitoring.
+        - `orca orchestration check --wait --types worker_done,escalation,question
+          --timeout-ms <ms>` — use this if other **Orca workers** are still
+          outstanding (e.g. parallel runs), since it also wakes early on their
+          `worker_done`/`escalation`. Note it returns *immediately* if any Delivery
+          is still unacked, so it only behaves as a timer once your inbox is acked.
+        Re-inspect `mlruns/` after each interval. Default to 60 min; honor a
+        ticket/plan `recheck_interval_minutes` if given. You may extend/reduce the
+        interval based on the expected runtime - for reference, a 10 million-timestep
+        run is expected to finish in about 6 hours.
+      - Proceed to (b) only once **every** run is **evaluable**: it has **fully
         completed** (reached `total_timesteps`) OR its target metrics show **clear
         convergence** (plateaued over a sustained recent window). See the
         `experiments` skill's "Readiness" definition; a plan may set its own
         `evidence_ready_condition`.
-      - If the run process **died with little/no data**, that is a real FAIL —
-        report it; do not wait forever.
+      - If a run process **died with little/no data**, that is a real FAIL for that
+        run — report it; do not wait forever on a dead run.
 
-   b. **Evaluate** (same worktree; depends on impl):
+   b. **Evaluate** (same worktree; one evaluator over the whole batch). Dispatch a
+      **single** evaluator that assesses all units/runs together against the
+      ticket's **Done when** — for experiments it compares every run against the
+      baseline; for code it runs the full test suite covering all units. Pass it
+      every implementer report:
       ```
       $ SPEC="$(cat .orca/roles/evaluator.md)
 
       TICKET:
-      $(cat .pi/tickets/<ticket_id>.md)"
-      
-      IMPLEMENTER_REPORT:
-      $(cat artifacts/<ticket_id>/implement<i>.md)"; 
-      
-      orca orchestration task-create --spec "$SPEC" --deps '["<impl_id>"]' --json
+      $(cat .pi/tickets/<ticket_id>.md)
+
+      IMPLEMENTER_REPORTS:
+      $(cat artifacts/<ticket_id>/implement_*_<i>.md)"
+
+      orca orchestration task-create --spec "$SPEC" --deps '["<impl_id_1>","<impl_id_2>",...]' --json
       orca orchestration worker-start --task <eval_id> --worktree current --agent pi --json
       ```
       Wait per the **Waiting** protocol; read the evaluator's `worker_done` body for
@@ -151,7 +189,7 @@ that batch.
 Per wait, do this in order:
 ```
 # 1. Wait for the next Delivery (note its `delivery_id` and messages):
-orca orchestration check --wait --types worker_done,escalation,question --timeout-ms <waiting time> --json
+orca orchestration check --wait --types worker_done,escalation,question --timeout-ms <time_in_ms> --json
 # 2. Process every message in the batch:
 #    - question   -> orca orchestration reply --id <msg_id> --body "<answer>" --json
 #    - worker_done -> capture its body, then release the worker terminal:
@@ -169,20 +207,20 @@ tasks can run for hours; keep waiting unless you get `worker_done`/`escalation`,
 the terminal dies, or the user stops you. If a worker proves `failed`, start a
 replacement with `worker-start --task <id> --retry-of <dispatch_id> ...`.
 
-## Experiment tickets: parallelize
-If `type: experiment` and the plan lists independent runs, you can run them in
-parallel. Two caveats specific to this repo:
-- A `new-child` worktree does **not** contain gitignored files, so each isolated
-  run would log to its **own** `./mlruns` that the evaluator can't see. If you use
-  isolated worktrees for the runs, point every run at a shared **absolute**
-  `MLFLOW_TRACKING_URI` so results land in one store, then run the evaluator in the
-  active worktree against that store.
-- Simpler/safer default: run the training jobs from the **active worktree**
-  (background processes with distinct `run_name`s) so they share `mlruns/`; only
-  fan out to separate worktrees if their code edits would actually collide.
-
-Start all runs, wait for all `worker_done`, then run a **single** evaluator task
-comparing every run against the baseline and gate on its verdict.
+## Worktree & mlruns notes (fan-out placement)
+The fan-out mechanics live in step 3a; these are the placement caveats for this
+repo:
+- **Prefer the active worktree for parallel units.** Experiment runs each edit
+  their **own script copy** and share `mlruns/`; disjoint-file code units don't
+  collide. So run them all in `--worktree current` — that is the simple, correct
+  default here.
+- **`new-child` worktrees lose gitignored files.** Only use one when two units
+  would edit the *same* files. An isolated worktree won't see `mlruns/`, so each
+  run there would log to its **own** `./mlruns` the evaluator can't read — if you
+  must isolate, point every run at a shared **absolute** `MLFLOW_TRACKING_URI` and
+  run the evaluator in the active worktree against that store.
+- Concurrency of parallel units is capped by `max_parallel_workers` (see
+  **Concurrency policy**), which on a single GPU is VRAM-bound.
 
 ## Rules
 - Default to `--worktree current` for every worker: this pipeline depends on
