@@ -125,13 +125,14 @@ ticket and any handoff text:
         ticket/plan `recheck_interval_minutes` if given. You may extend/reduce the
         interval based on the expected runtime - for reference, a 10 million-timestep
         run is expected to finish in about 6 hours.
+      - If a run process **died with little/no data**, that is a real FAIL for that
+        run — report it; do not wait forever on a dead run. Then, **after** the failure 
+        is resolved, continue monitoring.
       - Proceed to (b) only once **every** run is **evaluable**: it has **fully
         completed** (reached `total_timesteps`) OR its target metrics show **clear
         convergence** (plateaued over a sustained recent window). See the
         `experiments` skill's "Readiness" definition; a plan may set its own
         `evidence_ready_condition`.
-      - If a run process **died with little/no data**, that is a real FAIL for that
-        run — report it; do not wait forever on a dead run.
 
    b. **Evaluate** (same worktree; one evaluator over the whole batch). Dispatch a
       **single** evaluator that assesses all units/runs together against the

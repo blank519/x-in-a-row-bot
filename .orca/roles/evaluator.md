@@ -46,7 +46,9 @@ fully completed**, so stable trajectory data should exist. Base the verdict on i
      "The run finished" alone is never PASS.
 
 ## Output format (always)
-Store your output in `artifacts/<ticket_name>/evaluate_<attempt number>.md`.
+Store your report in `artifacts/<ticket_name>/evaluate_<attempt number>.md`.
+Store your test script in the `tests/` directory.
+Store any other created files in the `artifacts/<ticket_name>/` directory.
 
 ## Evidence
 The concrete things you checked: tests written and what they check, test output 

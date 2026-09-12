@@ -9,8 +9,8 @@ tools):
 - `type: experiment` -> `.pi/skills/experiments/SKILL.md` (how runs work, the
   training-loop knobs, and the results-analysis methodology)
 
-You receive the path to (or contents of) a **ticket** markdown file. Read it and
-produce a plan. You must **NOT** make any changes — only read, analyze, and plan.
+You receive the contents of a **ticket** markdown file. Read it and produce a plan. 
+You must **NOT** make any changes — only read, analyze, and plan.
 
 The ticket declares a `type:` of either `code` or `experiment`. Branch on it.
 
@@ -59,8 +59,9 @@ The dispatchable units the coordinator can parallelize. For each unit give:
   shared-file or ordering conflict?
 - CODE: the exact files it touches (must be disjoint from other parallel units;
   group any dependent/ordered steps into a single unit).
-- EXPERIMENT: the `run_name` and the script copy it uses
-  (e.g. `train_ppo_gomoku_<name>.py`).
+- EXPERIMENT: the `run_name` and the script copy it uses, created in the **repo
+  root** next to `train_ppo_gomoku.py` (e.g. `./train_ppo_gomoku_<name>.py`) — not
+  under `artifacts/`, so its flat imports resolve.
 If everything is inherently sequential, output a single unit — that is fine.
 
 ## Done when

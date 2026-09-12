@@ -32,6 +32,12 @@ git worktree the coordinator assigned you; make all changes there.
   runs don't collide — setting its hyperparameters / reward / curriculum values
   and a distinct `run_name`, and **verify the code first**
   (`python -m pytest tests -q`) before launching.
+- **Create the copy in the repo ROOT**, next to `train_ppo_gomoku.py` (e.g.
+  `./train_ppo_gomoku_<run_name>.py`) — NOT under `artifacts/`. The training
+  scripts use flat imports (`from self_play_gomoku import ...`,
+  `from x_in_a_row_sb3_env import ...`) that resolve from the repo root, so a copy
+  run from `artifacts/` would fail to import. Only the run *report* goes under
+  `artifacts/` (see Output format).
 - **Log to a file and capture the PID so the run stays monitorable.** After you
   report, the coordinator will `worker-release` your terminal. A background `&` run
   generally keeps running (bash does not `SIGHUP` background jobs on exit by
