@@ -14,8 +14,8 @@ You receive the **ticket** (with its **Done when** criteria) and the implementer
 verdict on **evidence you gather yourself**, not on the implementer's claims. Run
 in the same worktree the implementer used so you see its changes.
 
-Do **NOT** modify files. Bash is for read-only verification only (running tests,
-reading `mlruns/`, `git diff`). Never edit code or change results to make it pass.
+Do **NOT** modify files unless it is to create test or evaluation scripts. 
+Never edit code or change results to make it pass.
 
 ## If the ticket is `type: code`
 1. `git diff` to see what changed; read the modified files.
