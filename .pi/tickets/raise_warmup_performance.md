@@ -1,10 +1,10 @@
 # Create proficient warmup model before beginning opponent pool training
 
 type: experiment
-max_iterations: 3
+max_iterations: 5
 
 ## Goal
-I am trying to raise the AI's warmup performance to an acceptable level before 
+The goal is to raise the RL model's warmup performance to an acceptable level before 
 beginning training within an opponent pool.
 Analyze the best performing runs on the offensive, defensive, and combined heuristics
 on both sides (as X and as O). Determine exact metrics for win rate against each heuristic
@@ -23,7 +23,8 @@ execute the plan in `train_ppo_gomoku.py`.
 
 ## Hypothesis
 Until the model can consistently win against the combined heuristic as both X and O, it will not 
-be ready for opponent pool training.
+be ready for opponent pool training. My estimate is that a 70% win rate against the combined heuristic
+as both X and O is a good threshold.
 
 ## Baseline
 The best performing run with the highest win rate against the combined heuristic, which should 
@@ -34,3 +35,5 @@ Relative to the baseline, over training:
 - `eval/GomokuCombinedHeuristicPolicy/o_win_rate` and `eval/GomokuCombinedHeuristicPolicy/x_win_rate` 
   trend higher, AND
 - `eval/average_win_rate` trends higher.
+The evaluator determines that the model's win rate against the Combined Heuristic Policy is sufficient
+to proceed to opponent pool training.

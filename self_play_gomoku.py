@@ -168,7 +168,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         k = 20,
         warmup_steps = 999_424,
         warmup_p_random = 0.3, # p(random) during warmup
-        warmup_p_heuristics = [0.7], # p(heuristic) during warmup
+        warmup_p_heuristics = [0.7], # Backward-compatible constant Combined probability
         start_mistake_rate = 0.0, # Initial chance of combined heuristic making a mistake
         final_mistake_rate = 0.0, # Mistake rate at the end of the warmup anneal
         p_random = 0.1,
@@ -180,6 +180,9 @@ class SelfPlaySnapshotCallback(BaseCallback):
         best_model_path = "best_vs_heuristic",
         latest_model_path = "outputs/latest_model",
         verbose = 0,
+        warmup_heuristic_names = None,
+        warmup_start_p_heuristics = None,
+        warmup_end_p_heuristics = None,
     ):
         super().__init__(verbose=verbose)
         self.vec_env = vec_env
@@ -189,8 +192,24 @@ class SelfPlaySnapshotCallback(BaseCallback):
 
         self.k = k
         self.warmup_steps = warmup_steps
-        self.warmup_p_random = warmup_p_random
-        self.warmup_p_heuristics = warmup_p_heuristics
+        self.warmup_p_random = float(warmup_p_random)
+        # The original API exposed one constant Combined-policy probability via
+        # warmup_p_heuristics.  The staged API is opt-in, so existing callers
+        # retain exactly that behavior when the three new arguments are absent.
+        if warmup_heuristic_names is None:
+            self.warmup_heuristic_names = ["combined"]
+        else:
+            self.warmup_heuristic_names = [str(name).lower() for name in warmup_heuristic_names]
+        if warmup_start_p_heuristics is None:
+            self.warmup_start_p_heuristics = [float(p) for p in warmup_p_heuristics]
+        else:
+            self.warmup_start_p_heuristics = [float(p) for p in warmup_start_p_heuristics]
+        if warmup_end_p_heuristics is None:
+            self.warmup_end_p_heuristics = list(self.warmup_start_p_heuristics)
+        else:
+            self.warmup_end_p_heuristics = [float(p) for p in warmup_end_p_heuristics]
+        self.warmup_p_heuristics = list(self.warmup_start_p_heuristics)
+        self._validate_warmup_schedule()
         self.start_mistake_rate = start_mistake_rate
         self.final_mistake_rate = final_mistake_rate
         self.local_mask_radius = local_mask_radius
@@ -199,6 +218,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         self.mask_opponent_until_steps = warmup_total if mask_opponent_until_steps is None else int(mask_opponent_until_steps)
 
         self._warmup_installed = False
+        self._warmup_opponent = None
         self._warmup_heuristic = None
         self._learner_mask_active = False
         self._learner_mask_removed = False
@@ -243,6 +263,55 @@ class SelfPlaySnapshotCallback(BaseCallback):
 
         os.makedirs(self.snapshot_dir, exist_ok=True)
 
+    def _validate_warmup_schedule(self) -> None:
+        supported_names = {"combined", "defensive", "offensive"}
+        if not self.warmup_heuristic_names:
+            raise ValueError("warmup_heuristic_names must contain at least one policy name")
+        unknown = [name for name in self.warmup_heuristic_names if name not in supported_names]
+        if unknown:
+            raise ValueError(
+                f"Unsupported warmup heuristic name(s) {unknown}; expected combined, defensive, or offensive"
+            )
+        expected = len(self.warmup_heuristic_names)
+        if len(self.warmup_start_p_heuristics) != expected or len(self.warmup_end_p_heuristics) != expected:
+            raise ValueError(
+                "warmup heuristic names, start probabilities, and end probabilities "
+                f"must have the same length, got {expected}, "
+                f"{len(self.warmup_start_p_heuristics)}, and {len(self.warmup_end_p_heuristics)}"
+            )
+        for label, probabilities in (
+            ("start", self.warmup_start_p_heuristics),
+            ("end", self.warmup_end_p_heuristics),
+        ):
+            if any(not np.isfinite(p) or p < 0.0 for p in probabilities):
+                raise ValueError(f"warmup {label} probabilities must be finite and non-negative")
+            if self.warmup_p_random + sum(probabilities) > 1.0 + 1e-12:
+                raise ValueError(
+                    f"warmup_p_random plus {label} heuristic probabilities must be <= 1.0"
+                )
+        if not np.isfinite(self.warmup_p_random) or not 0.0 <= self.warmup_p_random <= 1.0:
+            raise ValueError("warmup_p_random must be finite and between 0.0 and 1.0")
+
+    def _make_warmup_heuristics(self):
+        factories = {
+            "combined": lambda: GomokuCombinedHeuristicPolicy(mistake_rate=self.start_mistake_rate),
+            "defensive": GomokuDefensiveHeuristicPolicy,
+            "offensive": GomokuOffensiveHeuristicPolicy,
+        }
+        heuristics = [factories[name]() for name in self.warmup_heuristic_names]
+        combined = next(
+            (policy for name, policy in zip(self.warmup_heuristic_names, heuristics) if name == "combined"),
+            None,
+        )
+        return heuristics, combined
+
+    def _scheduled_warmup_probabilities(self, progress: float) -> list[float]:
+        progress = min(1.0, max(0.0, float(progress)))
+        return [
+            start + (end - start) * progress
+            for start, end in zip(self.warmup_start_p_heuristics, self.warmup_end_p_heuristics)
+        ]
+
     def _on_step(self) -> bool:
         for info in self.locals.get("infos", []) or []:
             if "block_reward" in info:
@@ -280,41 +349,44 @@ class SelfPlaySnapshotCallback(BaseCallback):
         # Whether this step lands on an evaluation/snapshot boundary.
         on_snapshot_step = self.snapshot_freq > 0 and (self.num_timesteps % self.snapshot_freq == 0)
 
-        # Warmup: opponent is a fixed mixture of random + combined heuristic
-        # (no snapshots). The heuristic's mistake rate is annealed over the
-        # warmup window.
+        # Warmup uses no snapshots. Its named heuristic exposure can be
+        # linearly staged; the legacy default remains constant Combined-only.
         if self.num_timesteps < self.warmup_steps:
+            progress = self.num_timesteps / max(1, self.warmup_steps)
+            progress = min(1.0, max(0.0, progress))
+            scheduled_probabilities = self._scheduled_warmup_probabilities(progress)
             if not self._warmup_installed:
-                # Keep a reference to the combined heuristic so its mistake rate
-                # can be annealed in place. DummyVecEnv shares this object across
-                # all envs, so mutating it updates every environment's opponent.
-                self._warmup_heuristic = GomokuCombinedHeuristicPolicy(mistake_rate=self.start_mistake_rate)
-                warmup_opponent = OpponentPoolPolicy(
+                # DummyVecEnv shares these objects across all envs, so updating
+                # probabilities and Combined's mistake rate takes effect in place.
+                warmup_heuristics, self._warmup_heuristic = self._make_warmup_heuristics()
+                self._warmup_opponent = OpponentPoolPolicy(
                     height=self.pool.height,
                     width=self.pool.width,
                     win_con=self.pool.win_con,
                     p_random=self.warmup_p_random,
-                    p_heuristics=self.warmup_p_heuristics,
-                    heuristics=[self._warmup_heuristic],
+                    p_heuristics=scheduled_probabilities,
+                    heuristics=warmup_heuristics,
                     local_move_radius=self.local_mask_radius,
                     local_mask_enabled=False,  # opponent masking handled by the env
                 )
-                warmup_opponent.enable_heuristic(True)
-                warmup_opponent.set_snapshots([])
-                self.vec_env.env_method("set_opponent", warmup_opponent)
+                self._warmup_opponent.enable_heuristic(True)
+                self._warmup_opponent.set_snapshots([])
+                self.vec_env.env_method("set_opponent", self._warmup_opponent)
                 self._warmup_installed = True
+            else:
+                self._warmup_opponent.p_heuristics = scheduled_probabilities
 
-            # Linearly anneal the combined heuristic's mistake rate across the
-            # warmup window: high early (beatable opponent -> positive reward
-            # signal to learn blocking), decaying toward final_mistake_rate
-            # (full-strength opponent) by the end of warmup.
+            # Preserve mistake annealing for the Combined member, if configured.
             if self._warmup_heuristic is not None:
-                progress = self.num_timesteps / max(1, self.warmup_steps)
-                progress = min(1.0, max(0.0, progress))
                 current_mistake_rate = self.start_mistake_rate + (self.final_mistake_rate - self.start_mistake_rate) * progress
                 self._warmup_heuristic.set_mistake_rate(current_mistake_rate)
                 if on_snapshot_step:
                     mlflow.log_metric("train/mistake_rate", float(current_mistake_rate), step=self.num_timesteps)
+            if on_snapshot_step:
+                for name, probability in zip(self.warmup_heuristic_names, scheduled_probabilities):
+                    mlflow.log_metric(
+                        f"train/warmup_p_{name}", float(probability), step=self.num_timesteps
+                    )
 
         else:
             # After warmup, enable heuristic in the main pool. Opponent locality

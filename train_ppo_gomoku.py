@@ -10,9 +10,6 @@ from self_play_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfP
 
 import mlflow
 
-import datetime as dt
-
-
 def make_env(height: int, width: int, win_con: int,
              reward_shaping_coef: float = 0.0, reward_shaping_gamma: float = 0.99,
              block_reward_coef: float = 0.0,
@@ -45,7 +42,7 @@ def main():
     seed = 42
     set_random_seed(seed, using_cuda=th.cuda.is_available())
 
-    snapshot_dir = "self_play_snapshots"
+    snapshot_dir = "self_play_snapshots/warmup_mix_balanced_to_combined_15m_attempt3"
     snapshot_freq = 256_000 # Close to 250k, multiple of batch_size * n_environments
 
     # Potential-based reward shaping to give a dense signal for building threats
@@ -58,7 +55,7 @@ def main():
     # policy, so it directly incentivizes blocking. A decisive "block the four"
     # move reduces threat mass by ~0.6-1.3, so coef ~0.5 makes a good block worth a
     # meaningful fraction of a terminal win. 0.0 disables it.
-    block_reward_coef = 0.4
+    block_reward_coef = 0.10
     # Fraction of training episodes that start from a designed "block-or-lose"
     # position (opponent has an open threat, learner to move). Directly teaches
     # defense, which sparse self-play never reaches. 0.0 disables the curriculum.
@@ -75,22 +72,24 @@ def main():
     clip_range=0.1
 
     # Training schedule
-    total_timesteps = 10_240_000  # Compare results with finetune_ppo_persistent_pool.py
-    warmup_steps = 10_240_000 #Last value 8_192_000
+    total_timesteps = 15_360_000
+    warmup_steps = 15_360_000  # Entire run is warmup-only
 
     # Opponent pool parameters
     # For warmup: p_random + sum(p_heuristics) + p_snapshot should equal 1.0
-    warmup_p_random = 0.1
-    warmup_p_heuristics = [0.9] # Combined heuristic
-    start_mistake_rate = 0.7 # Initial chance of combined heuristic making a mistake
-    final_mistake_rate = 0.1 # Mistake rate at the end of the warmup anneal
+    warmup_p_random = 0.10
+    warmup_heuristic_names = ["combined", "defensive", "offensive"]
+    warmup_start_p_heuristics = [0.30, 0.30, 0.30]
+    warmup_end_p_heuristics = [0.60, 0.15, 0.15]
+    start_mistake_rate = 0.70
+    final_mistake_rate = 0.10
 
     # For self-play: p_random + sum(p_heuristics) < 1.0, remainder = snapshot pool (CURRENTLY UNUSED)
-    p_random = 0.1
+    p_random = 0.10
     p_heuristics = [0.4]
     local_mask_radius = 2
     mask_learner_until_steps = warmup_steps  # mask learner during warmup only
-    mask_opponent_until_steps = mask_learner_until_steps + 0  # keep opponent local slightly longer than learner
+    mask_opponent_until_steps = warmup_steps  # mask opponent during warmup only
     eval_games_per_side = 100
 
     n_envs = 16
@@ -117,7 +116,7 @@ def main():
     mlflow.set_tracking_uri("file:./mlruns")
     mlflow.set_experiment("ppo-gomoku")
 
-    with mlflow.start_run(run_name=f"ppo-gomoku-block-reward-sweep-40p-{dt.datetime.now().strftime('%Y-%m-%d-%H:%M')}"):
+    with mlflow.start_run(run_name="ppo-gomoku-warmup-mix-balanced-to-combined-15m-attempt3"):
         mlflow.log_params({
             "n_envs": n_envs,
             "n_steps": n_steps,
@@ -131,7 +130,9 @@ def main():
             "snapshot_freq": snapshot_freq,
             "warmup_steps": warmup_steps, # guided play before full self-play
             "warmup_p_random": warmup_p_random,
-            "warmup_p_heuristics": warmup_p_heuristics,
+            "warmup_heuristic_names": warmup_heuristic_names,
+            "warmup_start_p_heuristics": warmup_start_p_heuristics,
+            "warmup_end_p_heuristics": warmup_end_p_heuristics,
             "start_mistake_rate": start_mistake_rate,
             "final_mistake_rate": final_mistake_rate,
             "p_random": p_random,
@@ -177,7 +178,9 @@ def main():
             k=50, # max snapshot pool size
             warmup_steps=warmup_steps, # guided play before full self-play
             warmup_p_random=warmup_p_random,
-            warmup_p_heuristics=warmup_p_heuristics,
+            warmup_heuristic_names=warmup_heuristic_names,
+            warmup_start_p_heuristics=warmup_start_p_heuristics,
+            warmup_end_p_heuristics=warmup_end_p_heuristics,
             start_mistake_rate=start_mistake_rate,
             final_mistake_rate=final_mistake_rate,
             p_random=p_random,
@@ -186,14 +189,14 @@ def main():
             mask_learner_until_steps=mask_learner_until_steps, # mask learner during warmup only
             mask_opponent_until_steps=mask_opponent_until_steps, # keep opponent local slightly longer than learner
             eval_games_per_side=eval_games_per_side,
-            best_model_path=f"outputs/best_vs_heuristic_block_reward_sweep_40p",
-            latest_model_path=f"outputs/latest_vs_heuristic_block_reward_sweep_40p",
+            best_model_path="outputs/best_vs_heuristic_warmup_mix_balanced_to_combined_15m_attempt3",
+            latest_model_path="outputs/latest_vs_heuristic_warmup_mix_balanced_to_combined_15m_attempt3",
             verbose=1,
         )
 
         model.learn(total_timesteps=total_timesteps, callback=self_play_cb)
-        model.save(f"outputs/ppo_gomoku_block_reward_sweep_40p")
-        final_model_zip = f"outputs/ppo_gomoku_block_reward_sweep_40p.zip"
+        model.save("outputs/ppo_gomoku_warmup_mix_balanced_to_combined_15m_attempt3")
+        final_model_zip = "outputs/ppo_gomoku_warmup_mix_balanced_to_combined_15m_attempt3.zip"
         mlflow.log_artifact(final_model_zip, artifact_path="models")
 
 
