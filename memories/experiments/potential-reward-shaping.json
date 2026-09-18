@@ -1,0 +1,248 @@
+{
+  "schema_version": 2,
+  "experiment": "potential-reward-shaping",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-reward-shaping-2026-07-21-17:16",
+      "modified_params": {
+        "reward_shaping_coef": 0.01,
+        "reward_shaping_gamma": 0.995,
+        "total_timesteps": 8192000
+      },
+      "goal_hypothesis": "Establish whether potential shaping at coefficient 0.01 supports robust heuristic play in the 8.192M-step regimen.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.33 at step 8192000",
+          "insight": "Aggregate terminal win rate reached 33%."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.03 at step 8192000",
+          "insight": "Worst-side performance remained only 3%."
+        },
+        {
+          "metric": "eval/XInARowHeuristicPolicy/o_win_rate",
+          "outcome": "0.94 at step 8192000",
+          "insight": "High generic-heuristic success masked severe defensive/offensive weakness."
+        }
+      ],
+      "reasoning": [
+        "Shaping supported generic play but not broad robustness.",
+        "This first group run defines several configuration knobs, so it is not a clean coefficient-only comparison.",
+        "100-game side evaluations carry sampling noise, especially for low rates."
+      ],
+      "tags": [
+        "gomoku",
+        "reward-shaping",
+        "baseline",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "48afd570381e4f05aa0526d9c9c2e396",
+      "mlruns_path": "mlruns/510583218657647424/48afd570381e4f05aa0526d9c9c2e396",
+      "timestamp": "2026-07-21T21:16:39.979Z"
+    },
+    {
+      "run_name": "ppo-gomoku-no-reward-shaping-2026-07-22-09:52",
+      "modified_params": {
+        "reward_shaping_coef": 0
+      },
+      "goal_hypothesis": "Remove potential shaping while holding the 8.192M-step regimen fixed, relative to 48afd570381e4f05aa0526d9c9c2e396.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.5266666666666666 at step 8192000",
+          "insight": "No shaping improved aggregate win rate by 0.1967 over the shaped control."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.07 at step 8192000",
+          "insight": "Worst-side win rate rose from 0.03 to 0.07."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.93 at step 8192000",
+          "insight": "Strong offensive-X play contrasted with only 7% offensive-O."
+        }
+      ],
+      "reasoning": [
+        "Removing 0.01 shaping improved this controlled terminal comparison.",
+        "Large side asymmetry shows aggregate improvement was not uniformly robust.",
+        "Independent stochastic training and finite evaluation remain alternative explanations without replications."
+      ],
+      "tags": [
+        "gomoku",
+        "no-shaping",
+        "controlled-comparison",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "a952747d491342d4a391cf3951773aae",
+      "mlruns_path": "mlruns/510583218657647424/a952747d491342d4a391cf3951773aae",
+      "timestamp": "2026-07-22T13:52:17.691Z"
+    },
+    {
+      "run_name": "ppo-gomoku-no-reward-shaping-more-metrics-2026-07-22-12:47",
+      "modified_params": {
+        "reward_shaping_coef": 0
+      },
+      "goal_hypothesis": "Replicate the unshaped configuration of a952747d491342d4a391cf3951773aae with richer evaluation metrics.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.48333333333333334 at step 8192000",
+          "insight": "Replication was 0.0433 below the preceding unshaped run but remained above the original shaped control."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 8192000",
+          "insight": "Worst-side robustness varied sharply across replications."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_avg_episode_length",
+          "outcome": "15.3 at step 8192000",
+          "insight": "The richer logger shows defensive-O games lasted 15.3 moves on average despite only 2% wins."
+        }
+      ],
+      "reasoning": [
+        "The unshaped aggregate advantage broadly replicated, but worst-case performance did not.",
+        "Seed/training stochasticity likely explains part of the difference between nominally identical runs.",
+        "Episode-length evidence was newly logged and cannot be compared to older runs lacking that metric."
+      ],
+      "tags": [
+        "gomoku",
+        "no-shaping",
+        "replication",
+        "more-metrics",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "dde04e6209cd40f9ad02cd7341e56675",
+      "mlruns_path": "mlruns/510583218657647424/dde04e6209cd40f9ad02cd7341e56675",
+      "timestamp": "2026-07-22T16:47:26.988Z"
+    },
+    {
+      "run_name": "ppo-gomoku-reward-shaping-more-metrics-2026-07-22-18:49",
+      "modified_params": {
+        "mask_learner_until_steps": 5120000,
+        "mixed_warmup_steps": 3072000,
+        "reward_shaping_coef": 0.01,
+        "total_timesteps": 5120000
+      },
+      "goal_hypothesis": "Retest coefficient-0.01 shaping with richer metrics in a shortened 5.12M-step schedule, relative to the richer unshaped run dde04e6209cd40f9ad02cd7341e56675.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.5033333333333333 at step 5120000",
+          "insight": "Aggregate was 0.02 above the richer unshaped run despite substantially shorter training."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0 at step 5120000",
+          "insight": "At least one side had no wins, so robustness did not improve."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "26.81 at step 5120000",
+          "insight": "Defensive-X games were prolonged but still had 0% wins."
+        }
+      ],
+      "reasoning": [
+        "Shaping may accelerate aggregate learning but did not resolve worst-case failure.",
+        "Duration and curriculum boundaries changed alongside shaping, so this is not controlled.",
+        "Longer episodes can indicate resistance without competence and should not be interpreted as wins."
+      ],
+      "tags": [
+        "gomoku",
+        "reward-shaping",
+        "more-metrics",
+        "multi-parameter-change",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "f7caf4ff76bf4109940c86e7aaff0bea",
+      "mlruns_path": "mlruns/510583218657647424/f7caf4ff76bf4109940c86e7aaff0bea",
+      "timestamp": "2026-07-22T22:49:48.208Z"
+    },
+    {
+      "run_name": "ppo-gomoku-weaker-reward-shaping-2026-07-22-22:51",
+      "modified_params": {
+        "reward_shaping_coef": 0.001
+      },
+      "goal_hypothesis": "Test weaker coefficient-0.001 shaping under the same shortened schedule as f7caf4ff76bf4109940c86e7aaff0bea.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.49 at step 5120000",
+          "insight": "Weaker shaping was 0.0133 below coefficient 0.01."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 5120000",
+          "insight": "Worst-side rate modestly exceeded the zero of coefficient 0.01."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "30.45 at step 5120000",
+          "insight": "Defensive-X games lasted longer but ended in only 1% wins."
+        }
+      ],
+      "reasoning": [
+        "Coefficient 0.001 traded a tiny aggregate decline for a tiny worst-rate increase.",
+        "The controlled coefficient comparison supports no decisive advantage at this sample size.",
+        "Training stochasticity and 100-game evaluation noise can readily explain percentage-point differences."
+      ],
+      "tags": [
+        "gomoku",
+        "weak-shaping",
+        "controlled-comparison",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "d4516be1a1b242d5a37890627ae496d6",
+      "mlruns_path": "mlruns/510583218657647424/d4516be1a1b242d5a37890627ae496d6",
+      "timestamp": "2026-07-23T02:51:03.463Z"
+    },
+    {
+      "run_name": "ppo-gomoku-defensive-reward-shaping-2026-07-24-10:21",
+      "modified_params": {
+        "reward_shaping_coef": 0.01,
+        "reward_shaping_defense_weight": 2
+      },
+      "goal_hypothesis": "Test whether doubling defensive potential weight improves robustness over the shortened shaping variants.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.465 at step 5120000",
+          "insight": "Defense-biased shaping underperformed both coefficient-0.01 and coefficient-0.001 shortened runs."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0 at step 5120000",
+          "insight": "Worst-side performance remained zero."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_avg_episode_length",
+          "outcome": "31.65 at step 5120000",
+          "insight": "Long defensive games still ended with 0% wins as O."
+        }
+      ],
+      "reasoning": [
+        "Defense weighting prolonged defensive games but did not yield defensive wins.",
+        "Both coefficient and defense weight differ from the weak-shaping predecessor, confounding their effects.",
+        "Episode duration is not a substitute for win-rate competence; stochastic variation remains possible."
+      ],
+      "tags": [
+        "gomoku",
+        "defense-biased-shaping",
+        "multi-parameter-change",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "c8f93de9214748c1818df7d0cee560c9",
+      "mlruns_path": "mlruns/510583218657647424/c8f93de9214748c1818df7d0cee560c9",
+      "timestamp": "2026-07-24T14:21:52.697Z"
+    }
+  ]
+}

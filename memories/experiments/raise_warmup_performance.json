@@ -1,0 +1,633 @@
+{
+  "schema_version": 2,
+  "experiment": "raise_warmup_performance",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-warmup-block15-15m-2026-08-18",
+      "modified_params": {
+        "block_reward_coef": 0.15,
+        "defensive_opening_prob": 0.3,
+        "warmup_p_heuristics": "[0.9]",
+        "warmup_steps": 15360000
+      },
+      "goal_hypothesis": "Attempt 1: test whether a 0.15 block reward raises full-duration heuristic-only warmup performance.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.47 at step 15360000",
+          "insight": "The completed 0.15 run reached 47% average win rate."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.18 at step 15360000",
+          "insight": "Its 18% floor showed much broader robustness than many earlier curricula."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "0.18 at step 15360000",
+          "insight": "The limiting combined-O matchup won 18% over 9.51-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "9.51 at step 15360000",
+          "insight": "The weakest combined-O matchup was not merely represented by missing or truncated evaluation."
+        }
+      ],
+      "reasoning": [
+        "A 0.15 block coefficient was the strongest completed attempt-1 setting on average and worst rate.",
+        "The full heuristic-only horizon likely reinforced broad evaluator-specific competence.",
+        "Single-run comparisons cannot separate seed variance, and later attempts alter other curriculum knobs."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-1",
+        "block-reward-0.15"
+      ],
+      "mlruns_run_id": "7bbe675725f941eea81ab0fb38675ade",
+      "mlruns_path": "mlruns/510583218657647424/7bbe675725f941eea81ab0fb38675ade",
+      "timestamp": "2026-09-12T16:43:19.363Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-block20-15m-2026-08-18",
+      "modified_params": {
+        "block_reward_coef": 0.2
+      },
+      "goal_hypothesis": "Attempt 1: test whether increasing block reward from 0.15 to 0.20 improves full-duration warmup.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.365 at step 15360000",
+          "insight": "The 0.20 variant trailed 0.15 by 10.5 percentage points."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.07 at step 15360000",
+          "insight": "Its robustness floor trailed 0.15 by 11 points."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "0.07 at step 15360000",
+          "insight": "Combined-O was limiting, over 11.16-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "11.16 at step 15360000",
+          "insight": "Longer limiting games did not yield more wins than block15."
+        }
+      ],
+      "reasoning": [
+        "Increasing block reward to 0.20 overemphasized blocking relative to winning competence.",
+        "The controlled one-knob comparison favors 0.15 on average and worst metrics.",
+        "Unreplicated PPO variation remains a plausible secondary explanation."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-1",
+        "block-reward-0.20"
+      ],
+      "mlruns_run_id": "0c6ec2937cc74ef4995c31927e066ac7",
+      "mlruns_path": "mlruns/510583218657647424/0c6ec2937cc74ef4995c31927e066ac7",
+      "timestamp": "2026-09-13T08:20:41.308Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-block25-15m-2026-08-18",
+      "modified_params": {
+        "block_reward_coef": 0.25
+      },
+      "goal_hypothesis": "Attempt 1: test 0.25 block reward, qualified because the run was interrupted before the 15.36M-step target.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "incomplete: 0.023333333333333334 at last observed step 3072000",
+          "insight": "At interruption, average win rate was 2.33%; this is not a terminal 15.36M comparison."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "incomplete: 0.0 at last observed step 3072000",
+          "insight": "The partial checkpoint had a zero-win matchup."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "incomplete: 0.08 at last observed step 3072000",
+          "insight": "Defensive-X was 8% over 18.46-move games at the partial checkpoint."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "incomplete: 18.46 at last observed step 3072000",
+          "insight": "Episode-length evidence is also partial."
+        }
+      ],
+      "reasoning": [
+        "The run was interrupted at roughly one fifth of its target horizon, so low values cannot rank the final 0.25 setting.",
+        "High block reward may slow early learning, but completion is required to test that explanation.",
+        "Checkpoint noise and unequal horizon dominate any comparison with completed block15/block20 runs."
+      ],
+      "tags": [
+        "interrupted",
+        "incomplete",
+        "status-1",
+        "ticket-raise-warmup-performance",
+        "attempt-1",
+        "block-reward-0.25"
+      ],
+      "mlruns_run_id": "0c572fdacc98462798966e1aad118c63",
+      "mlruns_path": "mlruns/510583218657647424/0c572fdacc98462798966e1aad118c63",
+      "timestamp": "2026-09-14T00:26:32.709Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-block20-open40-15m-2026-08-18",
+      "modified_params": {
+        "defensive_opening_prob": 0.4
+      },
+      "goal_hypothesis": "Attempt 1: test whether 0.4 defensive-opening probability improves the block20 warmup control.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.38666666666666666 at step 15360000",
+          "insight": "More openings improved average by 2.17 percentage points over block20."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.09 at step 15360000",
+          "insight": "The floor improved from 7% to 9%."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "0.09 at step 15360000",
+          "insight": "Combined-O remained limiting, over 11.58-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "11.58 at step 15360000",
+          "insight": "The weakest matchup remained moderate length."
+        }
+      ],
+      "reasoning": [
+        "More defensive openings modestly improved both average and floor at block20.",
+        "The controlled one-knob delta supports a curriculum-opening benefit.",
+        "The gain is small enough that replication would be needed before treating it as reliable."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-1",
+        "defensive-opening-0.4"
+      ],
+      "mlruns_run_id": "31eef7d4ea694505bf635dab8d0045ca",
+      "mlruns_path": "mlruns/510583218657647424/31eef7d4ea694505bf635dab8d0045ca",
+      "timestamp": "2026-09-14T04:31:26.377Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-block20-shape0025-15m-2026-08-18",
+      "modified_params": {
+        "reward_shaping_coef": 0.0025
+      },
+      "goal_hypothesis": "Attempt 1: test whether very slight potential shaping improves the block20 warmup control.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.3016666666666667 at step 15360000",
+          "insight": "Shaping reduced average by 6.33 percentage points."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.03 at step 15360000",
+          "insight": "The floor fell from 7% to 3%."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "0.03 at step 15360000",
+          "insight": "Combined-O was limiting, over 10.89-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "10.89 at step 15360000",
+          "insight": "The weak combined-O evidence is paired with complete episode lengths."
+        }
+      ],
+      "reasoning": [
+        "Even 0.0025 potential shaping harmed this block-reward warmup regimen.",
+        "The controlled comparison aligns with earlier shaping dead ends.",
+        "Single-run variance remains, but average and worst metrics both moved adversely."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-1",
+        "slight-shaping",
+        "dead-end"
+      ],
+      "mlruns_run_id": "39f4cbd3d7404082879fbecae226c256",
+      "mlruns_path": "mlruns/510583218657647424/39f4cbd3d7404082879fbecae226c256",
+      "timestamp": "2026-09-14T20:41:01.681Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-block15-mistake30-15m-attempt2",
+      "modified_params": {
+        "block_reward_coef": 0.15,
+        "final_mistake_rate": 0.3
+      },
+      "goal_hypothesis": "Attempt 2: test whether ending at a higher 0.3 opponent mistake rate improves the strong block15 setting.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.37333333333333335 at step 15360000",
+          "insight": "The higher final mistake rate trailed attempt-1 block15's 47% average."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.05 at step 15360000",
+          "insight": "Its floor was only 5% versus 18% for block15."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "0.36 at step 15360000",
+          "insight": "Offensive-O was strong, with 6.86-move games, but other matchups limited robustness."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_avg_episode_length",
+          "outcome": "6.86 at step 15360000",
+          "insight": "The offensive-O evidence was based on short complete games."
+        }
+      ],
+      "reasoning": [
+        "Keeping opponents more mistake-prone late did not preserve broad robustness.",
+        "The two-parameter attempt framing versus block15 means both ticket wave and opponent trajectory matter.",
+        "Single-seed variation could contribute, but the 13-point worst-rate drop is substantial."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-2",
+        "final-mistake-rate-0.3"
+      ],
+      "mlruns_run_id": "10300ae7b1fb45d6a0bbf1d624126edc",
+      "mlruns_path": "mlruns/510583218657647424/10300ae7b1fb45d6a0bbf1d624126edc",
+      "timestamp": "2026-09-15T18:33:51.612Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-block10-15m-attempt2",
+      "modified_params": {
+        "block_reward_coef": 0.1
+      },
+      "goal_hypothesis": "Attempt 2: test whether reducing block reward below 0.15 improves full-duration warmup.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.41333333333333333 at step 15360000",
+          "insight": "Block10 reached 41.33%, below block15 but above other attempt-2 variants."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.12 at step 15360000",
+          "insight": "Its 12% floor was second only to block15 among completed ticket runs."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "0.12 at step 15360000",
+          "insight": "Combined-O was limiting over 7.89-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "7.89 at step 15360000",
+          "insight": "The weakest games were relatively short."
+        }
+      ],
+      "reasoning": [
+        "A moderate 0.10 block reward retained broad competence better than higher 0.20 and lower 0.05 settings.",
+        "Block15 still led, suggesting an optimum around 0.10-0.15.",
+        "Attempt waves and unreplicated seeds limit precise coefficient ranking."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-2",
+        "block-reward-0.10",
+        "promising"
+      ],
+      "mlruns_run_id": "ac7769166dd64dad8caadd09912da98b",
+      "mlruns_path": "mlruns/510583218657647424/ac7769166dd64dad8caadd09912da98b",
+      "timestamp": "2026-09-15T18:34:10.159Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-block05-15m-attempt2",
+      "modified_params": {
+        "block_reward_coef": 0.05
+      },
+      "goal_hypothesis": "Attempt 2: test whether a minimal 0.05 block reward is sufficient for strong full-duration warmup.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.2633333333333333 at step 15360000",
+          "insight": "Block05 substantially underperformed block10 and block15."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.05 at step 15360000",
+          "insight": "Its floor was only 5%."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "0.06 at step 15360000",
+          "insight": "Combined-O remained weak over 6.07-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "6.07 at step 15360000",
+          "insight": "Weak combined-O games ended quickly."
+        }
+      ],
+      "reasoning": [
+        "A 0.05 coefficient supplied too little defensive learning signal for broad competence.",
+        "The completed coefficient sweep favors an intermediate 0.10-0.15 range.",
+        "Unreplicated seeds mean the exact magnitude is uncertain, but both average and floor were worse."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-2",
+        "block-reward-0.05"
+      ],
+      "mlruns_run_id": "f6b6c5b8b66646538a1eda6cce21de88",
+      "mlruns_path": "mlruns/510583218657647424/f6b6c5b8b66646538a1eda6cce21de88",
+      "timestamp": "2026-09-15T18:34:29.630Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-mix-balanced-to-combined-15m-attempt3",
+      "modified_params": {
+        "block_reward_coef": 0.1,
+        "warmup_end_p_heuristics": "[0.6, 0.15, 0.15]",
+        "warmup_heuristic_names": "['combined', 'defensive', 'offensive']",
+        "warmup_start_p_heuristics": "[0.3, 0.3, 0.3]"
+      },
+      "goal_hypothesis": "Attempt 3: test whether a balanced three-heuristic mix fading toward combined improves block10 warmup.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.28 at step 15360000",
+          "insight": "The balanced mix trailed the single-combined block10 run by 13.33 points."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 15360000",
+          "insight": "Its floor collapsed from 12% to 1%."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.81 at step 15360000",
+          "insight": "Offensive-X was strong, but combined-X was only 1%."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "6.5 at step 15360000",
+          "insight": "The strong offensive-X result occurred over short 6.5-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "11.21 at step 15360000",
+          "insight": "Combined-X failures occurred over moderate-length games."
+        }
+      ],
+      "reasoning": [
+        "The balanced mixture created specialist offensive competence at the cost of combined robustness.",
+        "Curriculum interference between heuristic objectives likely reduced transferable play.",
+        "This changes the opponent representation and schedule together relative to attempt 2, so only within-attempt mix comparisons are clean."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-3",
+        "balanced-mix"
+      ],
+      "mlruns_run_id": "967532501a104f9abf420f51bcac9684",
+      "mlruns_path": "mlruns/510583218657647424/967532501a104f9abf420f51bcac9684",
+      "timestamp": "2026-09-16T12:46:13.796Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-mix-defense-to-combined-15m-attempt3",
+      "modified_params": {
+        "warmup_start_p_heuristics": "[0.3, 0.45, 0.15]"
+      },
+      "goal_hypothesis": "Attempt 3: test whether defense-biased initial three-heuristic exposure improves the balanced-to-combined schedule.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.23666666666666666 at step 15360000",
+          "insight": "Defense bias reduced average versus the balanced mix."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.05 at step 15360000",
+          "insight": "The floor improved from 1% to 5% despite lower average."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.22 at step 15360000",
+          "insight": "Defensive-X remained weak over 20.76-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "20.76 at step 15360000",
+          "insight": "Longer defensive-X games did not yield high win rate."
+        }
+      ],
+      "reasoning": [
+        "Initial defense bias traded aggregate performance for a modestly better worst-case floor.",
+        "Exposure to defensive games did not directly translate to high defensive evaluator win rates.",
+        "The one-schedule-vector comparison is controlled, but stochastic seed effects remain."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-3",
+        "defense-biased-mix"
+      ],
+      "mlruns_run_id": "d97abcab92844201ab741f9b0e52fb2d",
+      "mlruns_path": "mlruns/510583218657647424/d97abcab92844201ab741f9b0e52fb2d",
+      "timestamp": "2026-09-16T12:52:07.760Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-mix-offense-to-combined-15m-attempt3",
+      "modified_params": {
+        "warmup_start_p_heuristics": "[0.3, 0.15, 0.45]"
+      },
+      "goal_hypothesis": "Attempt 3: test whether offense-biased initial three-heuristic exposure improves the balanced-to-combined schedule.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.35 at step 15360000",
+          "insight": "Offense bias was the strongest attempt-3 mix at 35% average."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.03 at step 15360000",
+          "insight": "Its floor remained only 3%."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.88 at step 15360000",
+          "insight": "Offensive-X reached 88% over 6.27-move games."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "6.27 at step 15360000",
+          "insight": "Strong offensive-X wins occurred quickly."
+        }
+      ],
+      "reasoning": [
+        "Offense-biased exposure best supported average competence among attempt-3 mixtures.",
+        "The schedule over-specialized on offensive matchups and failed to raise the worst-case floor.",
+        "The controlled vector comparison is informative, though it remains a single seed."
+      ],
+      "tags": [
+        "complete",
+        "ticket-raise-warmup-performance",
+        "attempt-3",
+        "offense-biased-mix"
+      ],
+      "mlruns_run_id": "788dfa9797e344f2b993e436698647f3",
+      "mlruns_path": "mlruns/510583218657647424/788dfa9797e344f2b993e436698647f3",
+      "timestamp": "2026-09-16T12:53:54.196Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-mix-conservative-fade-15m-attempt4",
+      "modified_params": {
+        "warmup_end_p_heuristics": "[0.9, 0.0, 0.0]",
+        "warmup_start_p_heuristics": "[0.8, 0.05, 0.05]"
+      },
+      "goal_hypothesis": "Attempt 4: test a conservative mix fading fully to combined, qualified as interrupted before target.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "incomplete: 0.19166666666666668 at last observed step 6400000",
+          "insight": "The partial average cannot be compared as a completed 15.36M outcome."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "incomplete: 0.0 at last observed step 6400000",
+          "insight": "The partial checkpoint had a zero-win floor."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "incomplete: 0.67 at last observed step 6400000",
+          "insight": "Offensive-X learned early despite broad weakness."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "incomplete: 5.04 at last observed step 6400000",
+          "insight": "Partial offensive-X games were short."
+        }
+      ],
+      "reasoning": [
+        "The interrupted trajectory had not developed broad competence by the last observed 6.4M-step checkpoint.",
+        "Fading specialist exposure may have encouraged combined focus without solving side imbalance.",
+        "Unequal horizon and interrupted status dominate comparison with completed earlier attempts."
+      ],
+      "tags": [
+        "interrupted",
+        "incomplete",
+        "status-1",
+        "ticket-raise-warmup-performance",
+        "attempt-4",
+        "conservative-fade"
+      ],
+      "mlruns_run_id": "a6eb2d709e8e4adfba0ee5f4deb9be06",
+      "mlruns_path": "mlruns/510583218657647424/a6eb2d709e8e4adfba0ee5f4deb9be06",
+      "timestamp": "2026-09-17T08:08:51.639Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-mix-conservative-constant05-15m-attempt4",
+      "modified_params": {
+        "warmup_end_p_heuristics": "[0.8, 0.05, 0.05]",
+        "warmup_start_p_heuristics": "[0.8, 0.05, 0.05]"
+      },
+      "goal_hypothesis": "Attempt 4: test constant 5% specialist exposure, qualified as interrupted at the last observed 6.4M-step checkpoint.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "incomplete: 0.17666666666666667 at last observed step 6400000",
+          "insight": "The partial average was 16.5%, not a terminal result."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "incomplete: 0.0 at last observed step 6400000",
+          "insight": "The partial floor was zero."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "incomplete: 0.02 at last observed step 6400000",
+          "insight": "Combined-X had only 2% wins over 9.06-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "incomplete: 9.06 at last observed step 6400000",
+          "insight": "Episode lengths confirm substantive partial evaluation."
+        }
+      ],
+      "reasoning": [
+        "Constant 5% specialist exposure had barely established combined-X competence by interruption.",
+        "The conservative mix may be too combined-heavy early, but the uncompleted horizon prevents a final judgment.",
+        "Differences from fade and constant10 are small relative to checkpoint and training noise."
+      ],
+      "tags": [
+        "interrupted",
+        "incomplete",
+        "status-1",
+        "ticket-raise-warmup-performance",
+        "attempt-4",
+        "constant-specialist-0.05"
+      ],
+      "mlruns_run_id": "1f9a5292b74e47ada012c9ba6a8e7246",
+      "mlruns_path": "mlruns/510583218657647424/1f9a5292b74e47ada012c9ba6a8e7246",
+      "timestamp": "2026-09-17T08:14:34.571Z"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-mix-conservative-constant10-15m-attempt4",
+      "modified_params": {
+        "warmup_end_p_heuristics": "[0.7, 0.1, 0.1]",
+        "warmup_start_p_heuristics": "[0.7, 0.1, 0.1]"
+      },
+      "goal_hypothesis": "Attempt 4: test constant 10% specialist exposure, qualified as interrupted at the last observed 6.144M-step checkpoint.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "incomplete: 0.145 at last observed step 6144000",
+          "insight": "The partial average is not a terminal result."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "incomplete: 0.0 at last observed step 6144000",
+          "insight": "The partial floor was zero."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "incomplete: 0.7 at last observed step 6144000",
+          "insight": "Offensive-X was already strong over 5.15-move games."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "incomplete: 5.15 at last observed step 6144000",
+          "insight": "The partial offensive-X wins were rapid."
+        }
+      ],
+      "reasoning": [
+        "Extra specialist exposure accelerated offensive-X competence but not broad robustness.",
+        "The partial average differences among attempt-4 conditions are too small for a reliable conclusion.",
+        "Interrupted status and less than half the target horizon preclude ranking this against completed ticket runs."
+      ],
+      "tags": [
+        "interrupted",
+        "incomplete",
+        "status-1",
+        "ticket-raise-warmup-performance",
+        "attempt-4",
+        "constant-specialist-0.10"
+      ],
+      "mlruns_run_id": "099be2bb21fb48bc83980bc2ef6cb38a",
+      "mlruns_path": "mlruns/510583218657647424/099be2bb21fb48bc83980bc2ef6cb38a",
+      "timestamp": "2026-09-17T08:16:02.734Z"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": 2,
+  "experiment": "warmup-duration-control",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-shorter-warmup-no-defensive-reward-2026-07-24-16:03",
+      "modified_params": {
+        "mask_learner_until_steps": 4096000,
+        "random_warmup_steps": 1024000,
+        "reward_shaping_coef": 0.01,
+        "total_timesteps": 4096000
+      },
+      "goal_hypothesis": "Test whether shortening random warmup to 1.024M steps avoids the prior regression while retaining slight non-defense-biased shaping.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.325 at step 4096000",
+          "insight": "The shortened run ended at 32.5% average win rate."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 4096000",
+          "insight": "Worst-matchup performance remained 1%."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.01 at step 4096000",
+          "insight": "The offensive-X matchup collapsed, with paired episode length 5.01 moves."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "5.01 at step 4096000",
+          "insight": "The 1% offensive-X result came in very short games."
+        }
+      ],
+      "reasoning": [
+        "The shorter warmup/overall horizon did not produce broad competence by 4.096M steps.",
+        "Very short offensive-X games indicate rapid losses rather than merely long draws.",
+        "Warmup duration, mask horizon, and total steps changed together, so this run cannot isolate warmup length alone."
+      ],
+      "tags": [
+        "complete",
+        "short-warmup",
+        "multi-parameter-confound",
+        "control"
+      ],
+      "mlruns_run_id": "65d1afbb07eb473c842996fd6158de50",
+      "mlruns_path": "mlruns/510583218657647424/65d1afbb07eb473c842996fd6158de50",
+      "timestamp": "2026-07-24T20:03:08.158Z"
+    },
+    {
+      "run_name": "ppo-gomoku-should-be-same-2026-07-24-19:45",
+      "modified_params": {
+        "mask_learner_until_steps": 5120000,
+        "random_warmup_steps": 2048000,
+        "total_timesteps": 5120000
+      },
+      "goal_hypothesis": "Run the nominal longer-warmup same-configuration control against the shortened predecessor.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.5566666666666666 at step 5120000",
+          "insight": "The longer control exceeded the shortened run by 23.17 percentage points."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.02 at step 5120000",
+          "insight": "Worst rate improved slightly from 1% to 2%."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.94 at step 5120000",
+          "insight": "Offensive-X recovered from 1% to 94%, with 5.04-move average episodes."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "5.04 at step 5120000",
+          "insight": "Comparable short episode length but radically different win rate supports a learned tactical difference."
+        }
+      ],
+      "reasoning": [
+        "The longer warmup/horizon control strongly outperformed the shortened run, especially offensive-X.",
+        "More total optimization and longer masking may be as important as random warmup itself.",
+        "The three schedule horizons moved together, so the evidence supports the package rather than a clean warmup-only causal effect."
+      ],
+      "tags": [
+        "complete",
+        "longer-warmup",
+        "control",
+        "multi-parameter-confound"
+      ],
+      "mlruns_run_id": "32b4fcb765d64fb1b967769de1e7fae5",
+      "mlruns_path": "mlruns/510583218657647424/32b4fcb765d64fb1b967769de1e7fae5",
+      "timestamp": "2026-07-24T23:45:30.426Z"
+    }
+  ]
+}

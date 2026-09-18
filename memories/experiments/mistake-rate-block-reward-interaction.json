@@ -1,0 +1,275 @@
+{
+  "schema_version": 2,
+  "experiment": "mistake-rate-block-reward-interaction",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-defensive-curriculum-start-mistake-rate-70p-2026-08-04-10:45",
+      "modified_params": {
+        "final_mistake_rate": 0.1,
+        "reward_shaping_coef": 0,
+        "start_mistake_rate": 0.7,
+        "total_timesteps": 10240000
+      },
+      "goal_hypothesis": "Establish the no-block-reward control at a 0.7 initial heuristic mistake rate.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.2683333333333333 at step 10240000",
+          "insight": "The 70% mistake-rate control reached 26.83% average win rate."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.02 at step 10240000",
+          "insight": "The weakest matchup won only 2%."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "0.41 at step 10240000",
+          "insight": "Combined-X reached 41% over 10.9-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "10.9 at step 10240000",
+          "insight": "The combined-X comparison had moderate episode duration."
+        }
+      ],
+      "reasoning": [
+        "A high initial opponent mistake rate supported moderate average learning without block reward.",
+        "The low 2% floor shows substantial remaining side asymmetry.",
+        "This is the within-sweep control; stochastic variation remains because there are no same-setting replications."
+      ],
+      "tags": [
+        "complete",
+        "no-block-reward",
+        "mistake-rate-0.7",
+        "control"
+      ],
+      "mlruns_run_id": "97fd6a8b04574827a62fa60616e36028",
+      "mlruns_path": "mlruns/510583218657647424/97fd6a8b04574827a62fa60616e36028",
+      "timestamp": "2026-08-04T14:45:57.900Z"
+    },
+    {
+      "run_name": "ppo-gomoku-defensive-curriculum-start-mistake-rate-50p-2026-08-04-10:47",
+      "modified_params": {
+        "start_mistake_rate": 0.5
+      },
+      "goal_hypothesis": "Test whether lowering initial heuristic mistakes from 0.7 to 0.5 improves no-block-reward learning.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.2633333333333333 at step 10240000",
+          "insight": "Average win rate was nearly unchanged versus 0.7 (26.33% versus 26.83%)."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.0 at step 10240000",
+          "insight": "The floor declined from 2% to zero."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "0.6 at step 10240000",
+          "insight": "Combined-X improved from 41% to 60%, over 10.87-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "10.87 at step 10240000",
+          "insight": "Episode duration closely matched the 0.7 control."
+        }
+      ],
+      "reasoning": [
+        "Lowering start mistakes redistributed competence rather than improving the average.",
+        "Combined-X benefited, but a different zero-win matchup worsened the robustness floor.",
+        "The comparison changes one logged knob, though unreplicated stochastic variation remains."
+      ],
+      "tags": [
+        "complete",
+        "no-block-reward",
+        "mistake-rate-0.5",
+        "controlled-comparison"
+      ],
+      "mlruns_run_id": "c89367b4eaee4bfcbc5dd2de79e0ec00",
+      "mlruns_path": "mlruns/510583218657647424/c89367b4eaee4bfcbc5dd2de79e0ec00",
+      "timestamp": "2026-08-04T14:47:42.422Z"
+    },
+    {
+      "run_name": "ppo-gomoku-defensive-curriculum-start-mistake-rate-30p-2026-08-04-10:48",
+      "modified_params": {
+        "start_mistake_rate": 0.3
+      },
+      "goal_hypothesis": "Test whether a still-stronger initial heuristic at 0.3 mistakes improves no-block-reward learning.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.12666666666666668 at step 10240000",
+          "insight": "Average performance collapsed to 12.67%."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.0 at step 10240000",
+          "insight": "The floor remained zero."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "0.0 at step 10240000",
+          "insight": "Combined-X fell to zero wins, over 8.08-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "8.08 at step 10240000",
+          "insight": "The zero-win combined-X games were shorter than higher-mistake controls."
+        }
+      ],
+      "reasoning": [
+        "Starting against the stronger 0.3-mistake opponent was too difficult for this curriculum.",
+        "The zero combined-X result explains much of the aggregate regression.",
+        "The one-knob sweep supports the trend, but each setting has only one stochastic run."
+      ],
+      "tags": [
+        "complete",
+        "no-block-reward",
+        "mistake-rate-0.3",
+        "dead-end"
+      ],
+      "mlruns_run_id": "4dd0d1813a054691a8fd4220c48c810a",
+      "mlruns_path": "mlruns/510583218657647424/4dd0d1813a054691a8fd4220c48c810a",
+      "timestamp": "2026-08-04T14:48:49.748Z"
+    },
+    {
+      "run_name": "ppo-gomoku-defensive-curriculum-with-block-reward-start-mistake-rate-70p-2026-08-06-15:27",
+      "modified_params": {
+        "block_reward_coef": 0.5,
+        "reward_shaping_defense_weight": 1,
+        "start_mistake_rate": 0.7
+      },
+      "goal_hypothesis": "Test whether adding a 0.5 block reward improves the 0.7-mistake curriculum control.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.025 at step 10240000",
+          "insight": "Average win rate collapsed from 26.83% without block reward to 2.5%."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 10240000",
+          "insight": "Worst rate was 1%."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "0.23153866753302282 at step 10240000",
+          "insight": "The agent collected substantial shaped block reward despite poor evaluator wins."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "36.24 at step 10240000",
+          "insight": "Defensive-X games became long while win rate was only 6%."
+        }
+      ],
+      "reasoning": [
+        "A 0.5 block reward dominated the objective and harmed actual winning competence.",
+        "High collected block reward alongside 2.5% wins suggests reward misalignment.",
+        "Defense weight also differs from the no-block controls, but shaping coefficient is zero; single-seed uncertainty remains."
+      ],
+      "tags": [
+        "complete",
+        "block-reward-0.5",
+        "mistake-rate-0.7",
+        "reward-misalignment"
+      ],
+      "mlruns_run_id": "418d6300027545eea3a599c86cf6d230",
+      "mlruns_path": "mlruns/510583218657647424/418d6300027545eea3a599c86cf6d230",
+      "timestamp": "2026-08-06T19:27:23.295Z"
+    },
+    {
+      "run_name": "ppo-gomoku-defensive-curriculum-with-block-reward-start-mistake-rate-50p-2026-08-06-15:28",
+      "modified_params": {
+        "start_mistake_rate": 0.5
+      },
+      "goal_hypothesis": "Within the 0.5 block-reward regimen, test whether lowering start mistakes from 0.7 to 0.5 helps.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.03333333333333333 at step 10240000",
+          "insight": "Average increased slightly from 2.5% to 3.33% but remained extremely poor."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.0 at step 10240000",
+          "insight": "The floor fell to zero."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "0.25399671394989126 at step 10240000",
+          "insight": "Mean block reward rose while evaluator competence remained poor."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "38.8 at step 10240000",
+          "insight": "Very long defensive-X games yielded only 8% wins."
+        }
+      ],
+      "reasoning": [
+        "Changing start mistakes did not correct the severe 0.5 block-reward misalignment.",
+        "Higher collected block rewards without evaluator gains reinforce reward hacking/misalignment concerns.",
+        "The small average difference is within plausible stochastic noise."
+      ],
+      "tags": [
+        "complete",
+        "block-reward-0.5",
+        "mistake-rate-0.5",
+        "reward-misalignment"
+      ],
+      "mlruns_run_id": "cebec459a3ac48e39d299a18ccb1caba",
+      "mlruns_path": "mlruns/510583218657647424/cebec459a3ac48e39d299a18ccb1caba",
+      "timestamp": "2026-08-06T19:28:30.514Z"
+    },
+    {
+      "run_name": "ppo-gomoku-defensive-curriculum-with-block-reward-start-mistake-rate-30p-2026-08-06-15:29",
+      "modified_params": {
+        "start_mistake_rate": 0.7
+      },
+      "goal_hypothesis": "Nominally test the 0.3-mistake block-reward condition, while preserving the raw fact that params/start_mistake_rate is actually 0.7 and therefore makes this a mislabeled replication.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.04833333333333333 at step 10240000",
+          "insight": "The mislabeled 0.7 replication reached 4.83%, still extremely poor."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 10240000",
+          "insight": "Worst rate was 1%."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "0.23308468311891192 at step 10240000",
+          "insight": "Mean block reward closely matched the earlier 0.7 run's 0.23154."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.14 at step 10240000",
+          "insight": "Defensive-X was 14% over 32.76-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "32.76 at step 10240000",
+          "insight": "The paired episode-length metric confirms the 32.76-move defensive-X evaluation."
+        }
+      ],
+      "reasoning": [
+        "Raw parameters prove this is a 0.7 replication, not the 0.3 condition stated in its run name.",
+        "Its poor average replicates the central result that 0.5 block reward harms winning competence.",
+        "The modest difference versus the other 0.7 run is consistent with stochastic variation."
+      ],
+      "tags": [
+        "complete",
+        "block-reward-0.5",
+        "mislabeled-run",
+        "mistake-rate-0.7",
+        "replication"
+      ],
+      "mlruns_run_id": "1eb96584a93f43c2a5e3148ec35b17fe",
+      "mlruns_path": "mlruns/510583218657647424/1eb96584a93f43c2a5e3148ec35b17fe",
+      "timestamp": "2026-08-06T19:29:38.304Z"
+    }
+  ]
+}

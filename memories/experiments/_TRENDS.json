@@ -1,0 +1,1127 @@
+{
+  "schema_version": 2,
+  "sections": {
+    "breakthroughs_and_dead_ends": {
+      "chronology": [
+        {
+          "finding": "Early heuristic-heavy training was highly asymmetric and extension did not repair the weak side.",
+          "group": "extended-heuristic-training",
+          "qualification": "The second run loaded 21 snapshots and changed duration, so this is continuation evidence rather than an isolated duration test.",
+          "support": [
+            {
+              "metrics": {
+                "eval/GomokuDefensiveHeuristicPolicy/o_win_rate": "0.01 at step 10240000",
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.92 at step 10240000",
+                "eval/worst_win_rate": "0.01 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/3a3858a915ff444e9cf82b9aaaa36704",
+              "run_id": "3a3858a915ff444e9cf82b9aaaa36704",
+              "timestamp": "2026-07-18T22:34:02.173Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.36 at step 10240000",
+                "eval/worst_win_rate": "0.0 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/6a8ebacf0b4e431887eee888dc3ae04b",
+              "run_id": "6a8ebacf0b4e431887eee888dc3ae04b",
+              "timestamp": "2026-07-19T14:28:01.126Z"
+            }
+          ]
+        },
+        {
+          "finding": "Substantially greater/all-heuristic exposure was a dead end in both variants.",
+          "group": "all-heuristic-curriculum",
+          "qualification": "The retry also changed learning rate and heuristic mixture, so failure is attributable to the regimen, not one isolated knob.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.0033333333333333335 at step 10240000",
+                "eval/worst_win_rate": "0 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/7de8435281814b42a4baa3beed4ce961",
+              "run_id": "7de8435281814b42a4baa3beed4ce961",
+              "timestamp": "2026-07-20T02:33:47.646Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0 at step 10240000",
+                "eval/worst_win_rate": "0 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/f044a9791f2d48228213462c76ad94db",
+              "run_id": "f044a9791f2d48228213462c76ad94db",
+              "timestamp": "2026-07-20T14:02:51.965Z"
+            }
+          ]
+        },
+        {
+          "finding": "The original short regimen reproduced strong mean performance, while snapshot continuation sharply forgot offensive-first play; a fresh longer schedule largely recovered the mean but retained a zero worst side.",
+          "group": "reproduction-and-forgetting",
+          "qualification": "The continuation changed loading and masking schedules; catastrophic forgetting is observed but its precise cause is confounded.",
+          "support": [
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.94 at step 5120000",
+                "eval/average_win_rate": "0.49166666666666664 at step 5120000"
+              },
+              "path": "mlruns/510583218657647424/89720142ec914ccdaec8ade0d6c229fa",
+              "run_id": "89720142ec914ccdaec8ade0d6c229fa",
+              "timestamp": "2026-07-20T18:19:13.073Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.17 at step 3072000",
+                "eval/average_win_rate": "0.365 at step 3072000",
+                "eval/worst_win_rate": "0.0 at step 3072000"
+              },
+              "path": "mlruns/510583218657647424/045026321f574c0783eb98673bc27531",
+              "run_id": "045026321f574c0783eb98673bc27531",
+              "timestamp": "2026-07-20T20:45:46.827Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.93 at step 8192000",
+                "eval/average_win_rate": "0.4716666666666667 at step 8192000",
+                "eval/worst_win_rate": "0.0 at step 8192000"
+              },
+              "path": "mlruns/510583218657647424/463c605ebe2448eaa116ac7bfa252799",
+              "run_id": "463c605ebe2448eaa116ac7bfa252799",
+              "timestamp": "2026-07-21T02:57:21.406Z"
+            }
+          ]
+        },
+        {
+          "finding": "Unshaped training produced the best controlled terminal mean; shaping strength and defensive weighting failed to improve the weakest matchup.",
+          "group": "potential-reward-shaping",
+          "qualification": "The later more-metrics runs used shorter/masked schedules, so only the first shaped/unshaped pair is close to controlled.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.33 at step 8192000",
+                "eval/worst_win_rate": "0.03 at step 8192000"
+              },
+              "path": "mlruns/510583218657647424/48afd570381e4f05aa0526d9c9c2e396",
+              "run_id": "48afd570381e4f05aa0526d9c9c2e396",
+              "timestamp": "2026-07-21T21:16:39.979Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.5266666666666666 at step 8192000",
+                "eval/worst_win_rate": "0.07 at step 8192000"
+              },
+              "path": "mlruns/510583218657647424/a952747d491342d4a391cf3951773aae",
+              "run_id": "a952747d491342d4a391cf3951773aae",
+              "timestamp": "2026-07-22T13:52:17.691Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.49 at step 5120000",
+                "eval/worst_win_rate": "0.01 at step 5120000"
+              },
+              "path": "mlruns/510583218657647424/d4516be1a1b242d5a37890627ae496d6",
+              "run_id": "d4516be1a1b242d5a37890627ae496d6",
+              "timestamp": "2026-07-23T02:51:03.463Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.465 at step 5120000",
+                "eval/worst_win_rate": "0 at step 5120000"
+              },
+              "path": "mlruns/510583218657647424/c8f93de9214748c1818df7d0cee560c9",
+              "run_id": "c8f93de9214748c1818df7d0cee560c9",
+              "timestamp": "2026-07-24T14:21:52.697Z"
+            }
+          ]
+        },
+        {
+          "finding": "The nominal longer reproduction strongly beat the shortened warmup, rejecting the idea that shortening warmup was harmless.",
+          "group": "warmup-duration-control",
+          "qualification": "Multiple schedule lengths changed together; this is a regimen-level control, not a clean single warmup-duration estimate.",
+          "support": [
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length": "5.01 at step 4096000",
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.01 at step 4096000",
+                "eval/average_win_rate": "0.325 at step 4096000"
+              },
+              "path": "mlruns/510583218657647424/65d1afbb07eb473c842996fd6158de50",
+              "run_id": "65d1afbb07eb473c842996fd6158de50",
+              "timestamp": "2026-07-24T20:03:08.158Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length": "5.04 at step 5120000",
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.94 at step 5120000",
+                "eval/average_win_rate": "0.5566666666666666 at step 5120000"
+              },
+              "path": "mlruns/510583218657647424/32b4fcb765d64fb1b967769de1e7fae5",
+              "run_id": "32b4fcb765d64fb1b967769de1e7fae5",
+              "timestamp": "2026-07-24T23:45:30.426Z"
+            }
+          ]
+        },
+        {
+          "finding": "Combined-only heuristic training remained brittle; removing shaping modestly improved mean, while defense-biased shaping did not.",
+          "group": "combined-heuristic-shaping",
+          "qualification": "Policy mixture changed versus prior historical groups, limiting cross-group causal comparisons.",
+          "support": [
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length": "5.14 at step 10240000",
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.09 at step 10240000",
+                "eval/average_win_rate": "0.19166666666666668 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/be3f7f8e3c60490184b9c1b113b6d1e7",
+              "run_id": "be3f7f8e3c60490184b9c1b113b6d1e7",
+              "timestamp": "2026-07-26T15:01:36.346Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.03 at step 10240000",
+                "eval/average_win_rate": "0.22666666666666666 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/b8fffa7e72024d0b954d4aed9fd84c85",
+              "run_id": "b8fffa7e72024d0b954d4aed9fd84c85",
+              "timestamp": "2026-07-27T02:07:08.457Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0 at step 10240000",
+                "eval/average_win_rate": "0.175 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/0fe092c9397147f6bb40667c9160c5dd",
+              "run_id": "0fe092c9397147f6bb40667c9160c5dd",
+              "timestamp": "2026-07-27T17:20:39.470Z"
+            }
+          ]
+        },
+        {
+          "finding": "At full duration, defense weight 1.5 was the useful shaping setting; weight 2 raised mean slightly but reduced worst-side robustness.",
+          "group": "full-combined-defense-weight",
+          "qualification": "The 1.5 comparison follows a slight-shaping predecessor and isolates defense weight; stochastic replication is absent.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.355 at step 15360000",
+                "eval/worst_win_rate": "0.03 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/60b5b52f9c3548ea89ccc70f3be4bed0",
+              "run_id": "60b5b52f9c3548ea89ccc70f3be4bed0",
+              "timestamp": "2026-07-28T02:32:23.786Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.27 at step 15360000",
+                "eval/worst_win_rate": "0.01 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/3288a42374f643b6b81b734bc92edf58",
+              "run_id": "3288a42374f643b6b81b734bc92edf58",
+              "timestamp": "2026-07-30T14:33:00.644Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length": "14.09 at step 15360000",
+                "eval/GomokuDefensiveHeuristicPolicy/x_win_rate": "0.8 at step 15360000",
+                "eval/average_win_rate": "0.45 at step 15360000",
+                "eval/worst_win_rate": "0.04 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/89aeea1bc5134df18b0dc4d1b700e387",
+              "run_id": "89aeea1bc5134df18b0dc4d1b700e387",
+              "timestamp": "2026-07-31T02:41:43.762Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.45666666666666667 at step 15360000",
+                "eval/worst_win_rate": "0.02 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/63e6289ec9f847c4ad97e070a05994fd",
+              "run_id": "63e6289ec9f847c4ad97e070a05994fd",
+              "timestamp": "2026-07-31T14:59:05.628Z"
+            }
+          ]
+        },
+        {
+          "finding": "The initial opening-curriculum variants did not consistently improve robustness; the no-opening annealed/shaped variant had the best mean in this group.",
+          "group": "defensive-opening-curriculum",
+          "qualification": "Several knobs and an implementation defect later fixed confound this phase; it should not estimate the corrected curriculum.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.155 at step 15360000",
+                "eval/worst_win_rate": "0 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/7d72c2dc21f54ccf970746f72505cd49",
+              "run_id": "7d72c2dc21f54ccf970746f72505cd49",
+              "timestamp": "2026-08-01T17:03:31.770Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length": "12.24 at step 15360000",
+                "eval/GomokuDefensiveHeuristicPolicy/x_win_rate": "0.46 at step 15360000",
+                "eval/average_win_rate": "0.2866666666666667 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/0905ff28c6e946828a4698e40a02ebae",
+              "run_id": "0905ff28c6e946828a4698e40a02ebae",
+              "timestamp": "2026-08-01T23:23:57.884Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length": "31.98 at step 15360000",
+                "eval/GomokuDefensiveHeuristicPolicy/x_win_rate": "0.06 at step 15360000",
+                "eval/average_win_rate": "0.13166666666666665 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/784ddb4f1e6e43a794cc94d3556ef2ec",
+              "run_id": "784ddb4f1e6e43a794cc94d3556ef2ec",
+              "timestamp": "2026-08-03T02:57:38.399Z"
+            }
+          ]
+        },
+        {
+          "finding": "After the curriculum fix, slight shaping improved the pair but absolute robustness remained low.",
+          "group": "fixed-defensive-curriculum-shaping",
+          "qualification": "Shaping and starting learning rate both changed, so their contributions are not separated.",
+          "support": [
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length": "4.92 at step 15360000",
+                "eval/average_win_rate": "0.14833333333333334 at step 15360000",
+                "eval/worst_win_rate": "0.0 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/bdc81446285c44eb914bee0f54a285d6",
+              "run_id": "bdc81446285c44eb914bee0f54a285d6",
+              "timestamp": "2026-08-03T14:47:54.835Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length": "26.07 at step 15360000",
+                "eval/GomokuDefensiveHeuristicPolicy/x_win_rate": "0.36 at step 15360000",
+                "eval/average_win_rate": "0.20166666666666666 at step 15360000",
+                "eval/worst_win_rate": "0.01 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/619c1990a3ba4ee582672ff5de69f3ff",
+              "run_id": "619c1990a3ba4ee582672ff5de69f3ff",
+              "timestamp": "2026-08-03T14:48:49.509Z"
+            }
+          ]
+        },
+        {
+          "finding": "Annealed learning rate plus slight shaping was a meaningful recovery over both center-masked controls.",
+          "group": "center-mask-shaping-and-lr",
+          "qualification": "The annealed run differs from the unshaped control in shaping and learning-rate schedule, while comparison to the shaped fixed-rate run more directly supports annealing.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.22833333333333333 at step 10240000",
+                "eval/worst_win_rate": "0.01 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/6092600c9b9e4ce2b2aeaa9138807f3a",
+              "run_id": "6092600c9b9e4ce2b2aeaa9138807f3a",
+              "timestamp": "2026-08-04T04:04:54.610Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.87 at step 10240000",
+                "eval/average_win_rate": "0.19333333333333333 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/8dd08ed542594b19976adb99649996f3",
+              "run_id": "8dd08ed542594b19976adb99649996f3",
+              "timestamp": "2026-08-04T04:05:43.452Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.39 at step 10240000",
+                "eval/GomokuDefensiveHeuristicPolicy/x_win_rate": "0.67 at step 10240000",
+                "eval/average_win_rate": "0.355 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/f22bb1bdb24c42728292484ee442b4a8",
+              "run_id": "f22bb1bdb24c42728292484ee442b4a8",
+              "timestamp": "2026-08-04T04:07:23.858Z"
+            }
+          ]
+        },
+        {
+          "finding": "Without block reward, starting mistake rate 0.7/0.5 beat 0.3; adding block reward 0.5 collapsed performance despite high collected block reward.",
+          "group": "mistake-rate-block-reward-interaction",
+          "qualification": "Run 1eb96584a93f43c2a5e3148ec35b17fe is mislabeled 30p but raw start_mistake_rate is 0.7, so it is not evidence for a 0.3 block-reward cell.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.2683333333333333 at step 10240000",
+                "eval/worst_win_rate": "0.02 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/97fd6a8b04574827a62fa60616e36028",
+              "run_id": "97fd6a8b04574827a62fa60616e36028",
+              "timestamp": "2026-08-04T14:45:57.900Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.0 at step 10240000",
+                "eval/average_win_rate": "0.12666666666666668 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/4dd0d1813a054691a8fd4220c48c810a",
+              "run_id": "4dd0d1813a054691a8fd4220c48c810a",
+              "timestamp": "2026-08-04T14:48:49.748Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.025 at step 10240000",
+                "train/mean_block_reward": "0.23153866753302282 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/418d6300027545eea3a599c86cf6d230",
+              "run_id": "418d6300027545eea3a599c86cf6d230",
+              "timestamp": "2026-08-06T19:27:23.295Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.03333333333333333 at step 10240000",
+                "train/mean_block_reward": "0.25399671394989126 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/cebec459a3ac48e39d299a18ccb1caba",
+              "run_id": "cebec459a3ac48e39d299a18ccb1caba",
+              "timestamp": "2026-08-06T19:28:30.514Z"
+            }
+          ]
+        },
+        {
+          "finding": "The controlled sweep located a moderate optimum at 0.25; 0.4 collapsed and 0.1 was intermediate.",
+          "group": "block-reward-coefficient-sweep",
+          "qualification": "Single terminal runs per coefficient leave seed variance unmeasured.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.023333333333333334 at step 10240000",
+                "train/mean_block_reward": "0.20331668370167136 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/d6f58cab1784484aa56b29a8f6452e45",
+              "run_id": "d6f58cab1784484aa56b29a8f6452e45",
+              "timestamp": "2026-08-07T17:34:38.529Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.38 at step 10240000",
+                "eval/worst_win_rate": "0.04 at step 10240000",
+                "train/mean_block_reward": "0.09063593585352646 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/cc8536377bb64a74933df487a678cfa2",
+              "run_id": "cc8536377bb64a74933df487a678cfa2",
+              "timestamp": "2026-08-07T17:35:55.106Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.2866666666666667 at step 10240000",
+                "eval/worst_win_rate": "0.03 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/bbcbbeda483845c080b754d67dcb8f9e",
+              "run_id": "bbcbbeda483845c080b754d67dcb8f9e",
+              "timestamp": "2026-08-07T17:37:12.806Z"
+            }
+          ]
+        },
+        {
+          "finding": "At 0.25 and 15.36M steps, slight shaping hurt while opening probability 0.4 modestly improved the mean.",
+          "group": "long-block25-refinements",
+          "qualification": "Terminal-only comparisons are unreplicated and differ from the 10.24M sweep in duration.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.24166666666666667 at step 15360000",
+                "eval/worst_win_rate": "0.07 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/15601a9073d7440f8d2bb2293482f111",
+              "run_id": "15601a9073d7440f8d2bb2293482f111",
+              "timestamp": "2026-08-08T14:35:00.445Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length": "32.63 at step 15360000",
+                "eval/average_win_rate": "0.16333333333333333 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/f61fb73f62834518920d6aa0b695f294",
+              "run_id": "f61fb73f62834518920d6aa0b695f294",
+              "timestamp": "2026-08-08T14:37:06.802Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.2866666666666667 at step 15360000",
+                "eval/worst_win_rate": "0.06 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/bffd63073f574705ab3e10b2d86c45fd",
+              "run_id": "bffd63073f574705ab3e10b2d86c45fd",
+              "timestamp": "2026-08-08T14:41:34.175Z"
+            }
+          ]
+        },
+        {
+          "finding": "Reducing block reward to 0.20 improved long-run robustness, and opening probability 0.4 slightly raised mean but slightly lowered worst side in completed retries.",
+          "group": "block20-opening-retries",
+          "qualification": "df624486aa56409d8f50269333723a28 and f9c8f998888648a0ba59c78757125476 are status-1 runs; their 0.315/0.25 means at last steps 11008000/11264000 are partial trajectories only.",
+          "support": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.395 at step 15360000",
+                "eval/worst_win_rate": "0.14 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/4c2c75fc8db6427d851ae3aa124fac3b",
+              "run_id": "4c2c75fc8db6427d851ae3aa124fac3b",
+              "timestamp": "2026-08-17T03:45:58.893Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.415 at step 15360000",
+                "eval/worst_win_rate": "0.12 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/9e597a56d86d482bb732733806a084f8",
+              "run_id": "9e597a56d86d482bb732733806a084f8",
+              "timestamp": "2026-08-17T03:47:39.798Z"
+            }
+          ]
+        },
+        {
+          "finding": "Full heuristic-only warmup with block reward 0.15 produced the strongest robust model; lower/higher nearby coefficients and mixture schedules did not surpass it.",
+          "group": "raise_warmup_performance",
+          "qualification": "The 0.25 attempt and all three conservative attempt-4 mixtures are status-1 incomplete and cannot be ranked as terminal results; attempt-2 and mixture waves also changed mistake or mixture schedules.",
+          "support": [
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length": "9.51 at step 15360000",
+                "eval/GomokuCombinedHeuristicPolicy/o_win_rate": "0.18 at step 15360000",
+                "eval/average_win_rate": "0.47 at step 15360000",
+                "eval/worst_win_rate": "0.18 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/7bbe675725f941eea81ab0fb38675ade",
+              "run_id": "7bbe675725f941eea81ab0fb38675ade",
+              "timestamp": "2026-09-12T16:43:19.363Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.365 at step 15360000",
+                "eval/worst_win_rate": "0.07 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/0c6ec2937cc74ef4995c31927e066ac7",
+              "run_id": "0c6ec2937cc74ef4995c31927e066ac7",
+              "timestamp": "2026-09-13T08:20:41.308Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.41333333333333333 at step 15360000",
+                "eval/worst_win_rate": "0.12 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/ac7769166dd64dad8caadd09912da98b",
+              "run_id": "ac7769166dd64dad8caadd09912da98b",
+              "timestamp": "2026-09-15T18:34:10.159Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.35 at step 15360000",
+                "eval/worst_win_rate": "0.03 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/788dfa9797e344f2b993e436698647f3",
+              "run_id": "788dfa9797e344f2b993e436698647f3",
+              "timestamp": "2026-09-16T12:53:54.196Z"
+            }
+          ]
+        }
+      ],
+      "scope": {
+        "chronology_basis": "MLflow meta.yaml start_time; run-name dates are not assumed reliable",
+        "completed_runs": 55,
+        "covered_runs": 61,
+        "evidence_root": "mlruns/510583218657647424",
+        "experiment": "ppo-gomoku",
+        "experiment_id": "510583218657647424",
+        "interrupted_runs": 6
+      }
+    },
+    "correlations_and_patterns": {
+      "global_caveats": [
+        "All terminal evaluations use finite games per side and most variants have one seed, so close differences can be sampling noise.",
+        "Six status-1 runs—df624486aa56409d8f50269333723a28, f9c8f998888648a0ba59c78757125476, 0c572fdacc98462798966e1aad118c63, a6eb2d709e8e4adfba0ee5f4deb9be06, 1f9a5292b74e47ada012c9ba6a8e7246, and 099be2bb21fb48bc83980bc2ef6cb38a—are incomplete and are never treated as terminal rankings.",
+        "Metric schemas evolved: early runs omit episode lengths and some aggregates, so absence is not interpreted as zero.",
+        "Cross-group chronology often changes multiple parameters, curriculum implementations, or loaded snapshots; causal claims are restricted to close within-group controls."
+      ],
+      "patterns": [
+        {
+          "evidence": [
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/o_avg_episode_length": "4.11 at step 5120000",
+                "eval/GomokuOffensiveHeuristicPolicy/o_win_rate": "0.02 at step 5120000",
+                "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length": "5.04 at step 5120000",
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.94 at step 5120000",
+                "eval/average_win_rate": "0.5566666666666666 at step 5120000",
+                "eval/worst_win_rate": "0.02 at step 5120000"
+              },
+              "path": "mlruns/510583218657647424/32b4fcb765d64fb1b967769de1e7fae5",
+              "run_id": "32b4fcb765d64fb1b967769de1e7fae5",
+              "timestamp": "2026-07-24T23:45:30.426Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/o_win_rate": "0.18 at step 15360000",
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.43 at step 15360000",
+                "eval/average_win_rate": "0.47 at step 15360000",
+                "eval/worst_win_rate": "0.18 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/7bbe675725f941eea81ab0fb38675ade",
+              "run_id": "7bbe675725f941eea81ab0fb38675ade",
+              "timestamp": "2026-09-12T16:43:19.363Z"
+            }
+          ],
+          "interpretation": "The highest mean run is side-specialized; the later warmup run sacrifices mean but raises the weakest of six policy/side cells ninefold.",
+          "name": "Mean performance is a poor proxy for robustness"
+        },
+        {
+          "evidence": [
+            {
+              "metrics": {
+                "block_reward_coef": "0.4",
+                "eval/average_win_rate": "0.023333333333333334 at step 10240000",
+                "train/mean_block_reward": "0.20331668370167136 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/d6f58cab1784484aa56b29a8f6452e45",
+              "run_id": "d6f58cab1784484aa56b29a8f6452e45",
+              "timestamp": "2026-08-07T17:34:38.529Z"
+            },
+            {
+              "metrics": {
+                "block_reward_coef": "0.25",
+                "eval/average_win_rate": "0.38 at step 10240000",
+                "train/mean_block_reward": "0.09063593585352646 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/cc8536377bb64a74933df487a678cfa2",
+              "run_id": "cc8536377bb64a74933df487a678cfa2",
+              "timestamp": "2026-08-07T17:35:55.106Z"
+            },
+            {
+              "metrics": {
+                "block_reward_coef": "0.1",
+                "eval/average_win_rate": "0.2866666666666667 at step 10240000",
+                "train/mean_block_reward": "0.012365749827526307 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/bbcbbeda483845c080b754d67dcb8f9e",
+              "run_id": "bbcbbeda483845c080b754d67dcb8f9e",
+              "timestamp": "2026-08-07T17:37:12.806Z"
+            },
+            {
+              "metrics": {
+                "block_reward_coef": "0.15",
+                "eval/average_win_rate": "0.47 at step 15360000",
+                "eval/worst_win_rate": "0.18 at step 15360000",
+                "train/mean_block_reward": "0.04933115532995161 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/7bbe675725f941eea81ab0fb38675ade",
+              "run_id": "7bbe675725f941eea81ab0fb38675ade",
+              "timestamp": "2026-09-12T16:43:19.363Z"
+            }
+          ],
+          "interpretation": "Collecting more shaped block reward is negatively associated with game strength at high coefficients; moderate 0.15-0.25 settings are promising, with 0.15 strongest in the later full-warmup regimen.",
+          "name": "Block reward has a non-monotonic optimum and proxy-reward risk",
+          "qualification": "The 0.1/0.25/0.4 sweep is controlled but the 0.15 result uses a later, longer warmup configuration."
+        },
+        {
+          "evidence": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.33 at step 8192000",
+                "reward_shaping_coef": "0.01"
+              },
+              "path": "mlruns/510583218657647424/48afd570381e4f05aa0526d9c9c2e396",
+              "run_id": "48afd570381e4f05aa0526d9c9c2e396",
+              "timestamp": "2026-07-21T21:16:39.979Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.5266666666666666 at step 8192000",
+                "reward_shaping_coef": "0"
+              },
+              "path": "mlruns/510583218657647424/a952747d491342d4a391cf3951773aae",
+              "run_id": "a952747d491342d4a391cf3951773aae",
+              "timestamp": "2026-07-22T13:52:17.691Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.24166666666666667 at step 15360000",
+                "reward_shaping_coef": "0"
+              },
+              "path": "mlruns/510583218657647424/15601a9073d7440f8d2bb2293482f111",
+              "run_id": "15601a9073d7440f8d2bb2293482f111",
+              "timestamp": "2026-08-08T14:35:00.445Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.16333333333333333 at step 15360000",
+                "reward_shaping_coef": "0.005"
+              },
+              "path": "mlruns/510583218657647424/f61fb73f62834518920d6aa0b695f294",
+              "run_id": "f61fb73f62834518920d6aa0b695f294",
+              "timestamp": "2026-08-08T14:37:06.802Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.20166666666666666 at step 15360000",
+                "reward_shaping_coef": "0.005"
+              },
+              "path": "mlruns/510583218657647424/619c1990a3ba4ee582672ff5de69f3ff",
+              "run_id": "619c1990a3ba4ee582672ff5de69f3ff",
+              "timestamp": "2026-08-03T14:48:49.509Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.14833333333333334 at step 15360000",
+                "reward_shaping_coef": "0"
+              },
+              "path": "mlruns/510583218657647424/bdc81446285c44eb914bee0f54a285d6",
+              "run_id": "bdc81446285c44eb914bee0f54a285d6",
+              "timestamp": "2026-08-03T14:47:54.835Z"
+            }
+          ],
+          "interpretation": "Shaping hurt in clean/near-clean comparisons more often than it helped; the corrected-curriculum improvement coincided with a learning-rate change.",
+          "name": "Potential shaping is context-sensitive and usually negative",
+          "qualification": "Do not generalize a universal negative effect because schedules, defense weights, and curricula vary."
+        },
+        {
+          "evidence": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.27 at step 15360000",
+                "eval/worst_win_rate": "0.01 at step 15360000",
+                "reward_shaping_defense_weight": "1"
+              },
+              "path": "mlruns/510583218657647424/3288a42374f643b6b81b734bc92edf58",
+              "run_id": "3288a42374f643b6b81b734bc92edf58",
+              "timestamp": "2026-07-30T14:33:00.644Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length": "5.64 at step 15360000",
+                "eval/GomokuCombinedHeuristicPolicy/o_win_rate": "0.04 at step 15360000",
+                "eval/average_win_rate": "0.45 at step 15360000",
+                "eval/worst_win_rate": "0.04 at step 15360000",
+                "reward_shaping_defense_weight": "1.5"
+              },
+              "path": "mlruns/510583218657647424/89aeea1bc5134df18b0dc4d1b700e387",
+              "run_id": "89aeea1bc5134df18b0dc4d1b700e387",
+              "timestamp": "2026-07-31T02:41:43.762Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.45666666666666667 at step 15360000",
+                "eval/worst_win_rate": "0.02 at step 15360000",
+                "reward_shaping_defense_weight": "2"
+              },
+              "path": "mlruns/510583218657647424/63e6289ec9f847c4ad97e070a05994fd",
+              "run_id": "63e6289ec9f847c4ad97e070a05994fd",
+              "timestamp": "2026-07-31T14:59:05.628Z"
+            }
+          ],
+          "interpretation": "Weight 1.5 gives the best robustness of this controlled sequence; weight 2 chases mean at the expense of the weakest cell.",
+          "name": "Defense weight 1.5 is better than slight unbiased shaping, but does not solve side brittleness"
+        },
+        {
+          "evidence": [
+            {
+              "metrics": {
+                "defensive_opening_prob": "0.3",
+                "eval/average_win_rate": "0.24166666666666667 at step 15360000",
+                "eval/worst_win_rate": "0.07 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/15601a9073d7440f8d2bb2293482f111",
+              "run_id": "15601a9073d7440f8d2bb2293482f111",
+              "timestamp": "2026-08-08T14:35:00.445Z"
+            },
+            {
+              "metrics": {
+                "defensive_opening_prob": "0.4",
+                "eval/average_win_rate": "0.2866666666666667 at step 15360000",
+                "eval/worst_win_rate": "0.06 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/bffd63073f574705ab3e10b2d86c45fd",
+              "run_id": "bffd63073f574705ab3e10b2d86c45fd",
+              "timestamp": "2026-08-08T14:41:34.175Z"
+            },
+            {
+              "metrics": {
+                "defensive_opening_prob": "0.3",
+                "eval/average_win_rate": "0.395 at step 15360000",
+                "eval/worst_win_rate": "0.14 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/4c2c75fc8db6427d851ae3aa124fac3b",
+              "run_id": "4c2c75fc8db6427d851ae3aa124fac3b",
+              "timestamp": "2026-08-17T03:45:58.893Z"
+            },
+            {
+              "metrics": {
+                "defensive_opening_prob": "0.4",
+                "eval/average_win_rate": "0.415 at step 15360000",
+                "eval/worst_win_rate": "0.12 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/9e597a56d86d482bb732733806a084f8",
+              "run_id": "9e597a56d86d482bb732733806a084f8",
+              "timestamp": "2026-08-17T03:47:39.798Z"
+            }
+          ],
+          "interpretation": "Probability 0.4 repeatedly adds 0.02-0.045 mean but slightly lowers worst-side rate; it is a mean/robustness tradeoff, not a breakthrough.",
+          "name": "Defensive openings help modestly only after the core regimen is sound"
+        },
+        {
+          "evidence": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.19333333333333333 at step 10240000",
+                "starting_learning_rate": "0.0003"
+              },
+              "path": "mlruns/510583218657647424/8dd08ed542594b19976adb99649996f3",
+              "run_id": "8dd08ed542594b19976adb99649996f3",
+              "timestamp": "2026-08-04T04:05:43.452Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.39 at step 10240000",
+                "eval/average_win_rate": "0.355 at step 10240000",
+                "final_learning_rate": "0.0001",
+                "starting_learning_rate": "0.0003"
+              },
+              "path": "mlruns/510583218657647424/f22bb1bdb24c42728292484ee442b4a8",
+              "run_id": "f22bb1bdb24c42728292484ee442b4a8",
+              "timestamp": "2026-08-04T04:07:23.858Z"
+            }
+          ],
+          "interpretation": "This is one of the cleaner schedule comparisons, but it needs seed replication and worst-side logging interpretation.",
+          "name": "Annealed learning rate can rescue shaped center-mask training"
+        },
+        {
+          "evidence": [
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.94 at step 5120000",
+                "eval/average_win_rate": "0.49166666666666664 at step 5120000"
+              },
+              "path": "mlruns/510583218657647424/89720142ec914ccdaec8ade0d6c229fa",
+              "run_id": "89720142ec914ccdaec8ade0d6c229fa",
+              "timestamp": "2026-07-20T18:19:13.073Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.17 at step 3072000",
+                "eval/average_win_rate": "0.365 at step 3072000"
+              },
+              "path": "mlruns/510583218657647424/045026321f574c0783eb98673bc27531",
+              "run_id": "045026321f574c0783eb98673bc27531",
+              "timestamp": "2026-07-20T20:45:46.827Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.92 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/3a3858a915ff444e9cf82b9aaaa36704",
+              "run_id": "3a3858a915ff444e9cf82b9aaaa36704",
+              "timestamp": "2026-07-18T22:34:02.173Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.36 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/6a8ebacf0b4e431887eee888dc3ae04b",
+              "run_id": "6a8ebacf0b4e431887eee888dc3ae04b",
+              "timestamp": "2026-07-19T14:28:01.126Z"
+            }
+          ],
+          "interpretation": "Snapshot-pool continuation requires checkpoint selection and anti-forgetting evaluation rather than assuming terminal improvement.",
+          "name": "Longer or continued training can forget rather than monotonically improve",
+          "qualification": "Loading, masking, and schedule changes make these observations regimen-level correlations."
+        }
+      ]
+    },
+    "champion": {
+      "defining_parameters": {
+        "block_reward_coef": 0.15,
+        "defensive_opening_prob": 0.3,
+        "eval_games_per_side": 100,
+        "final_learning_rate": 0.0001,
+        "final_mistake_rate": 0.1,
+        "mask_learner_until_steps": 15360000,
+        "mask_opponent_until_steps": 15360000,
+        "reward_shaping_coef": 0,
+        "start_mistake_rate": 0.7,
+        "starting_learning_rate": 0.0003,
+        "total_timesteps": 15360000,
+        "warmup_p_heuristics": "[0.9]",
+        "warmup_p_random": 0.1,
+        "warmup_steps": 15360000
+      },
+      "other_strong_comparator": {
+        "evidence": {
+          "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length": "5.64 at step 15360000",
+          "eval/GomokuCombinedHeuristicPolicy/o_win_rate": "0.04 at step 15360000",
+          "eval/average_win_rate": "0.45 at step 15360000",
+          "eval/worst_win_rate": "0.04 at step 15360000"
+        },
+        "path": "mlruns/510583218657647424/89aeea1bc5134df18b0dc4d1b700e387",
+        "reason": "Similar mean but materially weaker combined-policy O-side robustness.",
+        "run_id": "89aeea1bc5134df18b0dc4d1b700e387",
+        "timestamp": "2026-07-31T02:41:43.762Z"
+      },
+      "path": "mlruns/510583218657647424/7bbe675725f941eea81ab0fb38675ade",
+      "qualification": "Champion means best among the 61 recorded MLflow runs under the stated heuristic-evaluation criterion, not proven superiority against learned agents or across seeds. It is a single completed run, and its run name date differs from the actual MLflow September 2026 start.",
+      "run_id": "7bbe675725f941eea81ab0fb38675ade",
+      "run_name": "ppo-gomoku-warmup-block15-15m-2026-08-18",
+      "selection_criterion": "Best completed-run per-policy/per-side robustness: maximize eval/worst_win_rate first, then require competitive eval/average_win_rate and inspect all six policy/side win rates with paired episode lengths. This avoids selecting a high-mean model that collapses on one side.",
+      "status": 3,
+      "terminal_evidence": {
+        "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length": "9.51 at step 15360000",
+        "eval/GomokuCombinedHeuristicPolicy/o_win_rate": "0.18 at step 15360000",
+        "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length": "11.12 at step 15360000",
+        "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.43 at step 15360000",
+        "eval/GomokuDefensiveHeuristicPolicy/o_avg_episode_length": "17.86 at step 15360000",
+        "eval/GomokuDefensiveHeuristicPolicy/o_win_rate": "0.54 at step 15360000",
+        "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length": "15.48 at step 15360000",
+        "eval/GomokuDefensiveHeuristicPolicy/x_win_rate": "0.63 at step 15360000",
+        "eval/GomokuOffensiveHeuristicPolicy/o_avg_episode_length": "7.23 at step 15360000",
+        "eval/GomokuOffensiveHeuristicPolicy/o_win_rate": "0.35 at step 15360000",
+        "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length": "6.86 at step 15360000",
+        "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.69 at step 15360000",
+        "eval/average_win_rate": "0.47 at step 15360000",
+        "eval/worst_win_rate": "0.18 at step 15360000",
+        "train/mean_block_reward": "0.04933115532995161 at step 15360000"
+      },
+      "why_not_highest_mean": {
+        "evidence": {
+          "eval/GomokuOffensiveHeuristicPolicy/o_avg_episode_length": "4.11 at step 5120000",
+          "eval/GomokuOffensiveHeuristicPolicy/o_win_rate": "0.02 at step 5120000",
+          "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length": "5.04 at step 5120000",
+          "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.94 at step 5120000",
+          "eval/average_win_rate": "0.5566666666666666 at step 5120000",
+          "eval/worst_win_rate": "0.02 at step 5120000"
+        },
+        "path": "mlruns/510583218657647424/32b4fcb765d64fb1b967769de1e7fae5",
+        "reason": "Its larger mean is driven by extreme matchup/side specialization; its weakest cell is nine times lower than the champion's 0.18.",
+        "run_id": "32b4fcb765d64fb1b967769de1e7fae5",
+        "timestamp": "2026-07-24T23:45:30.426Z"
+      },
+      "timestamp": "2026-09-12T16:43:19.363Z"
+    },
+    "promising_directions": {
+      "evaluation_requirements": [
+        "Primary metric: eval/worst_win_rate over every logged heuristic/side cell.",
+        "Secondary metric: eval/average_win_rate; report every component win rate rather than aggregate alone.",
+        "Pair each per-policy/side win rate with its *_avg_episode_length where logged.",
+        "Use replicated seeds and confidence intervals before promoting small terminal differences.",
+        "Never rank status-1 partial runs against completed terminal results; use them only as trajectory evidence."
+      ],
+      "prioritized": [
+        {
+          "caveat": "The 0.10 run belongs to attempt 2 and the 0.20 run to attempt 1; exact replication is required before assigning coefficient causality.",
+          "design": "Run multiple seeds at 0.10, 0.125, 0.15, 0.175, and 0.20 with every other champion parameter fixed; predeclare eval/worst_win_rate as primary and average_win_rate as secondary.",
+          "direction": "Replicate and locally tune the champion's block reward around 0.15 under the exact 15.36M heuristic-only warmup regimen.",
+          "evidence": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.47 at step 15360000",
+                "eval/worst_win_rate": "0.18 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/7bbe675725f941eea81ab0fb38675ade",
+              "run_id": "7bbe675725f941eea81ab0fb38675ade",
+              "timestamp": "2026-09-12T16:43:19.363Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.41333333333333333 at step 15360000",
+                "eval/worst_win_rate": "0.12 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/ac7769166dd64dad8caadd09912da98b",
+              "run_id": "ac7769166dd64dad8caadd09912da98b",
+              "timestamp": "2026-09-15T18:34:10.159Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.365 at step 15360000",
+                "eval/worst_win_rate": "0.07 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/0c6ec2937cc74ef4995c31927e066ac7",
+              "run_id": "0c6ec2937cc74ef4995c31927e066ac7",
+              "timestamp": "2026-09-13T08:20:41.308Z"
+            }
+          ],
+          "hypothesis": "Coefficients near 0.15 preserve the champion's 0.18 worst-side robustness better than 0.10 or 0.20 while retaining mean strength.",
+          "priority": 1
+        },
+        {
+          "caveat": "Episode length is descriptive and direction-dependent; longer games are not automatically better without win-rate improvement.",
+          "design": "Start from the champion, change one opponent/opening mixture knob at a time, and gate checkpoints on the minimum of the six win rates; always log paired episode lengths.",
+          "direction": "Optimize directly for the champion's weakest Combined-policy O side without sacrificing its other five cells.",
+          "evidence": [
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length": "9.51 at step 15360000",
+                "eval/GomokuCombinedHeuristicPolicy/o_win_rate": "0.18 at step 15360000",
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.43 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/7bbe675725f941eea81ab0fb38675ade",
+              "run_id": "7bbe675725f941eea81ab0fb38675ade",
+              "timestamp": "2026-09-12T16:43:19.363Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length": "5.64 at step 15360000",
+                "eval/GomokuCombinedHeuristicPolicy/o_win_rate": "0.04 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/89aeea1bc5134df18b0dc4d1b700e387",
+              "run_id": "89aeea1bc5134df18b0dc4d1b700e387",
+              "timestamp": "2026-07-31T02:41:43.762Z"
+            }
+          ],
+          "hypothesis": "A small curriculum reweighting toward combined-policy O-side situations can lift the current 0.18 floor while preserving defensive/offensive strengths.",
+          "priority": 2
+        },
+        {
+          "caveat": "Evidence is currently one center-mask pair and does not establish transfer to the champion curriculum.",
+          "design": "Compare fixed and annealed schedules across seeds with champion reward/curriculum settings unchanged and evaluate checkpoints, not only terminal models.",
+          "direction": "Test annealed learning rate on the champion regimen as a clean one-knob experiment.",
+          "evidence": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.19333333333333333 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/8dd08ed542594b19976adb99649996f3",
+              "run_id": "8dd08ed542594b19976adb99649996f3",
+              "timestamp": "2026-08-04T04:05:43.452Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuCombinedHeuristicPolicy/x_win_rate": "0.39 at step 10240000",
+                "eval/average_win_rate": "0.355 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/f22bb1bdb24c42728292484ee442b4a8",
+              "run_id": "f22bb1bdb24c42728292484ee442b4a8",
+              "timestamp": "2026-08-04T04:07:23.858Z"
+            }
+          ],
+          "hypothesis": "Annealing 0.0003 to 0.0001 may stabilize late warmup competence and reduce side collapse.",
+          "priority": 3
+        },
+        {
+          "caveat": "The observed mean gains are small and unreplicated.",
+          "design": "Sweep 0.30, 0.325, 0.35, 0.375, 0.40 around an otherwise fixed champion configuration with replicated seeds.",
+          "direction": "Use defensive-opening probability as a constrained mean/robustness tradeoff rather than maximizing it.",
+          "evidence": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.395 at step 15360000",
+                "eval/worst_win_rate": "0.14 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/4c2c75fc8db6427d851ae3aa124fac3b",
+              "run_id": "4c2c75fc8db6427d851ae3aa124fac3b",
+              "timestamp": "2026-08-17T03:45:58.893Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.415 at step 15360000",
+                "eval/worst_win_rate": "0.12 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/9e597a56d86d482bb732733806a084f8",
+              "run_id": "9e597a56d86d482bb732733806a084f8",
+              "timestamp": "2026-08-17T03:47:39.798Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.24166666666666667 at step 15360000",
+                "eval/worst_win_rate": "0.07 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/15601a9073d7440f8d2bb2293482f111",
+              "run_id": "15601a9073d7440f8d2bb2293482f111",
+              "timestamp": "2026-08-08T14:35:00.445Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.2866666666666667 at step 15360000",
+                "eval/worst_win_rate": "0.06 at step 15360000"
+              },
+              "path": "mlruns/510583218657647424/bffd63073f574705ab3e10b2d86c45fd",
+              "run_id": "bffd63073f574705ab3e10b2d86c45fd",
+              "timestamp": "2026-08-08T14:41:34.175Z"
+            }
+          ],
+          "hypothesis": "A value between 0.30 and 0.40 may retain the 0.30 setting's worst-side rate while capturing part of the 0.40 setting's mean gain.",
+          "priority": 4
+        },
+        {
+          "caveat": "Existing continuation runs also changed schedules, so the mechanism needs a controlled test.",
+          "design": "Evaluate every snapshot on all policy/side cells, retain Pareto-optimal checkpoints, and compare continuation with versus without fixed heuristic rehearsal.",
+          "direction": "Add anti-forgetting checkpoint selection before any self-play continuation.",
+          "evidence": [
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.94 at step 5120000",
+                "eval/average_win_rate": "0.49166666666666664 at step 5120000"
+              },
+              "path": "mlruns/510583218657647424/89720142ec914ccdaec8ade0d6c229fa",
+              "run_id": "89720142ec914ccdaec8ade0d6c229fa",
+              "timestamp": "2026-07-20T18:19:13.073Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.17 at step 3072000",
+                "eval/average_win_rate": "0.365 at step 3072000"
+              },
+              "path": "mlruns/510583218657647424/045026321f574c0783eb98673bc27531",
+              "run_id": "045026321f574c0783eb98673bc27531",
+              "timestamp": "2026-07-20T20:45:46.827Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.92 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/3a3858a915ff444e9cf82b9aaaa36704",
+              "run_id": "3a3858a915ff444e9cf82b9aaaa36704",
+              "timestamp": "2026-07-18T22:34:02.173Z"
+            },
+            {
+              "metrics": {
+                "eval/GomokuOffensiveHeuristicPolicy/x_win_rate": "0.36 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/6a8ebacf0b4e431887eee888dc3ae04b",
+              "run_id": "6a8ebacf0b4e431887eee888dc3ae04b",
+              "timestamp": "2026-07-19T14:28:01.126Z"
+            }
+          ],
+          "hypothesis": "Selecting on the minimum per-policy/side checkpoint and maintaining heuristic rehearsal will prevent the continuation regressions seen after snapshot loading.",
+          "priority": 5
+        },
+        {
+          "caveat": "These are regimen-level dead ends; they do not prove every alternative implementation of broad heuristic exposure will fail.",
+          "design": "Treat block_reward_coef >=0.4 and all-heuristic schedules as negative controls; if revisited, monitor train/mean_block_reward jointly with each policy/side win rate and stop on proxy divergence.",
+          "direction": "Avoid high block-reward and broad all-heuristic regimens unless redesigned with explicit robustness guards.",
+          "evidence": [
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.023333333333333334 at step 10240000",
+                "train/mean_block_reward": "0.20331668370167136 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/d6f58cab1784484aa56b29a8f6452e45",
+              "run_id": "d6f58cab1784484aa56b29a8f6452e45",
+              "timestamp": "2026-08-07T17:34:38.529Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0.0033333333333333335 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/7de8435281814b42a4baa3beed4ce961",
+              "run_id": "7de8435281814b42a4baa3beed4ce961",
+              "timestamp": "2026-07-20T02:33:47.646Z"
+            },
+            {
+              "metrics": {
+                "eval/average_win_rate": "0 at step 10240000"
+              },
+              "path": "mlruns/510583218657647424/f044a9791f2d48228213462c76ad94db",
+              "run_id": "f044a9791f2d48228213462c76ad94db",
+              "timestamp": "2026-07-20T14:02:51.965Z"
+            }
+          ],
+          "hypothesis": "High proxy reward and indiscriminate heuristic exposure divert learning from winning behavior.",
+          "priority": 6
+        }
+      ]
+    }
+  }
+}

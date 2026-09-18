@@ -1,0 +1,131 @@
+{
+  "schema_version": 2,
+  "experiment": "reproduction-and-forgetting",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-reproduce-og-results-2026-07-20-14:19",
+      "modified_params": {
+        "batch_size": 512,
+        "clip_range": 0.1,
+        "learning_rate": 0.0001,
+        "n_steps": 512,
+        "total_timesteps": 5120000
+      },
+      "goal_hypothesis": "Reproduce the original strong heuristic results under the recorded 5.12M-step PPO configuration.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.49166666666666664 at step 5120000",
+          "insight": "The reproduction reached a 49.17% terminal average win rate."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 5120000",
+          "insight": "The aggregate concealed a 1% worst-matchup floor."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.94 at step 5120000",
+          "insight": "A 94% offensive-X win rate confirms strong but asymmetric competence."
+        }
+      ],
+      "reasoning": [
+        "The PPO configuration reproduced high average heuristic performance.",
+        "The 1% worst rate shows reproduction of the aggregate did not imply robust policy/side coverage.",
+        "This is a configuration reproduction rather than a random-seed replication, so sampling and uncontrolled historical differences remain."
+      ],
+      "tags": [
+        "complete",
+        "reproduction",
+        "baseline",
+        "side-imbalance"
+      ],
+      "mlruns_run_id": "89720142ec914ccdaec8ade0d6c229fa",
+      "mlruns_path": "mlruns/510583218657647424/89720142ec914ccdaec8ade0d6c229fa",
+      "timestamp": "2026-07-20T18:19:13.073Z"
+    },
+    {
+      "run_name": "ppo-gomoku-og-results-extended-training-2026-07-20-16:45",
+      "modified_params": {
+        "loaded_snapshot_count": 1,
+        "loaded_snapshot_max_idx": 1,
+        "mask_learner_until_steps": 3072000,
+        "random_warmup_steps": 0,
+        "total_timesteps": 3072000
+      },
+      "goal_hypothesis": "Continue the reproduced model from one loaded snapshot to test whether additional self-play preserves its heuristic performance.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.365 at step 3072000",
+          "insight": "Continuation ended 12.67 percentage points below the 49.17% reproduction."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.0 at step 3072000",
+          "insight": "The robustness floor fell to zero."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.17 at step 3072000",
+          "insight": "Offensive-X dropped sharply from 94% in the reproduced predecessor."
+        }
+      ],
+      "reasoning": [
+        "Additional snapshot-based training caused catastrophic forgetting in offensive-X competence.",
+        "Removing random warmup and using a 3.072M continuation changed the experienced opponent distribution.",
+        "Because this is a continuation with several schedule changes, the loss cannot be attributed solely to elapsed training."
+      ],
+      "tags": [
+        "complete",
+        "continuation",
+        "loaded-snapshot",
+        "catastrophic-forgetting"
+      ],
+      "mlruns_run_id": "045026321f574c0783eb98673bc27531",
+      "mlruns_path": "mlruns/510583218657647424/045026321f574c0783eb98673bc27531",
+      "timestamp": "2026-07-20T20:45:46.827Z"
+    },
+    {
+      "run_name": "ppo-gomoku-catastrophic-forgetting-test-2026-07-20-22:57",
+      "modified_params": {
+        "mask_learner_until_steps": 8192000,
+        "mask_opponent_until_steps": 8192000,
+        "mixed_warmup_steps": 6144000,
+        "total_timesteps": 8192000
+      },
+      "goal_hypothesis": "Train a longer fresh schedule to determine whether catastrophic forgetting is reproducible without a loaded continuation snapshot.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.4716666666666667 at step 8192000",
+          "insight": "The fresh long run retained 47.17% average performance, near the 49.17% reproduction."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.0 at step 8192000",
+          "insight": "At least one matchup still had zero wins."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.93 at step 8192000",
+          "insight": "Offensive-X remained at 93%, unlike the loaded continuation's 17%."
+        }
+      ],
+      "reasoning": [
+        "Forgetting was not inevitable with more fresh-schedule training; offensive-X remained strong.",
+        "The loaded continuation's altered starting distribution is a more likely cause of its collapse than duration alone.",
+        "Multiple schedule horizons differ from the 5.12M reproduction, and the zero worst rate still shows unresolved asymmetry."
+      ],
+      "tags": [
+        "complete",
+        "fresh-run",
+        "forgetting-control",
+        "multi-parameter-confound"
+      ],
+      "mlruns_run_id": "463c605ebe2448eaa116ac7bfa252799",
+      "mlruns_path": "mlruns/510583218657647424/463c605ebe2448eaa116ac7bfa252799",
+      "timestamp": "2026-07-21T02:57:21.406Z"
+    }
+  ]
+}

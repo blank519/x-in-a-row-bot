@@ -1,0 +1,185 @@
+{
+  "schema_version": 2,
+  "experiment": "block20-opening-retries",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-block-reward-20p-longer-run-more-defensive-opening-2026-08-16-11:19",
+      "modified_params": {
+        "block_reward_coef": 0.2,
+        "defensive_opening_prob": 0.4,
+        "total_timesteps": 15360000
+      },
+      "goal_hypothesis": "Test a longer coefficient-0.20 run with 40% defensive openings; this status-1 attempt is incomplete and only its last checkpoint is interpretable.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "incomplete: 0.315 at last observed step 11008000",
+          "insight": "Partial trajectory had reached 31.5% before interruption."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "incomplete: 0.06 at last observed step 11008000",
+          "insight": "Worst-side partial performance was nonzero."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "incomplete: 0.053959373993552905 at last observed step 11008000",
+          "insight": "Training diagnostic is checkpoint-only, not terminal."
+        }
+      ],
+      "reasoning": [
+        "The run was interrupted at 11.008M of 15.36M planned steps, so no terminal claim is valid.",
+        "Forty-percent openings may have aided the partial trajectory.",
+        "PPO stochasticity and checkpoint timing confound comparison to completed retries."
+      ],
+      "tags": [
+        "gomoku",
+        "block-reward-0.20",
+        "defensive-opening-0.40",
+        "interrupted",
+        "incomplete",
+        "status-1",
+        "first-attempt"
+      ],
+      "mlruns_run_id": "df624486aa56409d8f50269333723a28",
+      "mlruns_path": "mlruns/510583218657647424/df624486aa56409d8f50269333723a28",
+      "timestamp": "2026-08-16T15:19:32.716Z"
+    },
+    {
+      "run_name": "ppo-gomoku-block-reward-20p-longer-run-2026-08-16-11:19",
+      "modified_params": {
+        "block_reward_coef": 0.2,
+        "defensive_opening_prob": 0.3,
+        "total_timesteps": 15360000
+      },
+      "goal_hypothesis": "Test the longer coefficient-0.20 30%-opening control; this status-1 attempt is incomplete and limited to its last checkpoint.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "incomplete: 0.25 at last observed step 11264000",
+          "insight": "Partial aggregate trailed the concurrent 40%-opening attempt."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "incomplete: 0.06 at last observed step 11264000",
+          "insight": "Worst-side partial result matched the other attempt."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "incomplete: 0.04375237417008421 at last observed step 11264000",
+          "insight": "Observed block signal is not terminal evidence."
+        }
+      ],
+      "reasoning": [
+        "The run stopped at 11.264M of 15.36M planned steps.",
+        "The 30% opening setting may explain lower partial aggregate than 40%, but checkpoints differ.",
+        "Seed noise and interrupted status preclude a final comparison."
+      ],
+      "tags": [
+        "gomoku",
+        "block-reward-0.20",
+        "defensive-opening-0.30",
+        "interrupted",
+        "incomplete",
+        "status-1",
+        "first-attempt"
+      ],
+      "mlruns_run_id": "f9c8f998888648a0ba59c78757125476",
+      "mlruns_path": "mlruns/510583218657647424/f9c8f998888648a0ba59c78757125476",
+      "timestamp": "2026-08-16T15:19:32.716Z"
+    },
+    {
+      "run_name": "ppo-gomoku-block-reward-20p-longer-run-2026-08-16-23:45",
+      "modified_params": {
+        "block_reward_coef": 0.2,
+        "defensive_opening_prob": 0.3,
+        "total_timesteps": 15360000
+      },
+      "goal_hypothesis": "Complete the retry of the 30%-opening coefficient-0.20 long run after interrupted attempt f9c8f998888648a0ba59c78757125476.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.395 at step 15360000",
+          "insight": "Completed retry substantially exceeded the interrupted checkpoint's 25%."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.14 at step 15360000",
+          "insight": "Worst-case terminal robustness was markedly stronger."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "0.14 at step 15360000",
+          "insight": "Even the weakest combined-O matchup achieved nonzero wins."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "11.22 at step 15360000",
+          "insight": "The limiting combined-O wins were measured over 11.22-move games."
+        }
+      ],
+      "reasoning": [
+        "Finishing training yielded a robust improvement over the partial trajectory.",
+        "The retry confirms coefficient 0.20 can support balanced performance at 15.36M steps.",
+        "Different random seeds mean improvement cannot be attributed solely to additional steps."
+      ],
+      "tags": [
+        "gomoku",
+        "block-reward-0.20",
+        "defensive-opening-0.30",
+        "retry",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "4c2c75fc8db6427d851ae3aa124fac3b",
+      "mlruns_path": "mlruns/510583218657647424/4c2c75fc8db6427d851ae3aa124fac3b",
+      "timestamp": "2026-08-17T03:45:58.893Z"
+    },
+    {
+      "run_name": "ppo-gomoku-block-reward-20p-longer-run-more-defensive-opening-2026-08-16-23:47",
+      "modified_params": {
+        "defensive_opening_prob": 0.4
+      },
+      "goal_hypothesis": "Test whether increasing openings from 30% to 40% improves the completed coefficient-0.20 long run relative to 4c2c75fc8db6427d851ae3aa124fac3b.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.415 at step 15360000",
+          "insight": "Forty-percent openings improved aggregate by 0.02."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.12 at step 15360000",
+          "insight": "Worst-side rate fell slightly from 0.14, so robustness was mixed."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.69 at step 15360000",
+          "insight": "Defensive-X improved from 54% in the 30%-opening control."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "18.67 at step 15360000",
+          "insight": "The 69% defensive-X result occurred over 18.67-move games."
+        }
+      ],
+      "reasoning": [
+        "More openings modestly improved aggregate and defensive-X specialization.",
+        "The controlled opening-probability delta supports comparison, but worst-side performance worsened slightly.",
+        "A single seed and 100-game side samples make the two-point aggregate gain uncertain."
+      ],
+      "tags": [
+        "gomoku",
+        "block-reward-0.20",
+        "defensive-opening-0.40",
+        "controlled-comparison",
+        "retry",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "9e597a56d86d482bb732733806a084f8",
+      "mlruns_path": "mlruns/510583218657647424/9e597a56d86d482bb732733806a084f8",
+      "timestamp": "2026-08-17T03:47:39.798Z"
+    }
+  ]
+}

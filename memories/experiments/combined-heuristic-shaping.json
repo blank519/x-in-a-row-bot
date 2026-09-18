@@ -1,0 +1,150 @@
+{
+  "schema_version": 2,
+  "experiment": "combined-heuristic-shaping",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-combined-heuristic-2026-07-26-11:01",
+      "modified_params": {
+        "mixed_p_heuristics": "[0.7]",
+        "p_heuristics": "[0.4]",
+        "reward_shaping_coef": 0.01,
+        "reward_shaping_defense_weight": 1
+      },
+      "goal_hypothesis": "Establish a combined-heuristic training baseline with coefficient-0.01 potential shaping.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.19166666666666668 at step 10240000",
+          "insight": "Terminal aggregate competence was low."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "0.09 at step 10240000",
+          "insight": "Combined-policy wins were 9% as X and 0% as O."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "9.97 at step 10240000",
+          "insight": "Combined-X games lasted 9.97 moves on average."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "5.14 at step 10240000",
+          "insight": "Combined-O losses occurred quickly."
+        }
+      ],
+      "reasoning": [
+        "The shaped combined regimen did not learn robust combined-policy play.",
+        "This first group run defines both opponent mix and shaping, so cross-era causality is limited.",
+        "Per-side 100-game evaluations expose substantial sampling and seed uncertainty."
+      ],
+      "tags": [
+        "gomoku",
+        "combined-heuristic",
+        "shaping",
+        "baseline",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "be3f7f8e3c60490184b9c1b113b6d1e7",
+      "mlruns_path": "mlruns/510583218657647424/be3f7f8e3c60490184b9c1b113b6d1e7",
+      "timestamp": "2026-07-26T15:01:36.346Z"
+    },
+    {
+      "run_name": "ppo-gomoku-combined-heuristic-no-reward-shaping-2026-07-26-22:07",
+      "modified_params": {
+        "reward_shaping_coef": 0
+      },
+      "goal_hypothesis": "Remove shaping while holding the combined-heuristic regimen fixed relative to be3f7f8e3c60490184b9c1b113b6d1e7.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.22666666666666666 at step 10240000",
+          "insight": "No shaping improved aggregate win rate by 0.035."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "0.03 at step 10240000",
+          "insight": "Combined-X performance fell from 9% to 3%, with O still zero."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "7.18 at step 10240000",
+          "insight": "The weak combined-X games lasted 7.18 moves on average."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.29 at step 10240000",
+          "insight": "Aggregate gain came partly from stronger defensive-policy evaluation."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "21.86 at step 10240000",
+          "insight": "The defensive-X evaluation lasted 21.86 moves on average."
+        }
+      ],
+      "reasoning": [
+        "Removing shaping modestly improved aggregate performance but not the target combined opponent.",
+        "The coefficient-only configuration delta makes this the cleanest group comparison.",
+        "Stochastic training may account for small changes, while policy-specific shifts warn against aggregate-only conclusions."
+      ],
+      "tags": [
+        "gomoku",
+        "combined-heuristic",
+        "no-shaping",
+        "controlled-comparison",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "b8fffa7e72024d0b954d4aed9fd84c85",
+      "mlruns_path": "mlruns/510583218657647424/b8fffa7e72024d0b954d4aed9fd84c85",
+      "timestamp": "2026-07-27T02:07:08.457Z"
+    },
+    {
+      "run_name": "ppo-gomoku-combined-heuristic-defense-biased-reward-shaping-2026-07-27-13:20",
+      "modified_params": {
+        "reward_shaping_coef": 0.01,
+        "reward_shaping_defense_weight": 1.5
+      },
+      "goal_hypothesis": "Test defense-biased shaping against the unshaped combined-heuristic control b8fffa7e72024d0b954d4aed9fd84c85.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.175 at step 10240000",
+          "insight": "Defense-biased shaping was worst of the three aggregate outcomes."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "0 at step 10240000",
+          "insight": "It won no combined-policy games on either side."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "8.07 at step 10240000",
+          "insight": "The winless combined-X games lasted 8.07 moves on average."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_avg_episode_length",
+          "outcome": "25.73 at step 10240000",
+          "insight": "Longer defensive-O games still yielded only 5% wins."
+        }
+      ],
+      "reasoning": [
+        "Defense-biased shaping degraded the target combined-policy outcome.",
+        "Coefficient and defense weight changed together versus control, so their effects cannot be separated.",
+        "Run-to-run stochasticity remains a caveat, though zero combined wins is strong negative evidence."
+      ],
+      "tags": [
+        "gomoku",
+        "combined-heuristic",
+        "defense-biased-shaping",
+        "multi-parameter-change",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "0fe092c9397147f6bb40667c9160c5dd",
+      "mlruns_path": "mlruns/510583218657647424/0fe092c9397147f6bb40667c9160c5dd",
+      "timestamp": "2026-07-27T17:20:39.470Z"
+    }
+  ]
+}

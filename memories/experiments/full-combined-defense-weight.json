@@ -1,0 +1,181 @@
+{
+  "schema_version": 2,
+  "experiment": "full-combined-defense-weight",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-full-combined-heuristic-run-no-reward-shaping-2026-07-27-22:32",
+      "modified_params": {
+        "mixed_p_heuristics": "[0.8]",
+        "reward_shaping_coef": 0,
+        "reward_shaping_defense_weight": 1,
+        "total_timesteps": 15360000
+      },
+      "goal_hypothesis": "Establish the full-length combined-heuristic control without potential shaping.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.355 at step 15360000",
+          "insight": "The unshaped full-length control reached 35.5% average win rate."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.03 at step 15360000",
+          "insight": "Its weakest policy/side win rate was 3%."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.6 at step 15360000",
+          "insight": "Defensive-X competence reached 60%, paired with 14.75-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "14.75 at step 15360000",
+          "insight": "The defensive-X win rate was observed over moderate-length games."
+        }
+      ],
+      "reasoning": [
+        "Long combined-heuristic exposure produced moderate average strength without shaping.",
+        "The 3% floor indicates the combined/opponent-side weaknesses remained substantial.",
+        "This control defines several regimen knobs at once relative to earlier curricula, so only later within-group variants isolate shaping."
+      ],
+      "tags": [
+        "complete",
+        "control",
+        "combined-heuristic",
+        "no-shaping"
+      ],
+      "mlruns_run_id": "60b5b52f9c3548ea89ccc70f3be4bed0",
+      "mlruns_path": "mlruns/510583218657647424/60b5b52f9c3548ea89ccc70f3be4bed0",
+      "timestamp": "2026-07-28T02:32:23.786Z"
+    },
+    {
+      "run_name": "ppo-gomoku-full-combined-heuristic-run-slight-reward-shaping-2026-07-30-10:33",
+      "modified_params": {
+        "reward_shaping_coef": 0.005
+      },
+      "goal_hypothesis": "Test whether slight potential shaping improves the full combined-heuristic control.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.27 at step 15360000",
+          "insight": "Slight shaping reduced average win rate from 35.5% to 27%."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 15360000",
+          "insight": "The floor declined from 3% to 1%."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.3 at step 15360000",
+          "insight": "Defensive-X fell from 60% to 30%, with 15.6-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "15.6 at step 15360000",
+          "insight": "Episode length was similar to control, while wins halved."
+        }
+      ],
+      "reasoning": [
+        "A 0.005 shaping coefficient without defense bias harmed aggregate and defensive performance.",
+        "The near-controlled parameter comparison makes shaping the leading explanation.",
+        "Single seeds and training stochasticity could still account for some difference."
+      ],
+      "tags": [
+        "complete",
+        "slight-shaping",
+        "controlled-comparison",
+        "dead-end"
+      ],
+      "mlruns_run_id": "3288a42374f643b6b81b734bc92edf58",
+      "mlruns_path": "mlruns/510583218657647424/3288a42374f643b6b81b734bc92edf58",
+      "timestamp": "2026-07-30T14:33:00.644Z"
+    },
+    {
+      "run_name": "ppo-gomoku-full-combined-heuristic-run-slight-defense-reward-shaping-2026-07-30-22:41",
+      "modified_params": {
+        "reward_shaping_defense_weight": 1.5
+      },
+      "goal_hypothesis": "Test whether defense-biasing the slight shaping potential reverses the unbiased shaping regression.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.45 at step 15360000",
+          "insight": "Defense weight 1.5 raised average win rate from 27% to 45%."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.04 at step 15360000",
+          "insight": "The floor improved from 1% to 4%."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.8 at step 15360000",
+          "insight": "Defensive-X rose from 30% to 80%, over 14.09-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "14.09 at step 15360000",
+          "insight": "Improvement occurred without longer defensive episodes."
+        }
+      ],
+      "reasoning": [
+        "Defense weight 1.5 corrected much of the unbiased shaping regression and exceeded the unshaped average.",
+        "The controlled defense-weight delta strongly links the gain to defense-biased shaping.",
+        "Combined-O remained only 4%, so the gain was not uniformly distributed; seed variance remains."
+      ],
+      "tags": [
+        "complete",
+        "slight-shaping",
+        "defense-weight-1.5",
+        "breakthrough"
+      ],
+      "mlruns_run_id": "89aeea1bc5134df18b0dc4d1b700e387",
+      "mlruns_path": "mlruns/510583218657647424/89aeea1bc5134df18b0dc4d1b700e387",
+      "timestamp": "2026-07-31T02:41:43.762Z"
+    },
+    {
+      "run_name": "ppo-gomoku-full-combined-heuristic-run-higher-defense-reward-shaping-2026-07-31-10:59",
+      "modified_params": {
+        "reward_shaping_defense_weight": 2
+      },
+      "goal_hypothesis": "Test whether raising defense weight from 1.5 to 2.0 further improves robust combined-heuristic performance.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.45666666666666667 at step 15360000",
+          "insight": "Weight 2.0 slightly exceeded weight 1.5 (45.67% versus 45%)."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.02 at step 15360000",
+          "insight": "The floor fell from 4% to 2%."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.72 at step 15360000",
+          "insight": "Defensive-X decreased from 80% to 72%, over 12.77-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "12.77 at step 15360000",
+          "insight": "The higher weight shortened defensive-X games but did not improve wins."
+        }
+      ],
+      "reasoning": [
+        "Increasing defense weight to 2.0 produced only a negligible average gain and worse robustness.",
+        "Weight 1.5 appears a better balance across matchups than 2.0.",
+        "The average difference is smaller than plausible evaluation/training noise, so no causal improvement should be claimed."
+      ],
+      "tags": [
+        "complete",
+        "slight-shaping",
+        "defense-weight-2.0",
+        "controlled-comparison"
+      ],
+      "mlruns_run_id": "63e6289ec9f847c4ad97e070a05994fd",
+      "mlruns_path": "mlruns/510583218657647424/63e6289ec9f847c4ad97e070a05994fd",
+      "timestamp": "2026-07-31T14:59:05.628Z"
+    }
+  ]
+}

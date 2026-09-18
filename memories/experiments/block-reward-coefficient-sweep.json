@@ -1,0 +1,130 @@
+{
+  "schema_version": 2,
+  "experiment": "block-reward-coefficient-sweep",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-block-reward-sweep-40p-2026-08-07-13:34",
+      "modified_params": {
+        "block_reward_coef": 0.4,
+        "defensive_opening_prob": 0.3,
+        "start_mistake_rate": 0.7
+      },
+      "goal_hypothesis": "Measure the high coefficient-0.40 endpoint in a controlled block-reward sweep.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.023333333333333334 at step 10240000",
+          "insight": "High block reward nearly eliminated terminal wins."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0 at step 10240000",
+          "insight": "Worst-side performance was zero."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "0.20331668370167136 at step 10240000",
+          "insight": "The block signal dominated diagnostics without translating to evaluation wins."
+        }
+      ],
+      "reasoning": [
+        "Coefficient 0.40 appears to overemphasize blocking at the expense of winning.",
+        "The group sweep holds other logged knobs fixed, supporting coefficient attribution.",
+        "One stochastic run and finite evaluation still limit precision."
+      ],
+      "tags": [
+        "gomoku",
+        "block-reward",
+        "coefficient-0.40",
+        "sweep",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "d6f58cab1784484aa56b29a8f6452e45",
+      "mlruns_path": "mlruns/510583218657647424/d6f58cab1784484aa56b29a8f6452e45",
+      "timestamp": "2026-08-07T17:34:38.529Z"
+    },
+    {
+      "run_name": "ppo-gomoku-block-reward-sweep-25p-2026-08-07-13:35",
+      "modified_params": {
+        "block_reward_coef": 0.25
+      },
+      "goal_hypothesis": "Test moderate coefficient 0.25 relative to high-coefficient control d6f58cab1784484aa56b29a8f6452e45.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.38 at step 10240000",
+          "insight": "Coefficient 0.25 improved aggregate by 0.3567."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.04 at step 10240000",
+          "insight": "Worst-side wins became nonzero and led the sweep."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "0.09063593585352646 at step 10240000",
+          "insight": "A smaller realized block signal coincided with much stronger play."
+        }
+      ],
+      "reasoning": [
+        "Moderate block reward best balanced blocking and winning in this sweep.",
+        "The coefficient-only delta supports a controlled comparison.",
+        "Replication is needed because PPO seeds and evaluation samples can vary."
+      ],
+      "tags": [
+        "gomoku",
+        "block-reward",
+        "coefficient-0.25",
+        "sweep",
+        "controlled-comparison",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "cc8536377bb64a74933df487a678cfa2",
+      "mlruns_path": "mlruns/510583218657647424/cc8536377bb64a74933df487a678cfa2",
+      "timestamp": "2026-08-07T17:35:55.106Z"
+    },
+    {
+      "run_name": "ppo-gomoku-block-reward-sweep-10p-2026-08-07-13:37",
+      "modified_params": {
+        "block_reward_coef": 0.1
+      },
+      "goal_hypothesis": "Test low coefficient 0.10 against moderate coefficient 0.25 under the same curriculum.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.2866666666666667 at step 10240000",
+          "insight": "Low coefficient beat 0.40 but trailed 0.25 by 0.0933."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.03 at step 10240000",
+          "insight": "Worst-side rate also trailed 0.25 slightly."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "0.012365749827526307 at step 10240000",
+          "insight": "The realized shaping signal was much smaller."
+        }
+      ],
+      "reasoning": [
+        "Coefficient 0.10 under-incentivized blocks relative to the sweep optimum.",
+        "The matched sweep supports a non-monotonic coefficient relationship.",
+        "Single runs per coefficient leave seed uncertainty around the apparent 0.25 optimum."
+      ],
+      "tags": [
+        "gomoku",
+        "block-reward",
+        "coefficient-0.10",
+        "sweep",
+        "controlled-comparison",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "bbcbbeda483845c080b754d67dcb8f9e",
+      "mlruns_path": "mlruns/510583218657647424/bbcbbeda483845c080b754d67dcb8f9e",
+      "timestamp": "2026-08-07T17:37:12.806Z"
+    }
+  ]
+}

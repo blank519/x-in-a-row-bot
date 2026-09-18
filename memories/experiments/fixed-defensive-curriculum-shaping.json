@@ -1,0 +1,96 @@
+{
+  "schema_version": 2,
+  "experiment": "fixed-defensive-curriculum-shaping",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-fixed-defensive-curriculum-no-reward-shaping-2026-08-03-10:47",
+      "modified_params": {
+        "defensive_opening_prob": 0.3,
+        "reward_shaping_coef": 0,
+        "starting_learning_rate": 0.0001,
+        "total_timesteps": 15360000
+      },
+      "goal_hypothesis": "Establish the corrected defensive-opening curriculum without potential shaping.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.14833333333333334 at step 15360000",
+          "insight": "The fixed unshaped control ended at only 14.83% average win rate."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.0 at step 15360000",
+          "insight": "At least one evaluated matchup had zero wins."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "0.0 at step 15360000",
+          "insight": "Combined-O was a zero-win matchup with 4.92-move average games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_avg_episode_length",
+          "outcome": "4.92 at step 15360000",
+          "insight": "The combined-O failures were rapid."
+        }
+      ],
+      "reasoning": [
+        "The corrected curriculum alone did not yield robust terminal performance.",
+        "Rapid zero-win combined-O games were a principal weakness.",
+        "The fix is shared by both group runs but is not independently compared to an identical pre-fix control here."
+      ],
+      "tags": [
+        "complete",
+        "fixed-curriculum",
+        "control",
+        "no-shaping"
+      ],
+      "mlruns_run_id": "bdc81446285c44eb914bee0f54a285d6",
+      "mlruns_path": "mlruns/510583218657647424/bdc81446285c44eb914bee0f54a285d6",
+      "timestamp": "2026-08-03T14:47:54.835Z"
+    },
+    {
+      "run_name": "ppo-gomoku-fixed-defensive-curriculum-with-reward-shaping-2026-08-03-10:48",
+      "modified_params": {
+        "reward_shaping_coef": 0.005,
+        "starting_learning_rate": 0.0003
+      },
+      "goal_hypothesis": "Test slight shaping in the corrected defensive curriculum, while disclosing the simultaneous higher starting learning rate.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.20166666666666666 at step 15360000",
+          "insight": "The shaped/higher-LR variant improved average win rate by 5.33 percentage points."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 15360000",
+          "insight": "The floor improved from zero to 1% but remained weak."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.36 at step 15360000",
+          "insight": "Defensive-X rose from 9% to 36%, over 26.07-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "26.07 at step 15360000",
+          "insight": "The defensive matchup remained long while becoming more winnable."
+        }
+      ],
+      "reasoning": [
+        "The shaped variant improved average and defensive-X results over the fixed control.",
+        "Both shaping and starting learning rate changed, so their contributions cannot be separated.",
+        "The remaining 1% floor indicates the improvement did not solve broad robustness."
+      ],
+      "tags": [
+        "complete",
+        "fixed-curriculum",
+        "shaping",
+        "learning-rate-confound"
+      ],
+      "mlruns_run_id": "619c1990a3ba4ee582672ff5de69f3ff",
+      "mlruns_path": "mlruns/510583218657647424/619c1990a3ba4ee582672ff5de69f3ff",
+      "timestamp": "2026-08-03T14:48:49.509Z"
+    }
+  ]
+}

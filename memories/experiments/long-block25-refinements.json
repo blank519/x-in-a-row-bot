@@ -1,0 +1,138 @@
+{
+  "schema_version": 2,
+  "experiment": "long-block25-refinements",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-block-reward-25p-longer-run-2026-08-08-10:34",
+      "modified_params": {
+        "block_reward_coef": 0.25,
+        "defensive_opening_prob": 0.3,
+        "reward_shaping_coef": 0,
+        "total_timesteps": 15360000
+      },
+      "goal_hypothesis": "Establish a 15.36M-step 0.25 block-reward control for shaping and defensive-opening refinements.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.24166666666666667 at step 15360000",
+          "insight": "The long 0.25 control reached 24.17% average win rate."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.07 at step 15360000",
+          "insight": "Its weakest matchup retained 7% wins."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.46 at step 15360000",
+          "insight": "Defensive-X reached 46% over 24.05-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "24.05 at step 15360000",
+          "insight": "Defensive-X games were comparatively long."
+        }
+      ],
+      "reasoning": [
+        "Longer 0.25 block-reward training yielded moderate average and a nonzero robustness floor.",
+        "The strongest evidence was defensive-side competence rather than uniformly high policy performance.",
+        "This baseline changes horizon and learning-rate schedule versus earlier sweeps, so cross-group causal comparisons are confounded."
+      ],
+      "tags": [
+        "complete",
+        "block-reward-0.25",
+        "long-run",
+        "control"
+      ],
+      "mlruns_run_id": "15601a9073d7440f8d2bb2293482f111",
+      "mlruns_path": "mlruns/510583218657647424/15601a9073d7440f8d2bb2293482f111",
+      "timestamp": "2026-08-08T14:35:00.445Z"
+    },
+    {
+      "run_name": "ppo-gomoku-block-reward-25p-longer-run-with-reward-shaping-2026-08-08-10:37",
+      "modified_params": {
+        "reward_shaping_coef": 0.005
+      },
+      "goal_hypothesis": "Test whether slight potential shaping improves long 0.25 block-reward training.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.16333333333333333 at step 15360000",
+          "insight": "Shaping reduced average win rate by 7.83 percentage points versus control."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.03 at step 15360000",
+          "insight": "Worst rate fell from 7% to 3%."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.23 at step 15360000",
+          "insight": "Defensive-X halved from 46% to 23%, with 32.63-move games."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "32.63 at step 15360000",
+          "insight": "Longer defensive games did not translate into more wins."
+        }
+      ],
+      "reasoning": [
+        "Slight shaping was harmful under the long 0.25 block-reward regimen.",
+        "The one-knob comparison and consistent average/floor declines make shaping the leading explanation.",
+        "Single-seed variance remains, and training diagnostics show a slightly different realized mean block reward."
+      ],
+      "tags": [
+        "complete",
+        "block-reward-0.25",
+        "slight-shaping",
+        "dead-end"
+      ],
+      "mlruns_run_id": "f61fb73f62834518920d6aa0b695f294",
+      "mlruns_path": "mlruns/510583218657647424/f61fb73f62834518920d6aa0b695f294",
+      "timestamp": "2026-08-08T14:37:06.802Z"
+    },
+    {
+      "run_name": "ppo-gomoku-block-reward-25p-longer-run-more-defensive-opening-2026-08-08-10:41",
+      "modified_params": {
+        "defensive_opening_prob": 0.4
+      },
+      "goal_hypothesis": "Test whether raising defensive-opening probability from 0.3 to 0.4 improves long 0.25 block-reward training.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.2866666666666667 at step 15360000",
+          "insight": "More openings improved average win rate by 4.5 percentage points."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.06 at step 15360000",
+          "insight": "The floor was 6%, essentially preserving the control's 7%."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.45 at step 15360000",
+          "insight": "Offensive-X improved from 29% to 45%, over 10.56-move games."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "10.56 at step 15360000",
+          "insight": "The offensive-X gain came with slightly shorter games."
+        }
+      ],
+      "reasoning": [
+        "Increasing defensive openings modestly improved aggregate performance without sacrificing the floor materially.",
+        "The gain unexpectedly included offensive-X competence, suggesting broader curriculum benefit.",
+        "The one-knob comparison is strong evidence, but 100-game evaluation and single seeds leave sampling uncertainty."
+      ],
+      "tags": [
+        "complete",
+        "block-reward-0.25",
+        "defensive-opening-0.4",
+        "promising"
+      ],
+      "mlruns_run_id": "bffd63073f574705ab3e10b2d86c45fd",
+      "mlruns_path": "mlruns/510583218657647424/bffd63073f574705ab3e10b2d86c45fd",
+      "timestamp": "2026-08-08T14:41:34.175Z"
+    }
+  ]
+}

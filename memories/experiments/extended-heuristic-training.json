@@ -1,0 +1,88 @@
+{
+  "schema_version": 2,
+  "experiment": "extended-heuristic-training",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-20260718-183401-more-heuristic-games",
+      "modified_params": {
+        "mixed_p_heuristic": 0.7,
+        "mixed_warmup_steps": 3072000,
+        "random_warmup_steps": 2048000,
+        "total_timesteps": 10240000
+      },
+      "goal_hypothesis": "Test whether a long, heuristic-heavy original regimen can retain broad heuristic competence through 10.24M steps.",
+      "results_insights": [
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 10240000",
+          "insight": "The terminal worst-side win rate remained only 1%, revealing a severe robustness floor."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.92 at step 10240000",
+          "insight": "The agent was strong as X against the offensive heuristic."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "0.01 at step 10240000",
+          "insight": "The same checkpoint was almost unable to win as O against the defensive heuristic."
+        }
+      ],
+      "reasoning": [
+        "The heuristic-heavy schedule learned strong performance in favorable policy/side matchups but not balanced robustness.",
+        "The 1% defensive-O result likely drives the 1% worst-win-rate floor despite 92% offensive-X performance.",
+        "Evaluation uses 100 games per side, but stochastic training and the multi-stage schedule prevent attributing the imbalance to one knob."
+      ],
+      "tags": [
+        "complete",
+        "historical-baseline",
+        "heuristic-heavy",
+        "side-imbalance"
+      ],
+      "mlruns_run_id": "3a3858a915ff444e9cf82b9aaaa36704",
+      "mlruns_path": "mlruns/510583218657647424/3a3858a915ff444e9cf82b9aaaa36704",
+      "timestamp": "2026-07-18T22:34:02.173Z"
+    },
+    {
+      "run_name": "ppo-gomoku-2026-07-19-10:28-extended-training",
+      "modified_params": {
+        "loaded_snapshot_count": 21,
+        "loaded_snapshot_max_idx": 21,
+        "total_timesteps": 20480000
+      },
+      "goal_hypothesis": "Continue from 21 snapshots and double the nominal horizon to test whether extended self-play preserves heuristic skill.",
+      "results_insights": [
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.0 at step 10240000",
+          "insight": "The latest logged checkpoint had a zero-win matchup."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.36 at step 10240000",
+          "insight": "Offensive-X fell from the predecessor's 92% to 36% at the comparable logged step."
+        },
+        {
+          "metric": "eval/XInARowHeuristicPolicy/x_win_rate",
+          "outcome": "0.85 at step 10240000",
+          "insight": "The generic heuristic X matchup remained relatively strong but below the predecessor's 94%."
+        }
+      ],
+      "reasoning": [
+        "Extended continuation produced clear forgetting in the formerly strong offensive-X matchup.",
+        "Snapshot-pool continuation likely shifted the training distribution away from preserving heuristic competence.",
+        "Although MLflow status is complete, metrics stop at step 10.24M despite total_timesteps=20.48M, so conclusions apply to the latest observed checkpoint and logging/horizon semantics are a caveat."
+      ],
+      "tags": [
+        "complete",
+        "continuation",
+        "loaded-snapshots",
+        "forgetting",
+        "metric-horizon-caveat"
+      ],
+      "mlruns_run_id": "6a8ebacf0b4e431887eee888dc3ae04b",
+      "mlruns_path": "mlruns/510583218657647424/6a8ebacf0b4e431887eee888dc3ae04b",
+      "timestamp": "2026-07-19T14:28:01.126Z"
+    }
+  ]
+}

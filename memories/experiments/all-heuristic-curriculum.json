@@ -1,0 +1,89 @@
+{
+  "schema_version": 2,
+  "experiment": "all-heuristic-curriculum",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-all-heuristic-games-2026-07-19-22:33",
+      "modified_params": {
+        "ent_coef": 0.01,
+        "mixed_p_heuristics": "[0.2, 0.3, 0.3]",
+        "mixed_p_random": 0.2,
+        "total_timesteps": 10240000
+      },
+      "goal_hypothesis": "Test whether an all-heuristic-heavy 10.24M-step curriculum with revised PPO settings learns broad competence across standard, defensive, and offensive heuristics.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.0033333333333333335 at step 10240000",
+          "insight": "Terminal aggregate performance was effectively zero."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0 at step 10240000",
+          "insight": "At least one evaluated policy/side had no wins."
+        },
+        {
+          "metric": "eval/XInARowHeuristicPolicy/o_win_rate",
+          "outcome": "0.02 at step 10240000",
+          "insight": "The only terminal wins were 2% as O against the generic heuristic; all defensive/offensive side rates were zero."
+        }
+      ],
+      "reasoning": [
+        "The curriculum failed to convert heavy heuristic exposure into useful terminal competence.",
+        "The multi-knob regimen (opponent mixture, duration, entropy) prevents isolating one cause.",
+        "Evaluation sampling at 100 games per side adds uncertainty, but rates near zero make the failure unambiguous."
+      ],
+      "tags": [
+        "gomoku",
+        "all-heuristic",
+        "curriculum",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "7de8435281814b42a4baa3beed4ce961",
+      "mlruns_path": "mlruns/510583218657647424/7de8435281814b42a4baa3beed4ce961",
+      "timestamp": "2026-07-20T02:33:47.646Z"
+    },
+    {
+      "run_name": "ppo-gomoku-all-heuristic-games-try-2-2026-07-20-10:02",
+      "modified_params": {
+        "learning_rate": 0.0001,
+        "mixed_p_heuristics": "[0.3, 0.25, 0.25]"
+      },
+      "goal_hypothesis": "Retry the all-heuristic curriculum with a fixed 0.0001 learning rate and rebalanced heuristic mixture, relative to run 7de8435281814b42a4baa3beed4ce961.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0 at step 10240000",
+          "insight": "The retry won none of its terminal evaluation games, versus 0.00333 aggregate in the predecessor."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0 at step 10240000",
+          "insight": "Worst-case competence remained zero."
+        },
+        {
+          "metric": "eval/XInARowHeuristicPolicy/o_win_rate",
+          "outcome": "0 at step 10240000",
+          "insight": "Even the predecessor's small 2% generic-O success disappeared."
+        }
+      ],
+      "reasoning": [
+        "The fixed learning rate and rebalanced mixture did not rescue the curriculum.",
+        "Because two configuration dimensions changed together, their individual effects are confounded.",
+        "Finite evaluation sampling cannot explain zero wins across every logged side/policy as evidence of broad competence."
+      ],
+      "tags": [
+        "gomoku",
+        "all-heuristic",
+        "retry",
+        "complete",
+        "status-3",
+        "multi-parameter-change"
+      ],
+      "mlruns_run_id": "f044a9791f2d48228213462c76ad94db",
+      "mlruns_path": "mlruns/510583218657647424/f044a9791f2d48228213462c76ad94db",
+      "timestamp": "2026-07-20T14:02:51.965Z"
+    }
+  ]
+}

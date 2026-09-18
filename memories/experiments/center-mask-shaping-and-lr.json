@@ -1,0 +1,160 @@
+{
+  "schema_version": 2,
+  "experiment": "center-mask-shaping-and-lr",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-center-mask-defensive-curriculum-no-reward-shaping-2026-08-04-00:04",
+      "modified_params": {
+        "defensive_opening_prob": 0.3,
+        "reward_shaping_coef": 0,
+        "starting_learning_rate": 0.0001,
+        "total_timesteps": 10240000
+      },
+      "goal_hypothesis": "Establish the unshaped fixed-rate center-masked defensive-curriculum control.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.22833333333333333 at step 10240000",
+          "insight": "Aggregate performance reached 22.8%."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.79 at step 10240000",
+          "insight": "Strong defensive-X results were offset by weak other matchups."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "10.61 at step 10240000",
+          "insight": "The strong defensive-X result occurred over 10.61-move games."
+        },
+        {
+          "metric": "eval/worst_win_rate",
+          "outcome": "0.01 at step 10240000",
+          "insight": "Worst-case robustness remained nearly zero."
+        }
+      ],
+      "reasoning": [
+        "Center masking plus curriculum yielded side-specific defensive strength, not breadth.",
+        "As the first group run, several defining knobs limit comparison with earlier eras.",
+        "Aggregate and per-side metrics may vary with seed and 100-game samples."
+      ],
+      "tags": [
+        "gomoku",
+        "center-mask",
+        "no-shaping",
+        "fixed-lr",
+        "baseline",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "6092600c9b9e4ce2b2aeaa9138807f3a",
+      "mlruns_path": "mlruns/510583218657647424/6092600c9b9e4ce2b2aeaa9138807f3a",
+      "timestamp": "2026-08-04T04:04:54.610Z"
+    },
+    {
+      "run_name": "ppo-gomoku-center-mask-defensive-curriculum-with-reward-shaping-2026-08-04-00:05",
+      "modified_params": {
+        "reward_shaping_coef": 0.005,
+        "starting_learning_rate": 0.0003
+      },
+      "goal_hypothesis": "Test slight shaping with a higher starting rate against unshaped fixed-rate control 6092600c9b9e4ce2b2aeaa9138807f3a.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.19333333333333333 at step 10240000",
+          "insight": "Aggregate fell by 0.035."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.17 at step 10240000",
+          "insight": "The control's 79% defensive-X result did not persist."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "21.82 at step 10240000",
+          "insight": "The weaker defensive-X performance occurred over longer 21.82-move games."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.87 at step 10240000",
+          "insight": "Performance shifted toward offensive-X specialization."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "5.02 at step 10240000",
+          "insight": "The specialized offensive-X wins occurred over short 5.02-move games."
+        }
+      ],
+      "reasoning": [
+        "Shaping plus higher starting rate changed specialization rather than improving breadth.",
+        "Two knobs changed together, so shaping and rate effects are confounded.",
+        "Single-seed training can produce large side-specific variation."
+      ],
+      "tags": [
+        "gomoku",
+        "center-mask",
+        "shaping",
+        "higher-start-lr",
+        "multi-parameter-change",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "8dd08ed542594b19976adb99649996f3",
+      "mlruns_path": "mlruns/510583218657647424/8dd08ed542594b19976adb99649996f3",
+      "timestamp": "2026-08-04T04:05:43.452Z"
+    },
+    {
+      "run_name": "ppo-gomoku-center-mask-defensive-curriculum-with-reward-shaping-annealed-learning-rate-2026-08-04-00:07",
+      "modified_params": {
+        "final_learning_rate": 0.0001,
+        "reward_shaping_coef": 0.005,
+        "starting_learning_rate": 0.0003
+      },
+      "goal_hypothesis": "Replicate the shaped annealed center-mask setting to determine whether its result is stable relative to 8dd08ed542594b19976adb99649996f3.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "0.355 at step 10240000",
+          "insight": "Nominally identical logged settings improved aggregate by 0.1617."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "0.67 at step 10240000",
+          "insight": "Defensive competence was substantially broader than the prior run."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "11.54 at step 10240000",
+          "insight": "The improved defensive-X result occurred over 11.54-move games."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "0.39 at step 10240000",
+          "insight": "Combined-X play also improved, though combined-O remained 1%."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_avg_episode_length",
+          "outcome": "11.33 at step 10240000",
+          "insight": "The combined-X evaluation lasted 11.33 moves on average."
+        }
+      ],
+      "reasoning": [
+        "Large variation between nominally identical shaped settings demonstrates seed sensitivity.",
+        "The run is best treated as a replication, not causal evidence for annealing.",
+        "Worst-side 1% performance still limits robustness despite the aggregate gain."
+      ],
+      "tags": [
+        "gomoku",
+        "center-mask",
+        "shaping",
+        "annealed-lr",
+        "replication",
+        "complete",
+        "status-3"
+      ],
+      "mlruns_run_id": "f22bb1bdb24c42728292484ee442b4a8",
+      "mlruns_path": "mlruns/510583218657647424/f22bb1bdb24c42728292484ee442b4a8",
+      "timestamp": "2026-08-04T04:07:23.858Z"
+    }
+  ]
+}
