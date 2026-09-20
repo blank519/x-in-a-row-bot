@@ -6,7 +6,7 @@ Read `.orca/pipelines/common.md`, the experiment skill, and especially its
 1. Run one planner in the active worktree. Require one work unit per run, a unique
    root-level script copy/run name, baseline ID, target trajectories, and an
    evidence-ready condition.
-2. Dispatch independent runs in VRAM-limited waves. Prefer the active worktree:
+2. Dispatch independent runs in concurrent waves. Prefer the active worktree:
    distinct script copies avoid edit conflicts and all runs share `mlruns/`.
 3. Each implementer verifies configuration, launches durably, confirms real PPO
    progress, and reports run ID/PID/log/baseline/recheck time. Worker completion

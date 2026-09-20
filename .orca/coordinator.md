@@ -16,9 +16,9 @@ gates, and bounded retry loop. This is supervised orchestration, not a handoff.
 
 ## Worker policy
 
-- Default to `--agent pi`, `--worktree current`, and
-  `max_parallel_workers: 3` unless the ticket overrides it.
-- The GPU VRAM footprint is the experiment concurrency limit; use 1 when unsure.
+- Default to `--agent pi`, `--worktree current`, and `max_parallel_workers: 3`
+  unless the ticket overrides it or a measured VRAM preflight proves the batch
+  will not fit.
 - Workers do not dispatch nested workers.
 - Build each task spec from the matching `.orca/roles/<role>.md`, ticket material,
   and only the plan unit/retry feedback that worker needs.
