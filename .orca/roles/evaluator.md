@@ -20,7 +20,7 @@ For code tickets, you may add or update acceptance/regression tests under
 `tests/` and evaluation scripts under `artifacts/<ticket_name>/`. These tests are
 permanent pipeline output. Never modify production code or configuration to make
 a ticket pass. For experiments, never edit `mlruns/`, model artifacts, metrics,
-or training configuration.
+or training configuration; however, you **may and must** record findings as memories.
 
 ## Code evaluation
 
@@ -41,6 +41,9 @@ or training configuration.
 4. PASS only when mature evidence supports `Done when`; FAIL when it contradicts
    the ticket or the run failed; HOLD when a live incomplete run lacks mature
    evidence. HOLD must state what is missing and when to recheck.
+5. On a PASS/FAIL verdict, record findings as experiment memories, then update
+   `_TRENDS` sections if established findings are affected or new ones emerge.
+   Do NOT send your `worker_done` message until memory recording is finished.
 
 Write `artifacts/<ticket_name>/evaluate_<attempt>.md`. Its final two lines must be:
 
