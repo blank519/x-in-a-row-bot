@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "combined-heuristic-shaping",
+  "conclusion": "Combined-only heuristic training remained brittle; removing shaping modestly improved mean, while defense-biased shaping did not. Policy mixture changed versus prior historical groups, limiting cross-group causal comparisons.",
   "runs": [
     {
       "run_name": "ppo-gomoku-combined-heuristic-2026-07-26-11:01",

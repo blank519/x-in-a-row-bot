@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "reproduction-and-forgetting",
+  "conclusion": "The original short regimen reproduced strong mean performance, while snapshot continuation sharply forgot offensive-first play; a fresh longer schedule largely recovered the mean but retained a zero worst side. The continuation changed loading and masking schedules; catastrophic forgetting is observed but its precise cause is confounded. Loading, masking, and schedule changes make these observations regimen-level correlations.",
   "runs": [
     {
       "run_name": "ppo-gomoku-reproduce-og-results-2026-07-20-14:19",

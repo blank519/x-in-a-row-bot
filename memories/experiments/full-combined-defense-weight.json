@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "full-combined-defense-weight",
+  "conclusion": "At full duration, defense weight 1.5 was the useful shaping setting; weight 2 raised mean slightly but reduced worst-side robustness. The 1.5 comparison follows a slight-shaping predecessor and isolates defense weight; stochastic replication is absent.",
   "runs": [
     {
       "run_name": "ppo-gomoku-full-combined-heuristic-run-no-reward-shaping-2026-07-27-22:32",

@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "block-reward-coefficient-sweep",
+  "conclusion": "The controlled sweep located a moderate optimum at 0.25; 0.4 collapsed and 0.1 was intermediate. Single terminal runs per coefficient leave seed variance unmeasured.",
   "runs": [
     {
       "run_name": "ppo-gomoku-block-reward-sweep-40p-2026-08-07-13:34",

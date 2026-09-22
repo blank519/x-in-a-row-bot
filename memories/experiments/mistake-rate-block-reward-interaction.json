@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "mistake-rate-block-reward-interaction",
+  "conclusion": "Without block reward, starting mistake rate 0.7/0.5 beat 0.3; adding block reward 0.5 collapsed performance despite high collected block reward. Run 1eb96584a93f43c2a5e3148ec35b17fe is mislabeled 30p but raw start_mistake_rate is 0.7, so it is not evidence for a 0.3 block-reward cell.",
   "runs": [
     {
       "run_name": "ppo-gomoku-defensive-curriculum-start-mistake-rate-70p-2026-08-04-10:45",

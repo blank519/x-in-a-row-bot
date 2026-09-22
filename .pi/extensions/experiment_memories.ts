@@ -16,7 +16,7 @@ import { StringEnum } from "@earendil-works/pi-ai";
 import { withFileMutationQueue, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type Static } from "typebox";
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const TREND_SECTIONS = [
 	"breakthroughs_and_dead_ends",
 	"correlations_and_patterns",
@@ -51,15 +51,16 @@ export const runEntrySchema = Type.Object({
 });
 
 export const writeExperimentMemorySchema = Type.Object({
-	operation: StringEnum(["append_run", "update_trends_section"] as const),
-	experiment: Type.Optional(Type.String({ description: "Safe experiment/ticket filename stem; required for append_run." })),
+	operation: StringEnum(["append_run", "update_experiment_conclusion", "update_trends_section"] as const),
+	experiment: Type.Optional(Type.String({ description: "Safe experiment/ticket filename stem; required for append_run and update_experiment_conclusion." })),
+	conclusion: Type.Optional(Type.String({ description: "Non-empty curated experiment conclusion; required for append_run and update_experiment_conclusion." })),
 	run: Type.Optional(runEntrySchema),
 	section: Type.Optional(StringEnum(TREND_SECTIONS)),
 	content: Type.Optional(Type.Any({ description: "Non-null JSON-compatible section content; strings must be non-empty." })),
 });
 
 export const queryExperimentMemoriesSchema = Type.Object({
-	mode: StringEnum(["runs", "trends_section"] as const),
+	mode: StringEnum(["runs", "experiment_conclusion", "trends_section"] as const),
 	experiment: Type.Optional(Type.String({ description: "Case-insensitive exact experiment name." })),
 	run_name: Type.Optional(Type.String({ description: "Case-insensitive exact run name." })),
 	modified_param: Type.Optional(Type.String({ description: "Case-insensitive exact modified parameter name." })),
@@ -73,9 +74,10 @@ export const queryExperimentMemoriesSchema = Type.Object({
 export type RunEntry = Static<typeof runEntrySchema>;
 export type WriteExperimentMemoryInput = Static<typeof writeExperimentMemorySchema>;
 export type QueryExperimentMemoriesInput = Static<typeof queryExperimentMemoriesSchema>;
-export interface ExperimentDocument { schema_version: number; experiment: string; runs: RunEntry[] }
+export interface ExperimentDocument { schema_version: number; experiment: string; conclusion: string; runs: RunEntry[] }
 export interface TrendsDocument { schema_version: number; sections: Record<TrendSection, JsonValue> }
 export interface RunMatch { experiment: string; entry: RunEntry }
+export interface CompactEvidencePointer { timestamp: string; run_id?: string; experiment_name?: string }
 
 function abortIfRequested(signal?: AbortSignal): void {
 	if (signal?.aborted) {
@@ -114,25 +116,56 @@ function validateCanonicalTimestamp(value: unknown, path: string): asserts value
 	}
 }
 
-function containsMlflowRunPath(value: unknown): boolean {
-	return typeof value === "string" && /^mlruns\/[^/]+\/[^/]+(?:\/.*)?$/.test(value);
+const FORBIDDEN_TREND_KEYS = new Set(["qualification", "support", "terminal_evidence"]);
+
+function validateCompactEvidencePointer(value: unknown, path: string): asserts value is CompactEvidencePointer {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`${path} must be a compact evidence pointer object.`);
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== Object.prototype && prototype !== null) throw new Error(`${path} must be a plain compact evidence pointer object.`);
+	const pointer = value as Record<string, unknown>;
+	const keys = Object.keys(pointer).sort();
+	const hasRunId = Object.prototype.hasOwnProperty.call(pointer, "run_id");
+	const hasExperimentName = Object.prototype.hasOwnProperty.call(pointer, "experiment_name");
+	if (hasRunId === hasExperimentName) throw new Error(`${path} must contain exactly one evidence locator: run_id or experiment_name.`);
+	const expectedKeys = (hasRunId ? ["run_id", "timestamp"] : ["experiment_name", "timestamp"]).sort();
+	if (keys.length !== expectedKeys.length || keys.some((key, index) => key !== expectedKeys[index])) {
+		throw new Error(`${path} may contain only one locator (run_id or experiment_name) and timestamp; extra evidence keys are not allowed.`);
+	}
+	validateCanonicalTimestamp(pointer.timestamp, `${path}.timestamp`);
+	if (hasRunId) {
+		if (!nonEmpty(pointer.run_id)) throw new Error(`${path}.run_id must be a non-empty string.`);
+	} else {
+		validateExperimentName(pointer.experiment_name, `${path}.experiment_name`);
+	}
 }
 
-function validateJsonValue(value: unknown, path: string, seen = new Set<object>()): asserts value is JsonValue {
+function validateTrendJsonValue(value: unknown, path: string, seen = new Set<object>()): asserts value is JsonValue {
 	if (isJsonScalar(value)) return;
 	if (typeof value !== "object" || value === null) throw new Error(`${path} must be JSON-compatible (objects, arrays, or scalar values).`);
 	if (seen.has(value)) throw new Error(`${path} must not contain cyclic data.`);
 	seen.add(value);
 	if (Array.isArray(value)) {
-		value.forEach((item, index) => validateJsonValue(item, `${path}[${index}]`, seen));
+		value.forEach((item, index) => validateTrendJsonValue(item, `${path}[${index}]`, seen));
 	} else {
 		const prototype = Object.getPrototypeOf(value);
 		if (prototype !== Object.prototype && prototype !== null) throw new Error(`${path} must contain plain JSON objects only.`);
 		const object = value as Record<string, unknown>;
-		if (Object.prototype.hasOwnProperty.call(object, "run_id") || containsMlflowRunPath(object.path)) {
-			validateCanonicalTimestamp(object.timestamp, `${path}.timestamp`);
+		for (const [key, item] of Object.entries(object)) {
+			if (FORBIDDEN_TREND_KEYS.has(key)) throw new Error(`${path}.${key} is forbidden in schema 3 trends; migrate its reasoning to an experiment conclusion.`);
+			if (key === "evidence") {
+				if (!Array.isArray(item) || item.length === 0) throw new Error(`${path}.evidence must be a non-empty list of compact timestamped evidence pointers.`);
+				item.forEach((pointer, index) => validateCompactEvidencePointer(pointer, `${path}.evidence[${index}]`));
+				continue;
+			}
+			if (key === "historical_summaries") {
+				if (!Array.isArray(item)) throw new Error(`${path}.historical_summaries must be a list of evidence-free one-line strings.`);
+				item.forEach((summary, index) => {
+					if (!nonEmpty(summary) || /[\r\n]/.test(summary)) throw new Error(`${path}.historical_summaries[${index}] must be a non-empty single-line string.`);
+				});
+				continue;
+			}
+			validateTrendJsonValue(item, `${path}.${key}`, seen);
 		}
-		for (const [key, item] of Object.entries(object)) validateJsonValue(item, `${path}.${key}`, seen);
 	}
 	seen.delete(value);
 }
@@ -179,15 +212,26 @@ function validateRunEntry(value: unknown, path = "run", requireStoredTags = fals
 	});
 }
 
+function schemaMigrationGuidance(version: unknown): string {
+	return version === 1 || version === 2
+		? ` Schema version ${version} is controlled migration input only; migrate to schema 3 across the complete experiment memory store before reading or writing.`
+		: "";
+}
+
 function validateExperimentDocument(value: unknown, expectedExperiment?: string): asserts value is ExperimentDocument {
 	if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("experiment memory must be a JSON object.");
 	const document = value as Record<string, unknown>;
 	if (document.schema_version !== SCHEMA_VERSION) {
-		const guidance = document.schema_version === 1 ? " Schema version 1 is legacy migration input; migrate to schema 2 before reading or writing." : "";
-		throw new Error(`unsupported experiment memory schema_version; expected ${SCHEMA_VERSION}.${guidance}`);
+		throw new Error(`unsupported experiment memory schema_version; expected ${SCHEMA_VERSION}.${schemaMigrationGuidance(document.schema_version)}`);
+	}
+	const keys = Object.keys(document).sort();
+	const expectedKeys = ["conclusion", "experiment", "runs", "schema_version"].sort();
+	if (keys.length !== expectedKeys.length || keys.some((key, index) => key !== expectedKeys[index])) {
+		throw new Error("experiment memory must contain exactly schema_version, experiment, conclusion, and runs.");
 	}
 	validateExperimentName(document.experiment, "stored experiment");
 	if (expectedExperiment !== undefined && document.experiment !== expectedExperiment) throw new Error(`stored experiment identity ${JSON.stringify(document.experiment)} does not match filename ${JSON.stringify(expectedExperiment)}.`);
+	if (!nonEmpty(document.conclusion)) throw new Error("experiment memory conclusion must be a non-empty string.");
 	if (!Array.isArray(document.runs)) throw new Error("experiment memory runs must be an array.");
 	document.runs.forEach((run, index) => validateRunEntry(run, `runs[${index}]`, true));
 }
@@ -209,15 +253,18 @@ function validateTrendsDocument(value: unknown): asserts value is TrendsDocument
 	if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("trends memory must be a JSON object.");
 	const document = value as Record<string, unknown>;
 	if (document.schema_version !== SCHEMA_VERSION) {
-		const guidance = document.schema_version === 1 ? " Schema version 1 is legacy migration input; migrate to schema 2 before reading or writing." : "";
-		throw new Error(`unsupported trends memory schema_version; expected ${SCHEMA_VERSION}.${guidance}`);
+		throw new Error(`unsupported trends memory schema_version; expected ${SCHEMA_VERSION}.${schemaMigrationGuidance(document.schema_version)}`);
+	}
+	const documentKeys = Object.keys(document).sort();
+	if (documentKeys.length !== 2 || documentKeys[0] !== "schema_version" || documentKeys[1] !== "sections") {
+		throw new Error("trends memory must contain exactly schema_version and sections.");
 	}
 	if (typeof document.sections !== "object" || document.sections === null || Array.isArray(document.sections)) throw new Error("trends memory sections must be an object.");
 	const sections = document.sections as Record<string, unknown>;
 	const keys = Object.keys(sections).sort();
 	const expected = [...TREND_SECTIONS].sort();
 	if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) throw new Error(`trends memory must contain exactly these sections: ${TREND_SECTIONS.join(", ")}.`);
-	for (const section of TREND_SECTIONS) validateJsonValue(sections[section], `sections.${section}`);
+	for (const section of TREND_SECTIONS) validateTrendJsonValue(sections[section], `sections.${section}`);
 }
 
 function containedBy(parent: string, child: string): boolean {
@@ -335,18 +382,19 @@ function cloneRun(run: RunEntry): RunEntry {
 	return entry;
 }
 
-export async function writeExperimentMemory(input: WriteExperimentMemoryInput, cwd: string, signal?: AbortSignal): Promise<{ path: string; operation: string; experiment?: string; entry?: RunEntry; section?: TrendSection; sectionContent?: JsonValue }> {
+export async function writeExperimentMemory(input: WriteExperimentMemoryInput, cwd: string, signal?: AbortSignal): Promise<{ path: string; operation: string; experiment?: string; conclusion?: string; entry?: RunEntry; section?: TrendSection; sectionContent?: JsonValue }> {
 	abortIfRequested(signal);
 	if (input.operation === "append_run") {
-		if (input.section !== undefined || input.content !== undefined) throw new Error("append_run accepts only experiment and run payload fields.");
+		if (input.section !== undefined || input.content !== undefined) throw new Error("append_run accepts only experiment, conclusion, and run payload fields.");
 		validateExperimentName(input.experiment);
+		if (!nonEmpty(input.conclusion)) throw new Error("append_run requires a non-empty conclusion.");
 		validateRunEntry(input.run);
 		const root = await storeRootForWrite(cwd);
 		const target = targetPath(root, `${input.experiment}.json`);
 		return withFileMutationQueue(target, async () => {
 			abortIfRequested(signal);
 			await rejectSymlinkTarget(target);
-			let current: ExperimentDocument = { schema_version: SCHEMA_VERSION, experiment: input.experiment!, runs: [] };
+			let current: ExperimentDocument = { schema_version: SCHEMA_VERSION, experiment: input.experiment!, conclusion: input.conclusion!, runs: [] };
 			try {
 				await stat(target);
 				const parsed = await readJson(target, "experiment memory");
@@ -356,17 +404,34 @@ export async function writeExperimentMemory(input: WriteExperimentMemoryInput, c
 				if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 			}
 			const entry = cloneRun(input.run!);
-			const next: ExperimentDocument = { schema_version: SCHEMA_VERSION, experiment: current.experiment, runs: [...current.runs, entry] };
+			const next: ExperimentDocument = { schema_version: SCHEMA_VERSION, experiment: current.experiment, conclusion: input.conclusion!, runs: [...current.runs, entry] };
 			validateExperimentDocument(next, input.experiment);
 			await atomicWrite(target, next, signal);
-			return { path: target, operation: input.operation, experiment: input.experiment, entry };
+			return { path: target, operation: input.operation, experiment: input.experiment, conclusion: input.conclusion, entry };
+		});
+	}
+	if (input.operation === "update_experiment_conclusion") {
+		if (input.run !== undefined || input.section !== undefined || input.content !== undefined) throw new Error("update_experiment_conclusion accepts only experiment and conclusion payload fields.");
+		validateExperimentName(input.experiment);
+		if (!nonEmpty(input.conclusion)) throw new Error("update_experiment_conclusion requires a non-empty conclusion.");
+		const root = await storeRootForWrite(cwd);
+		const target = targetPath(root, `${input.experiment}.json`);
+		return withFileMutationQueue(target, async () => {
+			abortIfRequested(signal);
+			await rejectSymlinkTarget(target);
+			const parsed = await readJson(target, "experiment memory");
+			validateExperimentDocument(parsed, input.experiment);
+			const next: ExperimentDocument = { schema_version: SCHEMA_VERSION, experiment: parsed.experiment, conclusion: input.conclusion!, runs: parsed.runs };
+			validateExperimentDocument(next, input.experiment);
+			await atomicWrite(target, next, signal);
+			return { path: target, operation: input.operation, experiment: input.experiment, conclusion: input.conclusion };
 		});
 	}
 	if (input.operation === "update_trends_section") {
-		if (input.experiment !== undefined || input.run !== undefined) throw new Error("update_trends_section accepts only section and content payload fields.");
+		if (input.experiment !== undefined || input.conclusion !== undefined || input.run !== undefined) throw new Error("update_trends_section accepts only section and content payload fields.");
 		if (!isTrendSection(input.section)) throw new Error(`section must be one of: ${TREND_SECTIONS.join(", ")}.`);
 		if (input.content === undefined || input.content === null || (typeof input.content === "string" && !nonEmpty(input.content))) throw new Error("content must be non-null JSON-compatible data; string content must be non-empty.");
-		validateJsonValue(input.content, "content");
+		validateTrendJsonValue(input.content, "content");
 		const root = await storeRootForWrite(cwd);
 		const target = targetPath(root, "_TRENDS.json");
 		return withFileMutationQueue(target, async () => {
@@ -388,7 +453,7 @@ export async function writeExperimentMemory(input: WriteExperimentMemoryInput, c
 			return { path: target, operation: input.operation, section: input.section, sectionContent };
 		});
 	}
-	throw new Error("operation must be append_run or update_trends_section.");
+	throw new Error("operation must be append_run, update_experiment_conclusion, or update_trends_section.");
 }
 
 function equalName(left: string, right: string): boolean {
@@ -423,8 +488,26 @@ function matchesRun(input: QueryExperimentMemoriesInput, experiment: string, run
 	return true;
 }
 
-export async function queryExperimentMemories(input: QueryExperimentMemoriesInput, cwd: string, signal?: AbortSignal): Promise<{ mode: "runs"; root: string; matches: RunMatch[] } | { mode: "trends_section"; path: string; section: TrendSection; content: JsonValue }> {
+export async function queryExperimentMemories(input: QueryExperimentMemoriesInput, cwd: string, signal?: AbortSignal): Promise<{ mode: "runs"; root: string; matches: RunMatch[] } | { mode: "experiment_conclusion"; path: string; experiment: string; conclusion: string } | { mode: "trends_section"; path: string; section: TrendSection; content: JsonValue }> {
 	abortIfRequested(signal);
+	if (input.mode === "experiment_conclusion") {
+		for (const field of ["run_name", "modified_param", "modified_param_value", "metric", "outcome", "tag", "section"] as const) {
+			if (input[field] !== undefined) throw new Error(`experiment_conclusion mode does not accept ${field}.`);
+		}
+		validateExperimentName(input.experiment);
+		const root = await storeRootForRead(cwd);
+		if (!root) throw new Error(`Experiment memory ${JSON.stringify(input.experiment)} is missing because the experiment memory store does not exist.`);
+		const entries = await readdir(root, { withFileTypes: true });
+		const candidates = entries.filter((entry) => entry.name.endsWith(".json") && entry.name.toLocaleLowerCase() === `${input.experiment}.json`.toLocaleLowerCase());
+		if (candidates.length === 0) throw new Error(`Experiment memory ${JSON.stringify(input.experiment)} does not exist.`);
+		if (candidates.length > 1) throw new Error(`Experiment memory name ${JSON.stringify(input.experiment)} is ambiguous under case-insensitive lookup.`);
+		const filenameExperiment = candidates[0].name.slice(0, -5);
+		const target = targetPath(root, candidates[0].name);
+		await rejectSymlinkTarget(target);
+		const parsed = await readJson(target, "experiment memory");
+		validateExperimentDocument(parsed, filenameExperiment);
+		return { mode: "experiment_conclusion", path: target, experiment: parsed.experiment, conclusion: parsed.conclusion };
+	}
 	if (input.mode === "trends_section") {
 		for (const field of ["experiment", "run_name", "modified_param", "modified_param_value", "metric", "outcome", "tag"] as const) {
 			if (input[field] !== undefined) throw new Error(`trends_section mode does not accept ${field}.`);
@@ -438,7 +521,7 @@ export async function queryExperimentMemories(input: QueryExperimentMemoriesInpu
 		validateTrendsDocument(parsed);
 		return { mode: "trends_section", path: target, section: input.section, content: parsed.sections[input.section] };
 	}
-	if (input.mode !== "runs") throw new Error("mode must be runs or trends_section.");
+	if (input.mode !== "runs") throw new Error("mode must be runs, experiment_conclusion, or trends_section.");
 	validateRunQuery(input);
 	const root = await storeRootForRead(cwd);
 	if (!root) return { mode: "runs", root: resolve(cwd, "memories", "experiments"), matches: [] };
@@ -465,14 +548,16 @@ export default function experimentMemoriesExtension(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "write_experiment_memory",
 		label: "Write Experiment Memory",
-		description: "Append a validated evidence-linked run analysis without clobbering prior entries, or transactionally replace one canonical trends section. Strict JSON schema version 2 is stored under memories/experiments.",
-		promptSnippet: "Append validated run analysis or update one canonical experiment-trends section",
+		description: "Append a validated evidence-linked run analysis with its experiment conclusion, update an existing conclusion, or transactionally replace one canonical trends section. Strict JSON schema version 3 is stored under memories/experiments.",
+		promptSnippet: "Append validated run analysis, update an experiment conclusion, or update one canonical trends section",
 		parameters: writeExperimentMemorySchema,
 		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
 			const details = await writeExperimentMemory(params, ctx.cwd, signal);
 			const text = details.operation === "append_run"
-				? `Appended run ${JSON.stringify(details.entry!.run_name)} to experiment ${JSON.stringify(details.experiment)} at ${details.path}.`
-				: `Updated trends section ${JSON.stringify(details.section)} at ${details.path}; all other sections were preserved.`;
+				? `Appended run ${JSON.stringify(details.entry!.run_name)} and refreshed the conclusion for experiment ${JSON.stringify(details.experiment)} at ${details.path}.`
+				: details.operation === "update_experiment_conclusion"
+					? `Updated the conclusion for experiment ${JSON.stringify(details.experiment)} at ${details.path}; existing runs were preserved.`
+					: `Updated trends section ${JSON.stringify(details.section)} at ${details.path}; all other sections were preserved.`;
 			return { content: [{ type: "text" as const, text }], details };
 		},
 	});
@@ -480,14 +565,16 @@ export default function experimentMemoriesExtension(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "query_experiment_memories",
 		label: "Query Experiment Memories",
-		description: "Query validated experiment run entries using case-insensitive exact AND-composed experiment/run/parameter/metric/outcome/tag filters, or retrieve exactly one canonical trends section. Read-only queries never create the store.",
-		promptSnippet: "Query structured experiment-run memories or one canonical trends section",
+		description: "Query validated experiment run entries using case-insensitive exact AND-composed filters, retrieve one experiment conclusion without its runs, or retrieve exactly one canonical trends section. Read-only queries never create the store.",
+		promptSnippet: "Query structured experiment runs, one conclusion, or one canonical trends section",
 		parameters: queryExperimentMemoriesSchema,
 		async execute(_toolCallId, params, signal, _onUpdate, ctx) {
 			const details = await queryExperimentMemories(params, ctx.cwd, signal);
 			const text = details.mode === "runs"
 				? `Found ${details.matches.length} matching experiment run entr${details.matches.length === 1 ? "y" : "ies"}.`
-				: `Retrieved trends section ${JSON.stringify(details.section)} from ${details.path}.`;
+				: details.mode === "experiment_conclusion"
+					? `Retrieved the conclusion for experiment ${JSON.stringify(details.experiment)} from ${details.path}.`
+					: `Retrieved trends section ${JSON.stringify(details.section)} from ${details.path}.`;
 			return { content: [{ type: "text" as const, text }], details };
 		},
 	});

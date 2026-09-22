@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "raise_warmup_performance",
+  "conclusion": "Full heuristic-only warmup with block reward 0.15 produced the strongest robust model; lower/higher nearby coefficients and mixture schedules did not surpass it. The 0.25 attempt and all three conservative attempt-4 mixtures are status-1 incomplete and cannot be ranked as terminal results; attempt-2 and mixture waves also changed mistake or mixture schedules. The 0.1/0.25/0.4 sweep is controlled but the 0.15 result uses a later, longer warmup configuration. Champion means best among the 61 recorded MLflow runs under the stated heuristic-evaluation criterion, not proven superiority against learned agents or across seeds. It is a single completed run, and its run name date differs from the actual MLflow September 2026 start.",
   "runs": [
     {
       "run_name": "ppo-gomoku-warmup-block15-15m-2026-08-18",

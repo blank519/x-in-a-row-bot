@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "defensive-opening-curriculum",
+  "conclusion": "The initial opening-curriculum variants did not consistently improve robustness; the no-opening annealed/shaped variant had the best mean in this group. Several knobs and an implementation defect later fixed confound this phase; it should not estimate the corrected curriculum.",
   "runs": [
     {
       "run_name": "ppo-gomoku-defensive-curriculum-no-reward-shaping-2026-08-01-13:03",

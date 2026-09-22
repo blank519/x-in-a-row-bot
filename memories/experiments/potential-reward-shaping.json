@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "potential-reward-shaping",
+  "conclusion": "Unshaped training produced the best controlled terminal mean; shaping strength and defensive weighting failed to improve the weakest matchup. The later more-metrics runs used shorter/masked schedules, so only the first shaped/unshaped pair is close to controlled. Do not generalize a universal negative effect because schedules, defense weights, and curricula vary.",
   "runs": [
     {
       "run_name": "ppo-gomoku-reward-shaping-2026-07-21-17:16",

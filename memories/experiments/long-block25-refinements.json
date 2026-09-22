@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "long-block25-refinements",
+  "conclusion": "At 0.25 and 15.36M steps, slight shaping hurt while opening probability 0.4 modestly improved the mean. Terminal-only comparisons are unreplicated and differ from the 10.24M sweep in duration.",
   "runs": [
     {
       "run_name": "ppo-gomoku-block-reward-25p-longer-run-2026-08-08-10:34",

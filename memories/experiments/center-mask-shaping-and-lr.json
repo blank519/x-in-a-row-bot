@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "center-mask-shaping-and-lr",
+  "conclusion": "Annealed learning rate plus slight shaping was a meaningful recovery over both center-masked controls. The annealed run differs from the unshaped control in shaping and learning-rate schedule, while comparison to the shaped fixed-rate run more directly supports annealing.",
   "runs": [
     {
       "run_name": "ppo-gomoku-center-mask-defensive-curriculum-no-reward-shaping-2026-08-04-00:04",

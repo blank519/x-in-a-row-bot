@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "all-heuristic-curriculum",
+  "conclusion": "Substantially greater/all-heuristic exposure was a dead end in both variants. The retry also changed learning rate and heuristic mixture, so failure is attributable to the regimen, not one isolated knob.",
   "runs": [
     {
       "run_name": "ppo-gomoku-all-heuristic-games-2026-07-19-22:33",

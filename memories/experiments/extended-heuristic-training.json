@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "extended-heuristic-training",
+  "conclusion": "Early heuristic-heavy training was highly asymmetric and extension did not repair the weak side. The second run loaded 21 snapshots and changed duration, so this is continuation evidence rather than an isolated duration test.",
   "runs": [
     {
       "run_name": "ppo-gomoku-20260718-183401-more-heuristic-games",

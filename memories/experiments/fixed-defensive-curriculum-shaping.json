@@ -1,6 +1,7 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "experiment": "fixed-defensive-curriculum-shaping",
+  "conclusion": "After the curriculum fix, slight shaping improved the pair but absolute robustness remained low. Shaping and starting learning rate both changed, so their contributions are not separated.",
   "runs": [
     {
       "run_name": "ppo-gomoku-fixed-defensive-curriculum-no-reward-shaping-2026-08-03-10:47",
