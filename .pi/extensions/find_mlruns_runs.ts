@@ -14,6 +14,9 @@ import { Type, type Static } from "typebox";
 
 const PARAMETER_OPERATORS = ["eq", "ne", "contains", "gt", "gte", "lt", "lte"] as const;
 const METRIC_OPERATORS = ["eq", "ne", "gt", "gte", "lt", "lte"] as const;
+const METRIC_FILTER_HISTORY_MODES = ["latest", "all", "recent"] as const;
+const METRIC_RANK_MODES = ["latest", "max", "min", "recent_mean"] as const;
+const METRIC_HISTORY_MODES = ["all", "recent"] as const;
 const SORT_FIELDS = ["start_time", "end_time", "run_name", "run_id"] as const;
 const SORT_ORDERS = ["asc", "desc"] as const;
 export const MAX_RESULTS = 100;
@@ -21,6 +24,8 @@ export const DEFAULT_RESULTS = 10;
 
 type ParameterOperator = (typeof PARAMETER_OPERATORS)[number];
 type MetricOperator = (typeof METRIC_OPERATORS)[number];
+type MetricFilterHistoryMode = (typeof METRIC_FILTER_HISTORY_MODES)[number];
+type MetricRankMode = (typeof METRIC_RANK_MODES)[number];
 type SortOrder = (typeof SORT_ORDERS)[number];
 type SortField = (typeof SORT_FIELDS)[number];
 
@@ -34,6 +39,8 @@ const metricFilterSchema = Type.Object({
 	key: Type.String({ description: "Slash-normalized metric key, or an unambiguous normalized alias." }),
 	operator: Type.Optional(StringEnum(METRIC_OPERATORS, { description: "Numeric comparison operator (default: eq)." })),
 	value: Type.Number(),
+	historyMode: Type.Optional(StringEnum(METRIC_FILTER_HISTORY_MODES, { description: "Sample scope: latest (default), all valid samples, or the final recentCount valid samples. History scopes pass when any selected sample matches." })),
+	recentCount: Type.Optional(Type.Integer({ minimum: 1, description: "Positive sample count required only when historyMode is recent." })),
 });
 
 export const findMlrunsRunsSchema = Type.Object({
@@ -47,9 +54,15 @@ export const findMlrunsRunsSchema = Type.Object({
 	endedAfter: Type.Optional(Type.Union([Type.String(), Type.Number()], { description: "Inclusive ISO/date or Unix-seconds/milliseconds lower bound." })),
 	endedBefore: Type.Optional(Type.Union([Type.String(), Type.Number()], { description: "Inclusive ISO/date or Unix-seconds/milliseconds upper bound." })),
 	parameterFilters: Type.Optional(Type.Array(parameterFilterSchema, { description: "AND-composed parameter predicates." })),
-	metricFilters: Type.Optional(Type.Array(metricFilterSchema, { description: "AND-composed predicates on each metric file's latest valid sample." })),
-	rankByMetric: Type.Optional(Type.String({ description: "Metric key to rank by; runs missing it are excluded." })),
+	metricFilters: Type.Optional(Type.Array(metricFilterSchema, { description: "AND-composed metric predicates; each defaults to existential matching of the latest valid sample only." })),
+	rankByMetric: Type.Optional(Type.String({ description: "Metric key to rank by; runs missing a valid sample are excluded." })),
+	rankMode: Type.Optional(StringEnum(METRIC_RANK_MODES, { description: "Ranking score: latest (default), whole-history max/min, or recent_mean over rankRecentCount valid samples." })),
+	rankRecentCount: Type.Optional(Type.Integer({ minimum: 1, description: "Positive sample count required only for rankMode recent_mean." })),
 	rankOrder: Type.Optional(StringEnum(SORT_ORDERS, { description: "Metric ranking order (default: desc)." })),
+	returnMetrics: Type.Optional(Type.Array(Type.String(), { description: "Returned metric keys/aliases only; absent returns all, empty returns none. Does not affect matching or ranking." })),
+	returnParameters: Type.Optional(Type.Array(Type.String(), { description: "Returned parameter keys/aliases only; absent returns all, empty returns none. Does not affect matching." })),
+	metricHistory: Type.Optional(StringEnum(METRIC_HISTORY_MODES, { description: "Additionally return/display all or recent histories for returned metric keys; absent preserves latest-only output." })),
+	metricHistoryLimit: Type.Optional(Type.Integer({ minimum: 1, description: "Positive sample count required only when metricHistory is recent." })),
 	latest: Type.Optional(Type.Integer({ minimum: 1, maximum: MAX_RESULTS, description: "Preselect this many newest matching runs before optional ranking/sorting." })),
 	sort: Type.Optional(Type.Object({
 		by: StringEnum(SORT_FIELDS, { description: "Metadata sort field (ignored when rankByMetric is set)." }),
@@ -72,6 +85,7 @@ export interface MlrunsRunResult {
 	endTime: string | null;
 	parameters: Record<string, string>;
 	metrics: Record<string, MetricSample>;
+	metricHistories?: Record<string, MetricSample[]>;
 	warnings: string[];
 }
 export interface FindMlrunsRunsDetails {
@@ -86,6 +100,7 @@ export interface FindMlrunsRunsDetails {
 interface LoadedRun extends MlrunsRunResult {
 	parameterMap: Map<string, string>;
 	metricMap: Map<string, MetricSample>;
+	metricHistoryMap: Map<string, MetricSample[]>;
 }
 
 function abortIfRequested(signal?: AbortSignal): void {
@@ -170,10 +185,11 @@ function relativeKey(root: string, file: string): string {
 	return relative(root, file).split(sep).join("/");
 }
 
-function parseMetricHistory(text: string): MetricSample | undefined {
-	const lines = text.split(/\r?\n/);
-	for (let index = lines.length - 1; index >= 0; index--) {
-		const line = lines[index].trim();
+function parseMetricHistory(text: string, signal?: AbortSignal): MetricSample[] {
+	const samples: MetricSample[] = [];
+	for (const rawLine of text.split(/\r?\n/)) {
+		abortIfRequested(signal);
+		const line = rawLine.trim();
 		if (!line) continue;
 		const parts = line.split(/\s+/);
 		if (parts.length !== 3) continue;
@@ -181,10 +197,10 @@ function parseMetricHistory(text: string): MetricSample | undefined {
 		const value = Number(parts[1]);
 		const step = Number(parts[2]);
 		if (Number.isFinite(timestamp) && Number.isFinite(value) && Number.isFinite(step)) {
-			return { value, timestamp, step };
+			samples.push({ value, timestamp, step });
 		}
 	}
-	return undefined;
+	return samples;
 }
 
 function sortedObject<T>(map: Map<string, T>): Record<string, T> {
@@ -199,6 +215,7 @@ async function loadRun(runDirectory: string, directoryRunId: string, experimentI
 	const warnings: string[] = [];
 	const parameterMap = new Map<string, string>();
 	const metricMap = new Map<string, MetricSample>();
+	const metricHistoryMap = new Map<string, MetricSample[]>();
 
 	const paramsRoot = join(runDirectory, "params");
 	for (const file of await recursiveFiles(paramsRoot, signal)) {
@@ -212,9 +229,11 @@ async function loadRun(runDirectory: string, directoryRunId: string, experimentI
 		const key = relativeKey(metricsRoot, file);
 		const value = await readText(file);
 		if (value === undefined) { warnings.push(`Unreadable metric: ${key}`); continue; }
-		const sample = parseMetricHistory(value);
-		if (sample) metricMap.set(key, sample);
-		else warnings.push(`Metric has no valid samples: ${key}`);
+		const samples = parseMetricHistory(value, signal);
+		if (samples.length) {
+			metricHistoryMap.set(key, samples);
+			metricMap.set(key, samples[samples.length - 1]);
+		} else warnings.push(`Metric has no valid samples: ${key}`);
 	}
 
 	const tagName = (await readText(join(runDirectory, "tags", "mlflow.runName")))?.trim();
@@ -238,6 +257,7 @@ async function loadRun(runDirectory: string, directoryRunId: string, experimentI
 		warnings,
 		parameterMap,
 		metricMap,
+		metricHistoryMap,
 	};
 }
 
@@ -284,15 +304,117 @@ function passesParameter(run: LoadedRun, filter: Static<typeof parameterFilterSc
 	return Number.isFinite(left) && Number.isFinite(right) && compareNumber(left, operator, right);
 }
 
-function passesMetric(run: LoadedRun, filter: Static<typeof metricFilterSchema>): boolean {
-	const key = resolveKey(run.metricMap, filter.key, "metric", run.runId);
-	if (!key) return false;
-	return compareNumber(run.metricMap.get(key)!.value, (filter.operator ?? "eq") as MetricOperator, filter.value);
+function finalSamples(samples: MetricSample[], count: number): MetricSample[] {
+	return samples.slice(Math.max(0, samples.length - count));
 }
 
-function metricFor(run: LoadedRun, selector: string): MetricSample | undefined {
-	const key = resolveKey(run.metricMap, selector, "metric", run.runId);
-	return key ? run.metricMap.get(key) : undefined;
+function passesMetric(run: LoadedRun, filter: Static<typeof metricFilterSchema>): boolean {
+	const key = resolveKey(run.metricHistoryMap, filter.key, "metric", run.runId);
+	if (!key) return false;
+	const historyMode = (filter.historyMode ?? "latest") as MetricFilterHistoryMode;
+	const history = run.metricHistoryMap.get(key)!;
+	const samples = historyMode === "latest"
+		? history.slice(-1)
+		: historyMode === "recent"
+			? finalSamples(history, filter.recentCount!)
+			: history;
+	const operator = (filter.operator ?? "eq") as MetricOperator;
+	return samples.some((sample) => compareNumber(sample.value, operator, filter.value));
+}
+
+function rankScore(run: LoadedRun, selector: string, mode: MetricRankMode, recentCount: number | undefined): number | undefined {
+	const key = resolveKey(run.metricHistoryMap, selector, "metric", run.runId);
+	if (!key) return undefined;
+	const history = run.metricHistoryMap.get(key)!;
+	if (mode === "latest") return history[history.length - 1].value;
+	if (mode === "max" || mode === "min") {
+		let result = history[0].value;
+		for (let index = 1; index < history.length; index++) {
+			result = mode === "max" ? Math.max(result, history[index].value) : Math.min(result, history[index].value);
+		}
+		return result;
+	}
+	const recent = finalSamples(history, recentCount!);
+	return recent.reduce((sum, sample) => sum + sample.value, 0) / recent.length;
+}
+
+function requirePositiveInteger(value: number | undefined, field: string): void {
+	if (value === undefined || !Number.isInteger(value) || value < 1) {
+		throw new Error(`${field} must be a positive integer.`);
+	}
+}
+
+function validateHistoryOptions(input: FindMlrunsRunsInput): void {
+	for (const [index, filter] of (input.metricFilters ?? []).entries()) {
+		const field = `metricFilters[${index}]`;
+		const mode = filter.historyMode ?? "latest";
+		if (!(METRIC_FILTER_HISTORY_MODES as readonly string[]).includes(mode)) {
+			throw new Error(`${field}.historyMode must be one of: ${METRIC_FILTER_HISTORY_MODES.join(", ")}.`);
+		}
+		if (mode === "recent") requirePositiveInteger(filter.recentCount, `${field}.recentCount`);
+		else if (filter.recentCount !== undefined) {
+			throw new Error(`${field}.recentCount is only valid when historyMode is "recent".`);
+		}
+	}
+
+	if (input.rankMode !== undefined && !input.rankByMetric) {
+		throw new Error("rankMode requires rankByMetric.");
+	}
+	if (input.rankByMetric) {
+		const mode = input.rankMode ?? "latest";
+		if (!(METRIC_RANK_MODES as readonly string[]).includes(mode)) {
+			throw new Error(`rankMode must be one of: ${METRIC_RANK_MODES.join(", ")}.`);
+		}
+		if (mode === "recent_mean") requirePositiveInteger(input.rankRecentCount, "rankRecentCount");
+		else if (input.rankRecentCount !== undefined) {
+			throw new Error('rankRecentCount is only valid when rankMode is "recent_mean".');
+		}
+	} else if (input.rankRecentCount !== undefined) {
+		throw new Error("rankRecentCount requires rankByMetric and rankMode \"recent_mean\".");
+	}
+
+	if (input.metricHistory !== undefined && !(METRIC_HISTORY_MODES as readonly string[]).includes(input.metricHistory)) {
+		throw new Error(`metricHistory must be one of: ${METRIC_HISTORY_MODES.join(", ")}.`);
+	}
+	if (input.metricHistory === "recent") requirePositiveInteger(input.metricHistoryLimit, "metricHistoryLimit");
+	else if (input.metricHistoryLimit !== undefined) {
+		throw new Error('metricHistoryLimit is only valid when metricHistory is "recent".');
+	}
+}
+
+function projectedKeys<T>(map: Map<string, T>, selectors: string[] | undefined, kind: string, runId: string, warnings: string[]): string[] {
+	if (selectors === undefined) return [...map.keys()].sort();
+	const keys = new Set<string>();
+	for (const selector of selectors) {
+		const key = resolveKey(map, selector, kind, runId);
+		if (key) keys.add(key);
+		else warnings.push(`Requested ${kind} "${selector}" was not found in run ${runId}.`);
+	}
+	return [...keys].sort();
+}
+
+function projectRun(run: LoadedRun, input: FindMlrunsRunsInput): MlrunsRunResult {
+	const warnings = [...run.warnings];
+	const parameterKeys = projectedKeys(run.parameterMap, input.returnParameters, "parameter", run.runId, warnings);
+	const metricKeys = projectedKeys(run.metricHistoryMap, input.returnMetrics, "metric", run.runId, warnings);
+	const parameters = new Map<string, string>(parameterKeys.map((key) => [key, run.parameterMap.get(key)!] as const));
+	const metrics = new Map<string, MetricSample>(metricKeys.map((key) => [key, run.metricMap.get(key)!] as const));
+	const { parameterMap: _parameterMap, metricMap: _metricMap, metricHistoryMap: _metricHistoryMap, ...publicRun } = run;
+	const projected: MlrunsRunResult = {
+		...publicRun,
+		parameters: sortedObject(parameters),
+		metrics: sortedObject(metrics),
+		warnings,
+	};
+	if (input.metricHistory) {
+		const histories = new Map<string, MetricSample[]>();
+		for (const key of metricKeys) {
+			const history = run.metricHistoryMap.get(key)!;
+			histories.set(key, input.metricHistory === "recent" ? finalSamples(history, input.metricHistoryLimit!) : [...history]);
+		}
+		projected.metricHistories = sortedObject(histories);
+	}
+	return projected;
 }
 
 function deterministicCompare(a: LoadedRun, b: LoadedRun, field: SortField, order: SortOrder): number {
@@ -308,6 +430,7 @@ function deterministicCompare(a: LoadedRun, b: LoadedRun, field: SortField, orde
 
 export async function queryMlrunsRuns(input: FindMlrunsRunsInput, cwd: string, signal?: AbortSignal): Promise<{ mlrunsPath: string; runs: MlrunsRunResult[] }> {
 	abortIfRequested(signal);
+	validateHistoryOptions(input);
 	const limit = input.limit ?? input.latest ?? DEFAULT_RESULTS;
 	if (!Number.isInteger(limit) || limit < 1 || limit > MAX_RESULTS) throw new Error(`limit must be an integer from 1 to ${MAX_RESULTS}.`);
 	if (input.latest !== undefined && (!Number.isInteger(input.latest) || input.latest < 1 || input.latest > MAX_RESULTS)) throw new Error(`latest must be an integer from 1 to ${MAX_RESULTS}.`);
@@ -361,17 +484,21 @@ export async function queryMlrunsRuns(input: FindMlrunsRunsInput, cwd: string, s
 	matches.sort((a, b) => deterministicCompare(a, b, "start_time", "desc"));
 	if (input.latest !== undefined) matches = matches.slice(0, input.latest);
 	if (input.rankByMetric) {
-		matches = matches.filter((run) => metricFor(run, input.rankByMetric!) !== undefined);
+		const mode = input.rankMode ?? "latest";
+		const scored = matches
+			.map((run) => ({ run, score: rankScore(run, input.rankByMetric!, mode, input.rankRecentCount) }))
+			.filter((entry): entry is { run: LoadedRun; score: number } => entry.score !== undefined);
 		const order = input.rankOrder ?? "desc";
-		matches.sort((a, b) => {
-			const comparison = metricFor(a, input.rankByMetric!)!.value - metricFor(b, input.rankByMetric!)!.value;
+		scored.sort((a, b) => {
+			const comparison = a.score - b.score;
 			if (comparison) return order === "asc" ? comparison : -comparison;
-			return deterministicCompare(a, b, "start_time", "desc");
+			return deterministicCompare(a.run, b.run, "start_time", "desc");
 		});
+		matches = scored.map(({ run }) => run);
 	} else if (input.sort) {
 		matches.sort((a, b) => deterministicCompare(a, b, input.sort!.by, input.sort!.order ?? "desc"));
 	}
-	return { mlrunsPath: root, runs: matches.slice(0, limit).map(({ parameterMap: _p, metricMap: _m, ...run }) => run) };
+	return { mlrunsPath: root, runs: matches.slice(0, limit).map((run) => projectRun(run, input)) };
 }
 
 function formatRun(run: MlrunsRunResult, index: number): string {
@@ -392,6 +519,15 @@ function formatRun(run: MlrunsRunResult, index: number): string {
 	const metrics = Object.entries(run.metrics);
 	if (!metrics.length) lines.push("  (none)");
 	else for (const [key, sample] of metrics) lines.push(`  - ${key}: ${sample.value} (timestamp=${sample.timestamp ?? "absent"}, step=${sample.step ?? "absent"})`);
+	if (run.metricHistories !== undefined) {
+		lines.push("Metric histories:");
+		const histories = Object.entries(run.metricHistories);
+		if (!histories.length) lines.push("  (none)");
+		else for (const [key, samples] of histories) {
+			lines.push(`  - ${key}:`);
+			for (const sample of samples) lines.push(`    - ${sample.value} (timestamp=${sample.timestamp ?? "absent"}, step=${sample.step ?? "absent"})`);
+		}
+	}
 	if (run.warnings.length) {
 		lines.push("Warnings:");
 		for (const warning of run.warnings) lines.push(`  - ${warning}`);
@@ -408,7 +544,7 @@ export default function findMlrunsRunsExtension(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "find_mlruns_runs",
 		label: "Find MLflow Runs",
-		description: `Directly search an on-disk MLflow file tree. Criteria compose with AND semantics; names are case-insensitive substrings, run IDs are prefixes, bounds are inclusive, and metrics use their latest valid history sample. Returns every readable parameter and metric for up to ${MAX_RESULTS} runs. Output is truncated at ${DEFAULT_MAX_LINES} lines or ${formatSize(DEFAULT_MAX_BYTES)} with a full-report path.`,
+		description: `Directly search an on-disk MLflow file tree. Criteria compose with AND semantics; names are case-insensitive substrings, run IDs are prefixes, and time bounds are inclusive. Metric filters and ranking default to the latest valid sample, with opt-in all/recent existential filtering and latest/max/min/recent-mean ranking. Return projections default to every readable parameter and metric, while optional all/recent histories are added without replacing latest values. Returns up to ${MAX_RESULTS} runs; output is truncated at ${DEFAULT_MAX_LINES} lines or ${formatSize(DEFAULT_MAX_BYTES)} with a full-report path.`,
 		promptSnippet: "Search and rank local MLflow runs without the MLflow API",
 		parameters: findMlrunsRunsSchema,
 		async execute(_toolCallId, params, signal, _onUpdate, ctx) {

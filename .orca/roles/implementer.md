@@ -17,7 +17,8 @@ Never fabricate tests, run state, metrics, or other evidence.
 
 - Make the planned production changes in repository style.
 - Preserve action masking and other project invariants.
-- Run the existing full test suite and smoke checks before handoff.
+- For code changes that can potentially affect the training loop, run the 
+  existing full test suite and smoke checks before handoff.
 - Do not create ticket acceptance tests; independent test design belongs to the
   evaluator.
 - On retry, fix production behavior rather than deleting, weakening, skipping, or

@@ -35,7 +35,14 @@ def _node_path(path: Path) -> str:
     return str(path)
 
 
-def _call_tool(store: Path, query: dict, *, expect_error: bool = False) -> dict:
+def _call_tool(
+    store: Path,
+    query: dict,
+    *,
+    expect_error: bool = False,
+    auto_discover: bool = False,
+    abort: bool = False,
+) -> dict:
     loader = PI_ROOT / "node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/loader.js"
     if not loader.exists():
         pytest.skip("Pi extension loader is unavailable")
@@ -47,15 +54,24 @@ let input = '';
 for await (const chunk of process.stdin) input += chunk;
 const p = JSON.parse(input);
 try {
-  const { loadExtensions } = await import(pathToFileURL(p.loader).href);
-  const loaded = await loadExtensions([p.extension], p.cwd);
+  const loaderModule = await import(pathToFileURL(p.loader).href);
+  const loaded = p.autoDiscover
+    ? await loaderModule.discoverAndLoadExtensions([], p.cwd, p.agentDir)
+    : await loaderModule.loadExtensions([p.extension], p.cwd);
   if (loaded.errors.length) throw new Error(JSON.stringify(loaded.errors));
-  if (loaded.extensions.length !== 1) throw new Error(`loaded ${loaded.extensions.length} extensions`);
-  const names = [...loaded.extensions[0].tools.keys()];
-  const registration = loaded.extensions[0].tools.get('find_mlruns_runs');
-  if (!registration) throw new Error(`registered tools: ${names.join(',')}`);
-  const tool = registration.definition;
-  const result = await tool.execute('acceptance', p.query, undefined, undefined, { cwd: p.cwd });
+  const names = loaded.extensions.flatMap((extension) => [...extension.tools.keys()]);
+  const registrations = loaded.extensions
+    .map((extension) => extension.tools.get('find_mlruns_runs'))
+    .filter(Boolean);
+  if (registrations.length !== 1) {
+    throw new Error(`find_mlruns_runs registrations: ${registrations.length}; tools: ${names.join(',')}`);
+  }
+  const tool = registrations[0].definition;
+  const controller = p.abort ? new AbortController() : undefined;
+  controller?.abort();
+  const result = await tool.execute(
+    'acceptance', p.query, controller?.signal, undefined, { cwd: p.cwd }
+  );
   let reportStats = null;
   if (result.details?.fullReportPath) {
     const report = await readFile(result.details.fullReportPath, 'utf8');
@@ -64,18 +80,31 @@ try {
       lines: report.split(/\r?\n/).length,
       hasHugeValue: report.includes('Z'.repeat(1000)),
       hasManyLinesValue: report.includes(['value', 'value', 'value'].join('\n')),
+      hasHistoryTail: report.includes('timestamp=2499, step=2499'),
     };
     await rm(dirname(result.details.fullReportPath), { recursive: true, force: true });
   }
-  console.log(JSON.stringify({ ok: true, names, result, reportStats }));
+  console.log(JSON.stringify({
+    ok: true,
+    names,
+    description: tool.description,
+    parameters: tool.parameters,
+    result,
+    reportStats,
+  }));
 } catch (error) {
   console.log(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }));
 }
 """
+    agent_dir = store.parent / "empty-pi-agent"
+    agent_dir.mkdir(exist_ok=True)
     payload = {
         "loader": _node_path(loader),
         "extension": _node_path(EXTENSION),
         "cwd": _node_path(ROOT),
+        "agentDir": _node_path(agent_dir),
+        "autoDiscover": auto_discover,
+        "abort": abort,
         "query": {"mlrunsPath": _node_path(store), **query},
     }
     completed = subprocess.run(
@@ -208,6 +237,101 @@ def _ids(response: dict) -> list[str]:
     return [run["runId"] for run in response["result"]["details"]["runs"]]
 
 
+def _run(response: dict, run_id: str) -> dict:
+    return next(run for run in response["result"]["details"]["runs"] if run["runId"] == run_id)
+
+
+@pytest.fixture
+def history_store(tmp_path: Path) -> Path:
+    """Build independent histories whose four rank modes produce distinct orders."""
+    store = tmp_path / "history-mlruns"
+    exp = store / "42"
+    exp.mkdir(parents=True)
+    (exp / "meta.yaml").write_text("name: history-evaluation\n", encoding="utf-8")
+    _write_run(
+        store,
+        "42",
+        "alpha-dir",
+        run_id="history-alpha-aaa",
+        name="History Candidate Alpha",
+        start=1704844800000,
+        end=1704848400000,
+        params={
+            "group": "blue",
+            "depth": "1",
+            "alpha_only": "yes",
+            "optim/learning-rate": "0.01",
+        },
+        metrics={
+            # Malformed/non-finite rows are interspersed so recent windows must
+            # count only valid appended records, not physical file lines.
+            "eval/score": (
+                "10 0.0 0\n"
+                "partial row\n"
+                "11 0.2 1\n"
+                "NaN 99 50\n"
+                "12 0.9 2\n"
+                "13 Infinity 3\n"
+                "14 0.95 4 extra\n"
+            ),
+            "eval/tie": "1 0.5 0\n",
+            "train/aux": "1 10 0\n",
+        },
+    )
+    _write_run(
+        store,
+        "42",
+        "beta-dir",
+        run_id="history-beta-bbb",
+        name="History Candidate Beta",
+        start=1704931200000,
+        end=1704934800000,
+        params={"group": "blue", "depth": "2", "beta_only": "yes"},
+        metrics={
+            "eval/score": "20 1.2 0\n21 0.6 1\n22 0.8 2\n",
+            "eval/tie": "1 0.5 0\n",
+            "train/aux": "1 20 0\n",
+        },
+    )
+    _write_run(
+        store,
+        "42",
+        "gamma-dir",
+        run_id="history-gamma-ccc",
+        name="History Candidate Gamma",
+        start=1705017600000,
+        end=1705021200000,
+        params={"group": "blue", "depth": "3", "gamma_only": "yes"},
+        metrics={
+            "eval/score": "30 -1.0 0\n31 1.1 1\n32 0.7 2\n",
+            "train/aux": "1 30 0\n",
+        },
+    )
+    # Sparse and malformed-only runs prove schema drift isolation and that
+    # missing ranked/predicate metrics do not poison otherwise valid runs.
+    _write_run(
+        store,
+        "42",
+        "malformed-dir",
+        run_id="history-malformed-ddd",
+        name="History Candidate Malformed",
+        start=1705104000000,
+        params={"group": "blue", "malformed_only": "yes"},
+        metrics={"eval/score": "not a sample\n1 NaN 0\n2 0.4\n"},
+    )
+    _write_run(
+        store,
+        "42",
+        "sparse-dir",
+        run_id="history-sparse-eee",
+        name="History Candidate Sparse",
+        start=1705190400000,
+        params=None,
+        metrics=None,
+    )
+    return store
+
+
 def test_real_pi_registration_combined_filters_and_complete_inventories(mlflow_store: Path):
     response = _call_tool(
         mlflow_store,
@@ -315,6 +439,409 @@ def test_ambiguous_alias_is_rejected_but_exact_key_works(mlflow_store: Path):
     assert _ids(exact) == ["alpha111aaa"]
 
 
+def test_real_loader_exposes_history_options_and_opt_in_defaults(history_store: Path):
+    # The actual Pi loader must expose exactly one tool whose schema documents
+    # every optional control without changing the default latest-only contract.
+    response = _call_tool(
+        history_store, {"runId": "history-alpha"}, auto_discover=True
+    )
+    assert response["names"].count("find_mlruns_runs") == 1
+    properties = response["parameters"]["properties"]
+    assert {
+        "metricFilters",
+        "rankMode",
+        "rankRecentCount",
+        "returnMetrics",
+        "returnParameters",
+        "metricHistory",
+        "metricHistoryLimit",
+    } <= properties.keys()
+    assert "default to the latest valid sample" in response["description"]
+    assert "absent returns all" in properties["returnMetrics"]["description"]
+    metric_filter_properties = properties["metricFilters"]["items"]["properties"]
+    assert {"historyMode", "recentCount"} <= metric_filter_properties.keys()
+    assert metric_filter_properties["recentCount"]["minimum"] == 1
+    assert properties["rankRecentCount"]["minimum"] == 1
+    assert properties["metricHistoryLimit"]["minimum"] == 1
+
+    run = response["result"]["details"]["runs"][0]
+    assert run["runId"] == "history-alpha-aaa"
+    assert run["runName"] == "History Candidate Alpha"
+    assert list(run["parameters"]) == ["alpha_only", "depth", "group", "optim/learning-rate"]
+    assert list(run["metrics"]) == ["eval/score", "eval/tie", "train/aux"]
+    assert run["metrics"]["eval/score"] == {"value": 0.9, "timestamp": 12, "step": 2}
+    assert "metricHistories" not in run
+    assert "Metric histories:" not in response["result"]["content"][0]["text"]
+
+
+def test_full_and_recent_history_filters_are_existential_over_valid_samples(history_store: Path):
+    # Whole-history finds old peaks, whereas fixed recent windows use the final
+    # N valid records after malformed and non-finite rows have been discarded.
+    all_history = _call_tool(
+        history_store,
+        {
+            "metricFilters": [
+                {"key": "evalscore", "operator": "gt", "value": 1.0, "historyMode": "all"}
+            ],
+            "limit": 10,
+        },
+    )
+    assert _ids(all_history) == ["history-gamma-ccc", "history-beta-bbb"]
+
+    recent_larger_than_history = _call_tool(
+        history_store,
+        {
+            "metricFilters": [
+                {
+                    "key": "eval/score",
+                    "operator": "gt",
+                    "value": 1.0,
+                    "historyMode": "recent",
+                    "recentCount": 10,
+                }
+            ],
+            "limit": 10,
+        },
+    )
+    assert _ids(recent_larger_than_history) == ["history-gamma-ccc", "history-beta-bbb"]
+
+    recent_two = _call_tool(
+        history_store,
+        {
+            "metricFilters": [
+                {
+                    "key": "eval/score",
+                    "operator": "gt",
+                    "value": 1.0,
+                    "historyMode": "recent",
+                    "recentCount": 2,
+                }
+            ],
+            "limit": 10,
+        },
+    )
+    assert _ids(recent_two) == ["history-gamma-ccc"]
+    recent_one = _call_tool(
+        history_store,
+        {
+            "metricFilters": [
+                {
+                    "key": "eval/score",
+                    "operator": "gt",
+                    "value": 1.0,
+                    "historyMode": "recent",
+                    "recentCount": 1,
+                }
+            ]
+        },
+    )
+    assert _ids(recent_one) == []
+
+    # Omitting historyMode remains latest-only, including the existential `ne`
+    # interpretation documented for history scopes.
+    latest = _call_tool(
+        history_store,
+        {"metricFilters": [{"key": "eval/score", "operator": "gt", "value": 0.75}], "limit": 10},
+    )
+    assert _ids(latest) == ["history-beta-bbb", "history-alpha-aaa"]
+    not_equal = _call_tool(
+        history_store,
+        {
+            "metricFilters": [
+                {"key": "eval/score", "operator": "ne", "value": 0.9, "historyMode": "all"}
+            ],
+            "runId": "history-alpha",
+        },
+    )
+    assert _ids(not_equal) == ["history-alpha-aaa"]
+
+
+def test_every_rank_mode_and_order_uses_the_requested_history_score(history_store: Path):
+    # Values were chosen so latest/max/min/recent-mean produce four distinct
+    # permutations, proving that rankMode changes the score rather than display.
+    cases = [
+        ({"rankMode": "latest", "rankOrder": "desc"}, ["history-alpha-aaa", "history-beta-bbb", "history-gamma-ccc"]),
+        ({"rankMode": "max", "rankOrder": "desc"}, ["history-beta-bbb", "history-gamma-ccc", "history-alpha-aaa"]),
+        ({"rankMode": "min", "rankOrder": "asc"}, ["history-gamma-ccc", "history-alpha-aaa", "history-beta-bbb"]),
+        (
+            {"rankMode": "recent_mean", "rankRecentCount": 2, "rankOrder": "desc"},
+            ["history-gamma-ccc", "history-beta-bbb", "history-alpha-aaa"],
+        ),
+    ]
+    for options, expected in cases:
+        response = _call_tool(
+            history_store,
+            {"rankByMetric": "evalscore", "limit": 10, **options},
+        )
+        assert _ids(response) == expected
+
+    ascending_latest = _call_tool(
+        history_store,
+        {"rankByMetric": "eval/score", "rankOrder": "asc", "limit": 10},
+    )
+    assert _ids(ascending_latest) == ["history-gamma-ccc", "history-beta-bbb", "history-alpha-aaa"]
+    # Equal scores retain the existing newest-first deterministic tie breaker.
+    tied = _call_tool(history_store, {"rankByMetric": "eval/tie", "limit": 10})
+    assert _ids(tied) == ["history-beta-bbb", "history-alpha-aaa"]
+
+
+def test_projections_are_post_selection_and_identity_is_always_human_visible(history_store: Path):
+    # Selected aliases project per-run maps; missing projection-only keys warn
+    # but never exclude sparse or schema-drifted runs.
+    selected = _call_tool(
+        history_store,
+        {
+            "returnMetrics": ["evalscore", "missing_metric"],
+            "returnParameters": ["depth", "alpha_only", "optimlearningrate"],
+            "limit": 10,
+        },
+    )
+    assert len(_ids(selected)) == 5
+    alpha = _run(selected, "history-alpha-aaa")
+    beta = _run(selected, "history-beta-bbb")
+    sparse = _run(selected, "history-sparse-eee")
+    assert alpha["parameters"] == {
+        "alpha_only": "yes",
+        "depth": "1",
+        "optim/learning-rate": "0.01",
+    }
+    assert list(alpha["metrics"]) == ["eval/score"]
+    assert beta["parameters"] == {"depth": "2"}
+    assert list(beta["metrics"]) == ["eval/score"]
+    assert sparse["parameters"] == {} and sparse["metrics"] == {}
+    assert any('Requested metric "missing_metric"' in warning for warning in alpha["warnings"])
+    assert any('Requested parameter "alpha_only"' in warning for warning in beta["warnings"])
+    text = selected["result"]["content"][0]["text"]
+    for run in selected["result"]["details"]["runs"]:
+        assert f"Run ID: {run['runId']}" in text
+        assert f"Run name: {run['runName']}" in text
+    assert "  - eval/score: 0.9 (timestamp=12, step=2)" in text
+    assert "  - train/aux:" not in text
+
+    # Empty arrays return no inventory while filters and ranking still use data.
+    empty = _call_tool(
+        history_store,
+        {
+            "parameterFilters": [{"key": "group", "value": "blue"}],
+            "metricFilters": [{"key": "eval/score", "operator": "gt", "value": 0.75}],
+            "rankByMetric": "eval/score",
+            "returnMetrics": [],
+            "returnParameters": [],
+            "metricHistory": "all",
+            "limit": 10,
+        },
+    )
+    assert _ids(empty) == ["history-alpha-aaa", "history-beta-bbb"]
+    for run in empty["result"]["details"]["runs"]:
+        assert run["parameters"] == {}
+        assert run["metrics"] == {}
+        assert run["metricHistories"] == {}
+    empty_text = empty["result"]["content"][0]["text"]
+    assert empty_text.count("Parameters:\n  (none)") == 2
+    assert empty_text.count("Metrics:\n  (none)") == 2
+    assert empty_text.count("Metric histories:\n  (none)") == 2
+
+
+def test_all_and_recent_returned_histories_preserve_latest_maps_and_text(history_store: Path):
+    # Requested histories augment rather than replace the stable latest map, and
+    # the human report displays the same valid records in append order.
+    all_history = _call_tool(
+        history_store,
+        {
+            "runId": "history-alpha",
+            "returnMetrics": ["eval/score"],
+            "returnParameters": [],
+            "metricHistory": "all",
+        },
+    )
+    run = all_history["result"]["details"]["runs"][0]
+    expected = [
+        {"value": 0, "timestamp": 10, "step": 0},
+        {"value": 0.2, "timestamp": 11, "step": 1},
+        {"value": 0.9, "timestamp": 12, "step": 2},
+    ]
+    assert run["metrics"] == {"eval/score": expected[-1]}
+    assert run["metricHistories"] == {"eval/score": expected}
+    text = all_history["result"]["content"][0]["text"]
+    assert "  - eval/score: 0.9 (timestamp=12, step=2)" in text
+    assert "    - 0 (timestamp=10, step=0)" in text
+    assert "    - 0.9 (timestamp=12, step=2)" in text
+    assert "Infinity" not in text and "NaN" not in text
+
+    recent = _call_tool(
+        history_store,
+        {
+            "runId": "history-alpha",
+            "returnMetrics": ["eval/score"],
+            "metricHistory": "recent",
+            "metricHistoryLimit": 2,
+        },
+    )
+    recent_run = recent["result"]["details"]["runs"][0]
+    assert recent_run["metrics"] == {"eval/score": expected[-1]}
+    assert recent_run["metricHistories"] == {"eval/score": expected[-2:]}
+    recent_all = _call_tool(
+        history_store,
+        {
+            "runId": "history-alpha",
+            "returnMetrics": ["eval/score"],
+            "metricHistory": "recent",
+            "metricHistoryLimit": 10,
+        },
+    )
+    assert recent_all["result"]["details"]["runs"][0]["metricHistories"] == {
+        "eval/score": expected
+    }
+
+
+def test_all_criteria_compose_before_preselection_ranking_and_projection(history_store: Path):
+    # Name/ID/experiment/inclusive times/parameter/history metric predicates are
+    # arbitrary AND criteria. Projection is presentation-only after selection.
+    combined = _call_tool(
+        history_store,
+        {
+            "experimentId": "42",
+            "experimentName": "HISTORY-EVALUATION",
+            "runName": "candidate beta",
+            "runId": "HISTORY-B",
+            "startedAfter": "2024-01-11T00:00:00Z",
+            "startedBefore": 1704931200,
+            "endedAfter": 1704934800000,
+            "endedBefore": "2024-01-11T01:00:00Z",
+            "parameterFilters": [
+                {"key": "group", "value": "blue"},
+                {"key": "depth", "operator": "gte", "value": 2},
+            ],
+            "metricFilters": [
+                {"key": "evalscore", "operator": "gt", "value": 1, "historyMode": "all"},
+                {"key": "eval/score", "operator": "lt", "value": 1, "historyMode": "recent", "recentCount": 1},
+            ],
+            "returnMetrics": [],
+            "returnParameters": [],
+            "limit": 10,
+        },
+    )
+    assert _ids(combined) == ["history-beta-bbb"]
+    assert _run(combined, "history-beta-bbb")["metrics"] == {}
+
+    # Filtering precedes newest preselection; ranking then cannot resurrect an
+    # older high-max run, and multiple matches remain available without `latest`.
+    multiple = _call_tool(
+        history_store,
+        {
+            "parameterFilters": [{"key": "group", "value": "blue"}],
+            "metricFilters": [
+                {"key": "eval/score", "operator": "gt", "value": 1, "historyMode": "all"}
+            ],
+            "rankByMetric": "eval/score",
+            "rankMode": "max",
+            "limit": 10,
+        },
+    )
+    assert _ids(multiple) == ["history-beta-bbb", "history-gamma-ccc"]
+    preselected = _call_tool(
+        history_store,
+        {
+            "metricFilters": [
+                {"key": "eval/score", "operator": "gt", "value": 1, "historyMode": "all"}
+            ],
+            "latest": 1,
+            "rankByMetric": "eval/score",
+            "rankMode": "max",
+        },
+    )
+    assert _ids(preselected) == ["history-gamma-ccc"]
+
+
+def test_sparse_predicate_rank_and_projection_absence_have_distinct_semantics(history_store: Path):
+    # Missing predicates fail only that run; missing rank metrics exclude it;
+    # missing projections retain it with warnings. Malformed-only files are local.
+    predicate = _call_tool(
+        history_store,
+        {"parameterFilters": [{"key": "depth", "operator": "gte", "value": 1}], "limit": 10},
+    )
+    assert set(_ids(predicate)) == {
+        "history-alpha-aaa",
+        "history-beta-bbb",
+        "history-gamma-ccc",
+    }
+    ranked = _call_tool(history_store, {"rankByMetric": "eval/score", "limit": 10})
+    assert set(_ids(ranked)) == {
+        "history-alpha-aaa",
+        "history-beta-bbb",
+        "history-gamma-ccc",
+    }
+    projected = _call_tool(
+        history_store,
+        {"returnMetrics": ["eval/score"], "returnParameters": ["depth"], "limit": 10},
+    )
+    assert len(_ids(projected)) == 5
+    malformed = _run(projected, "history-malformed-ddd")
+    sparse = _run(projected, "history-sparse-eee")
+    assert malformed["metrics"] == {} and sparse["metrics"] == {}
+    assert any("Metric has no valid samples: eval/score" in warning for warning in malformed["warnings"])
+    assert any('Requested metric "eval/score"' in warning for warning in malformed["warnings"])
+
+
+@pytest.mark.parametrize(
+    ("query", "message"),
+    [
+        ({"metricFilters": [{"key": "eval/score", "value": 1, "historyMode": "recent"}]}, "recentCount"),
+        ({"metricFilters": [{"key": "eval/score", "value": 1, "historyMode": "recent", "recentCount": 0}]}, "positive integer"),
+        ({"metricFilters": [{"key": "eval/score", "value": 1, "historyMode": "recent", "recentCount": 1.5}]}, "positive integer"),
+        ({"metricFilters": [{"key": "eval/score", "value": 1, "historyMode": "latest", "recentCount": 1}]}, "only valid"),
+        ({"metricFilters": [{"key": "eval/score", "value": 1, "historyMode": "invalid"}]}, "historyMode"),
+        ({"rankMode": "max"}, "requires rankByMetric"),
+        ({"rankByMetric": "eval/score", "rankMode": "recent_mean"}, "rankRecentCount"),
+        ({"rankByMetric": "eval/score", "rankMode": "recent_mean", "rankRecentCount": -2}, "positive integer"),
+        ({"rankByMetric": "eval/score", "rankMode": "latest", "rankRecentCount": 2}, "only valid"),
+        ({"rankByMetric": "eval/score", "rankMode": "invalid"}, "rankMode"),
+        ({"metricHistory": "recent"}, "metricHistoryLimit"),
+        ({"metricHistory": "recent", "metricHistoryLimit": 0}, "positive integer"),
+        ({"metricHistory": "all", "metricHistoryLimit": 2}, "only valid"),
+        ({"metricHistoryLimit": 2}, "only valid"),
+        ({"metricHistory": "invalid"}, "metricHistory"),
+    ],
+)
+def test_invalid_history_options_fail_actionably(history_store: Path, query: dict, message: str):
+    # Contradictory modes/counts must fail clearly rather than silently changing scope.
+    error = _call_tool(history_store, query, expect_error=True)
+    assert message in error["error"]
+
+
+def test_history_output_truncation_keeps_complete_details_and_full_report(history_store: Path):
+    # Explicit full histories may exceed Pi's report cap; the structured result
+    # remains complete and the fallback report contains samples beyond the cap.
+    metric = history_store / "42" / "alpha-dir" / "metrics" / "eval" / "long_history"
+    metric.write_text(
+        "".join(f"{index} {index / 1000} {index}\n" for index in range(2500)),
+        encoding="utf-8",
+    )
+    response = _call_tool(
+        history_store,
+        {
+            "runId": "history-alpha",
+            "returnMetrics": ["eval/long_history"],
+            "metricHistory": "all",
+        },
+    )
+    result = response["result"]
+    run = result["details"]["runs"][0]
+    assert len(run["metricHistories"]["eval/long_history"]) == 2500
+    assert run["metricHistories"]["eval/long_history"][-1] == {
+        "value": 2.499,
+        "timestamp": 2499,
+        "step": 2499,
+    }
+    assert result["details"]["truncated"] is True
+    text = result["content"][0]["text"]
+    assert len(text.splitlines()) <= 2000
+    assert len(text.encode("utf-8")) <= 50 * 1024
+    assert "Output truncated" in text and "Full report saved to:" in text
+    assert response["reportStats"]["lines"] > 2500
+    assert response["reportStats"]["hasHistoryTail"] is True
+
+
 def test_output_truncation_keeps_structured_contract_and_full_report(mlflow_store: Path):
     params = mlflow_store / "10" / "alpha-dir" / "params"
     huge = params / "huge"
@@ -345,6 +872,12 @@ def test_output_truncation_keeps_structured_contract_and_full_report(mlflow_stor
     assert "Full report saved to:" in line_text
     assert line_response["reportStats"]["lines"] > 2_100
     assert line_response["reportStats"]["hasManyLinesValue"] is True
+
+
+def test_real_loader_execution_honors_pre_cancelled_search(history_store: Path):
+    # Cancellation remains observable through the registered tool execution path.
+    error = _call_tool(history_store, {}, expect_error=True, abort=True)
+    assert "cancelled" in error["error"].lower()
 
 
 def test_extension_uses_filesystem_not_mlflow_api():
