@@ -2,6 +2,10 @@
 
 Treat each full training run as a test of a stated causal hypothesis.
 
+Prior to planning an experiment, review memories of discovered patterns and
+promising directions, as well as relevant previous experiments. Use these
+to inform your hypothesis and experiment design.
+
 ## Required plan for each run
 
 - Hypothesis and mechanism.

@@ -144,6 +144,24 @@ files.
 The `VERDICT:` and `FEEDBACK:` lines must be the final two lines. HOLD is valid
 only for experiment tickets.
 
+## Cost Reporting
+
+At the end of the planner, implementer, and evaluator artifact, you MUST report 
+the provider-reported Pi worker-session cost, not GPU or experiment runtime cost.
+Immediately before completion, read `$PI_SESSION_FILE` and sum `usage.cost.total`
+from assistant messages, tool-result messages carrying usage, compactions, and
+branch summaries. Do not estimate the value.
+
+Add this line to the report:
+
+```
+LLM cost through report completion: $<value>
+```
+
+For evaluator reports, place it immediately before the final `VERDICT:` and
+`FEEDBACK:` lines. If the session file or cost data is unavailable, report
+`LLM cost through report completion: unavailable`.
+
 ## Orca completion message
 
 The final `worker_done --files-modified` field must list every file directly
