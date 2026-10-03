@@ -32,7 +32,7 @@ Report:
 - baseline run ID;
 - PID, log path, and launch timestamp;
 - evidence of initial progress;
-- expected duration and suggested first recheck time.
+- expected run duration.
 
 ## Placement and concurrency
 

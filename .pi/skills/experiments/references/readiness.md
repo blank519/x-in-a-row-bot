@@ -20,7 +20,7 @@ immature one. Confirm this using process state and logs. A live but permanently
 stuck run should be bounded by the planned runtime plus a grace period rather
 than treated as indefinitely pending.
 
-For long default runs, a 60-minute observation interval is a reasonable starting
-point unless the plan provides a better interval; a 10M-step run may take roughly
-six hours. Readiness decisions should come from the trajectory evidence, not the
+Prefer waiting until the expected batch-completion time before the first full
+observation rather than polling. For reference, a 10M-step run may take roughly
+8 hours. Readiness decisions should come from the trajectory evidence, not the
 wall-clock estimate.

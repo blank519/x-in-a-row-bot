@@ -38,7 +38,7 @@ Treat each run as one independent unit. For every run specify:
 - distinct `run_name` and root-level script copy;
 - immutable baseline run ID;
 - target per-(heuristic, side) rate and paired episode-length movement;
-- evidence-ready condition and expected recheck/runtime.
+- evidence-ready condition.
 
 Change one variable at a time where practical.
 

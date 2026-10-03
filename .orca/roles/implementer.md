@@ -28,15 +28,21 @@ Never fabricate tests, run state, metrics, or other evidence.
 ## Experiment work
 
 - Implement only the assigned run in its distinct root-level copy of
-  `train_ppo_gomoku.py`; never edit the shared original or place the copy under
-  `artifacts/`.
+  `train_ppo_gomoku.py`. Treat `train_ppo_gomoku.py` and `self_play_gomoku.py`
+  (and all other shared library/env/test files) as strictly read-only: never
+  edit, rename, move, delete, or overwrite them, and never place your copy under
+  `artifacts/`. 
 - Apply the exact planned delta, unique run name, and MLflow parameter logging.
+  Do NOT make changes that deviate from the plan.
+- If the assigned delta seems to require a change to shared code, do NOT 
+  make it. Instead, stop and report the exact conflict in your implementation
+  report instead.
 - Run the existing tests and smoke checks before spending GPU time.
 - Launch durably with redirected logs and a captured PID. Confirm the training
   banner and real PPO iteration progress.
 - Report after confirmed launch; do not wait for completion and do not evaluate.
-- Include run ID/path, baseline ID, PID, log path, launch time, delta, and first
-  recheck time in the handoff.
+- You MUST include run ID/path, baseline ID, PID, log path, launch time, delta, 
+  and an estimated time until run completion.
 
 Write `artifacts/<ticket_name>/implement_<unit_id>_<attempt>.md` using the
 contract, then follow `.orca/roles/common-worker.md` and send exactly one
