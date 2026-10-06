@@ -1,38 +1,26 @@
 # Launching and handing off runs
 
-## Before launch
+## Coordinator launch
 
-- Work from the repository root in the WSL virtualenv.
-- Use the assigned root-level copy of `train_ppo_gomoku.py`, never the shared
-  original and never a copy under `artifacts/`; flat imports require repo-root
-  placement.
-- Apply only the planned delta and a unique run name. Confirm new knobs are logged.
-- Run `python -m pytest tests -q` and the code-change smoke checks.
+After the implementation units settle, the coordinator should launch the prepared
+runs with the `launch_run` tool, providing:
+- `scriptPath`;
+- `runName`;
+- optional `requiredFreeVramMiB` (omit unless plan specifies a non-default requirement);
+- optional `startupTimeoutSeconds`. 
 
-## Durable background launch
+Do not construct `nohup`, WSL, redirection, duplicate-kill, or PID-discovery commands manually.
 
-Create `logs/`, redirect output, and capture the PID so releasing an Orca terminal
-does not lose progress or output:
+A successful tool call is evidence of launch, not experiment completion.
 
-```bash
-mkdir -p logs
-nohup python <assigned_script.py> > logs/<run_name>.log 2>&1 & echo $!
-```
+## Reporting Launch
 
-Wait only until the log contains the training banner and real PPO iteration
-progress. Discover the MLflow run ID once its run directory/tag appears. Do not
-wait for completion and do not evaluate the run.
+For every batch of launches, successful or failed, create a launch report at 
+`artifacts/<ticket_name>/launch_attempt_<attempt>.md`. Read the launch report template in 
+`.orca/contracts/artifacts.md` for the required fields.
 
-## Required handoff
-
-Report:
-
-- run name and MLflow run ID/path;
-- assigned script copy and exact configuration delta;
-- baseline run ID;
-- PID, log path, and launch timestamp;
-- evidence of initial progress;
-- expected run duration.
+On failure, record the tool's stated reason and cleanup evidence. Do not
+substitute a manual launch.
 
 ## Placement and concurrency
 

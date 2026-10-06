@@ -18,32 +18,26 @@ obs, info = env.reset()
 
 done = False
 
-# while env.agents:  # Loop until all agents have terminated or truncated
-#agent = env.agent_selection
-
 # Get observation for the current agent
 obs = env._observe_for_learner()
 print(obs)
 
-# Select an action
-# Example: random legal action
-#action_mask = env.action_masks()
-#print(action_mask)
-# legal_actions = [i for i, valid in enumerate(action_mask) if valid]
-# print(legal_actions)
-# action = np.random.choice(legal_actions)
-# # Step the environment
-# env.step(action)
-# env.render()
+# Step the environment a few times, choosing a random legal action each turn
+max_steps = 10
+for step_num in range(max_steps):
+    if done:
+        break
 
-# # Get info for the current agent
-# info = env.infos
+    # Select a random legal action from the current action mask
+    action_mask = env.action_masks()
+    legal_actions = np.flatnonzero(action_mask)
+    action = int(np.random.choice(legal_actions))
 
-# # Optional: print board for debugging
-# print(f"Agent {agent} plays {action}")
-# print(env.board)  # simplistic board view
+    # Step the environment
+    obs, reward, terminated, truncated, info = env.step(action)
+    done = terminated or truncated
 
-# # After loop ends, you can access cumulative rewards
-# print("Episode finished!")
-# for agent in ["X", "O"]:
-#     print(f"Agent {agent} cumulative reward: {env.cumulative_rewards[agent]}") 
+    print(f"Step {step_num}: action={action}, reward={reward}, "
+          f"terminated={terminated}, truncated={truncated}, info={info}")
+
+print("Episode finished!" if done else "Reached max steps.")
