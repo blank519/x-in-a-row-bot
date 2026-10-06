@@ -17,8 +17,7 @@ gates, and bounded retry loop. This is supervised orchestration, not a handoff.
 ## Worker policy
 
 - Default to `--agent pi`, `--worktree current`, and `max_parallel_workers: 3`
-  unless the ticket overrides it or a measured VRAM preflight proves the batch
-  will not fit.
+  unless the ticket overrides it.
 - Workers do not dispatch nested workers.
 - Build each task spec from the matching `.orca/roles/<role>.md`, ticket material,
   and only the plan unit/retry feedback that worker needs.
@@ -29,10 +28,12 @@ gates, and bounded retry loop. This is supervised orchestration, not a handoff.
 2. Dispatch one planner and wait using the common Delivery/release/ACK protocol.
 3. Read its artifact and dispatch work units in dependency-respecting,
    concurrency-limited waves.
-4. For code, evaluate after every implementation unit settles. For experiments,
-   first monitor every launched run until the experiment pipeline says the whole
-   batch is evidence-ready.
-5. Dispatch one evaluator over the complete attempt.
+4. Wait until every implementation unit settles.
+   - For experiments, launch the runs created by the implementers and write a launch 
+     report. Read `.pi/skills/experiments/references/launching-runs.md` to understand 
+     how. Then, wait as described in the experiment pipeline until the whole batch is 
+     evidence-ready.
+5. Dispatch one evaluator over the entire completed batch.
 6. Act on its final verdict:
    - PASS: resolve a pass gate and report evidence.
    - FAIL: resolve a fail gate, consume one iteration, and retry implementation

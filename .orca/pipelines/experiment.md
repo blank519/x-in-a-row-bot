@@ -9,26 +9,31 @@ Read `.orca/pipelines/common.md`, the experiment skill, and especially its
 2. Dispatch independent runs with separate implementers in concurrent waves. Prefer 
    the active worktree: distinct script copies avoid edit conflicts and all runs 
    share `mlruns/`.
-3. Each implementer verifies configuration, launches durably, confirms real PPO
-   progress, and reports run ID/PID/log/baseline/recheck time. Worker completion
-   means launched, not trained.
-4. After releasing launch workers, the coordinator owns monitoring. Do NOT poll at
-   a short cadence. Instead:
-    a. Do one early health sweep shortly after launch (process alive, log shows the
+3. After every implementer verifies configuration and completes its hand-off, the 
+   coordinator launches all runs sequentially and durably, then writes its report.
+   a. If there is insufficient VRAM to continue launching runs, the coordinator will
+      defer remaining runs and wait until the current runs complete (see step 4), 
+      then launch the remaining runs and wait for them to finish as well. This does 
+      NOT consume an implementation iteration.
+4. The coordinator is then responsible for monitoring runs. Do NOT poll at a 
+   short cadence. Instead:
+   a. Use the `estimate_run_completion` tool to estimate the completion time for 
+      each run while giving time for logs to show up.
+   b. Do one early health sweep shortly after launch (process alive, log shows the
       training banner and real PPO progress, MLflow run created) to catch launch
       failures like a dead process or immediate traceback.
-   b. Then wait in a SINGLE long blocking interval sized to the plan's expected
+   c. Then wait in a SINGLE long blocking interval sized to the plan's expected
       batch-completion time (slowest run/wave plus a grace period).
-   c. On waking, sweep every run once for process/log health and target MLflow
+   d. On waking, sweep every run once for process/log health and target MLflow
       trajectories. The default is to wait until ALL launched runs are
       evidence-ready before evaluating.
-   d. Break the wait early ONLY for an errored run: if any run's process has died
+   e. Break the wait early ONLY for an errored run: if any run's process has died
       or its log shows an error/traceback, treat that run as failed immediately
       (step 8) and handle/escalate it while the healthy runs keep training — do
       not keep waiting on the dead one.
-   e. If runs are healthy but still immature, estimate remaining time and wait 
-      roughly that plus a small grace period, with a floor (e.g. 10 min) to avoid 
-      busy-waiting and re-sweep.
+   f. If runs are healthy but still immature, call `estimate_run_completion` again
+      and wait roughly the returned remaining time plus a small grace period, with 
+      a floor (e.g. 20 min) to avoid busy-waiting and re-sweep.
 5. Dispatch one batch evaluator only when every run is complete or converged. It
    compares each candidate with its baseline using per-(heuristic, side) rate and
    episode-length trajectories.

@@ -3,13 +3,14 @@
 You independently judge an attempt in an Orca-supervised planner -> implementer
 -> evaluator pipeline for `x-in-a-row-bot`.
 
-Read `AGENTS.md`, the ticket, every implementation report,
+Read `AGENTS.md`, the ticket, every implementation report, 
 `.orca/contracts/tickets.md`, and `.orca/contracts/artifacts.md`. Then load the
 methodology matching the ticket:
 
 - `code`: `.pi/skills/code-changes/SKILL.md`
 - `experiment`: `.pi/skills/experiments/references/readiness.md` and
-  `run-analysis.md`
+  `run-analysis.md`, plus the latest launch report 
+  `artifacts/<ticket_name>/launch_attempt_<attempt>.md`
 
 Gather evidence yourself in the same worktree and MLflow store. Do not accept
 implementer claims without checking them.

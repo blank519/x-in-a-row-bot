@@ -16,8 +16,8 @@ directory:
   metric movement, and evidence conditions.
 - `references/training-knobs.md` — curriculum, opponent pool, masks, shaping,
   block reward, defensive openings, snapshots, and evaluation.
-- `references/launching-runs.md` — root-level script copies, verification,
-  durable background launch, logs, PID, run IDs, and worktree caveats.
+- `references/launching-runs.md` — launch using the `launch_run` tool, logs, 
+  PID, run IDs, and worktree caveats.
 - `references/readiness.md` — completion, convergence, plateau requirements,
   dead/stuck runs, and HOLD readiness semantics.
 - `references/run-analysis.md` — MLflow layout and per-(heuristic, side) rate plus
