@@ -7,9 +7,50 @@ the installed `orchestration` skill; do not guess flags.
 ## Setup
 
 - Confirm the Orca runtime and experimental orchestration feature.
-- Default workers to `--agent pi` and `--worktree current`.
+- Create every worker (planner, implementer, evaluator) via the model-configured
+  terminal flow described below, using `--worktree current`. 
 - Read `max_iterations` from the ticket; default 3.
 - Create a Run with an objective containing ticket title and type.
+
+## Creating workers
+
+Pi does not support Orca's launch-time model selection via the `--model` flag. 
+To create Pi worker agents with specific models, start Pi with the model in an 
+Orca terminal, wait for its TUI to become idle, and attach that terminal to the 
+prepared worker task:
+
+```bash
+orca terminal create \
+  --worktree active \
+  --title "implement <unit-id> with <planner/implementer/evaluator-model-name>" \
+  --command "pi --model <planner/implementer/evaluator-model-id> --approve" \
+  --json
+
+orca terminal wait \
+  --terminal <terminal-handle> \
+  --for tui-idle \
+  --timeout-ms 120000 \
+  --json
+
+orca orchestration worker-start \
+  --run <run-id> \
+  --task <planner/implementer/evaluator-task-id> \
+  --worktree current \
+  --terminal <terminal-handle> \
+  --json
+```
+
+Read `<terminal-handle>` from the `terminal create` receipt. The final
+`worker-start` call supplies the planner/implementer/evaluator task 
+specification and lifecycle preamble to the already model-configured Pi session.
+
+The exact model name and model ID to use for the planner, implementer, and evaluator 
+will be specified in `.orca/pipelines/code.md` or `.orca/pipelines/experiment.md`, 
+depending on the type of ticket being processed.
+
+This terminal flow is REQUIRED for every planner, implementer, and evaluator
+worker. State the role's expected model in the worker's task spec so the worker can 
+verify `PI_MODEL` matches before doing work and flag a mismatch.
 
 ## Task specs
 
@@ -21,7 +62,7 @@ all implementers to the batch evaluator.
 ## Dispatch and fan-out
 
 Create all dispatchable tasks, but start no more than `max_parallel_workers`
-(default 2). Only units explicitly marked independent may overlap. As workers
+(default 3). Only units explicitly marked independent may overlap. As workers
 settle, release them and start queued work until all required units finish.
 
 ## Waiting protocol
@@ -49,6 +90,13 @@ An unacknowledged Delivery is replayed and stalls the loop. A timeout/count zero
 is a checkpoint, not a worker failure. Replace a failed worker with a retry of the
 same task. If a worker becomes TUI-idle without reporting, nudge it with the exact
 completion command from its preamble before using manual task completion.
+
+Finally, if the worker is in an external terminal, you MUST close it, using the 
+following command:
+
+```bash
+orca terminal close --terminal <terminal-handle> --json
+```
 
 ## Evaluation and decisions
 

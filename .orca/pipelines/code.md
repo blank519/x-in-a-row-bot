@@ -16,3 +16,17 @@ Read `.orca/pipelines/common.md` and `.pi/skills/code-changes/SKILL.md`.
 On FAIL, preserve evaluator-authored tests for the next attempt. The next
 implementer fixes production behavior and must not weaken those tests. Escalate a
 test that demonstrably contradicts the ticket instead of silently changing it.
+
+## Model Configuration
+
+Use the following models for each role:
+
+- **Planner**: 
+  - Model Name: GPT 5.6 Sol 
+  - Model ID: openai/gpt-5.6-sol
+- **Implementer**: 
+  - Model Name: GLM 5.3 Flash
+  - Model ID: openrouter/z-ai/glm-5.3-flash
+- **Evaluator**: 
+  - Model Name: GPT 5.6 Sol
+  - Model ID: openai/gpt-5.6-sol

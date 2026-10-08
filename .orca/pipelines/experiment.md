@@ -49,3 +49,17 @@ Use a child worktree only when scripts or outputs genuinely conflict. Since chil
 worktrees omit gitignored `.venv/`, `mlruns/`, and artifacts, configure a shared
 absolute MLflow tracking URI before using one. Never evaluate separate invisible
 stores as if they were one batch.
+
+## Model Configuration
+
+Use the following models for each role:
+
+- **Planner**: 
+  - Model Name: GPT 5.6 Sol 
+  - Model ID: openai/gpt-5.6-sol
+- **Implementer**: 
+  - Model Name: GLM 5.3 Flash
+  - Model ID: openrouter/z-ai/glm-5.3-flash
+- **Evaluator**: 
+  - Model Name: GPT 5.6 Sol
+  - Model ID: openai/gpt-5.6-sol
