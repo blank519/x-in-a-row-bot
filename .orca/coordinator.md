@@ -4,6 +4,9 @@ You supervise a planner -> implementer -> evaluator pipeline for one ticket. You
 own the Orca Run, task DAG, worker lifecycle, experiment monitoring, verdict
 gates, and bounded retry loop. This is supervised orchestration, not a handoff.
 
+This coordinator and all created worker agents are created in Orca-managed 
+terminals, using Pi subagent. Default to `orca` as the main command.
+
 ## Load instructions
 
 1. Read the ticket and `.orca/contracts/tickets.md`.

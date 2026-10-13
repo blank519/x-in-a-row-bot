@@ -2,28 +2,8 @@
   "schema_version": 3,
   "sections": {
     "breakthroughs_and_dead_ends": {
-      "historical_summaries": [
-        "extended-heuristic-training, 2 runs, Jul 18–19 2026 — dead end: Early heuristic-heavy training was highly asymmetric and extension did not repair the weak side.",
-        "all-heuristic-curriculum, 2 runs, Jul 20 2026 — dead end: Substantially greater/all-heuristic exposure was a dead end in both variants.",
-        "reproduction-and-forgetting, 3 runs, Jul 20–21 2026 — finding: The original short regimen reproduced strong mean performance, while snapshot continuation sharply forgot offensive-first play; a fresh longer schedule largely recovered the mean but retained a zero worst side.",
-        "potential-reward-shaping, 6 runs, Jul 21–24 2026 — finding: Unshaped training produced the best controlled terminal mean; shaping strength and defensive weighting failed to improve the weakest matchup.",
-        "warmup-duration-control, 2 runs, Jul 24 2026 — finding: The nominal longer reproduction strongly beat the shortened warmup, rejecting the idea that shortening warmup was harmless.",
-        "combined-heuristic-shaping, 3 runs, Jul 26–27 2026 — dead end: Combined-only heuristic training remained brittle; removing shaping modestly improved mean, while defense-biased shaping did not.",
-        "full-combined-defense-weight, 4 runs, Jul 28–31 2026 — finding: At full duration, defense weight 1.5 was the useful shaping setting; weight 2 raised mean slightly but reduced worst-side robustness.",
-        "defensive-opening-curriculum, 4 runs, Aug 1–3 2026 — dead end: The initial opening-curriculum variants did not consistently improve robustness; the no-opening annealed/shaped variant had the best mean in this group.",
-        "fixed-defensive-curriculum-shaping, 2 runs, Aug 3 2026 — finding: After the curriculum fix, slight shaping improved the pair but absolute robustness remained low.",
-        "center-mask-shaping-and-lr, 3 runs, Aug 4 2026 — finding: Annealed learning rate plus slight shaping was a meaningful recovery over both center-masked controls.",
-        "mistake-rate-block-reward-interaction, 6 runs, Aug 4–6 2026 — finding: Without block reward, starting mistake rate 0.7/0.5 beat 0.3; adding block reward 0.5 collapsed performance despite high collected block reward.",
-        "block-reward-coefficient-sweep, 3 runs, Aug 7 2026 — finding: The controlled sweep located a moderate optimum at 0.25; 0.4 collapsed and 0.1 was intermediate.",
-        "long-block25-refinements, 3 runs, Aug 8 2026 — finding: At 0.25 and 15.36M steps, slight shaping hurt while opening probability 0.4 modestly improved the mean.",
-        "block20-opening-retries, 4 runs, Aug 16–17 2026 — finding: Reducing block reward to 0.20 improved long-run robustness, and opening probability 0.4 slightly raised mean but slightly lowered worst side in completed retries."
-      ],
       "current_findings": [
         {
-          "group": "raise_warmup_performance",
-          "run_count": 14,
-          "period": "Sep 12–17 2026",
-          "finding": "Full heuristic-only warmup with block reward 0.15 produced the strongest robust model; lower/higher nearby coefficients and mixture schedules did not surpass it.",
           "evidence": [
             {
               "run_id": "7bbe675725f941eea81ab0fb38675ade",
@@ -41,13 +21,89 @@
               "run_id": "788dfa9797e344f2b993e436698647f3",
               "timestamp": "2026-09-16T12:53:54.196Z"
             }
-          ]
+          ],
+          "finding": "Full heuristic-only warmup with block reward 0.15 produced the strongest robust model in that batch; lower/higher nearby coefficients and mixture schedules did not surpass it.",
+          "group": "raise_warmup_performance",
+          "period": "Sep 12–17 2026",
+          "run_count": 14
+        },
+        {
+          "evidence": [
+            {
+              "run_id": "f1eaf9d418d5488682575b8432de89bd",
+              "timestamp": "2026-10-08T02:36:02.493Z"
+            },
+            {
+              "run_id": "add5ba32cdb748c2a5590fbdc6d7ea1a",
+              "timestamp": "2026-10-08T02:37:20.794Z"
+            },
+            {
+              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+              "timestamp": "2026-10-08T02:38:41.933Z"
+            }
+          ],
+          "finding": "Widening the post-flatten projection 512→1024 is a breakthrough for late warmup trajectories at seed 42: it beat the prior baseline 5/5 on Combined-X, Combined-O, and aggregate, with means 0.504/0.232/0.524 versus 0.358/0.150/0.437. True LR decay and batch256 were dead ends for the ticket because their aggregate means regressed; no candidate reached sustained 0.60 on both Combined sides.",
+          "group": "raise_warmup_performance_2",
+          "period": "Oct 8 2026",
+          "run_count": 3
+        },
+        {
+          "evidence": [
+            {
+              "run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
+              "timestamp": "2026-10-11T20:59:38.942Z"
+            },
+            {
+              "run_id": "107fdc23596540e696b4e4c00cfd6465",
+              "timestamp": "2026-10-11T21:00:52.055Z"
+            },
+            {
+              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
+              "timestamp": "2026-10-11T21:02:04.726Z"
+            },
+            {
+              "run_id": "6b767bd3d98e44d1a553591582665a02",
+              "timestamp": "2026-10-11T21:03:21.413Z"
+            },
+            {
+              "run_id": "50165123f87442b889ad546df7e8c15a",
+              "timestamp": "2026-10-11T21:04:45.282Z"
+            },
+            {
+              "run_id": "85bf235c5bd7461b95fb89e304900687",
+              "timestamp": "2026-10-12T18:48:42.508Z"
+            },
+            {
+              "run_id": "bbfd2c71088544debb4d163edf48b197",
+              "timestamp": "2026-10-12T18:50:02.020Z"
+            }
+          ],
+          "finding": "Across both final-attempt matched seeds, reallocating conserved expected opening exposure from (.30 X,.30 O) to (.00 X,.60 O) was a replicated dead end: Combined-O fell by .082 and .086, aggregate fell by .024 and .085, and Offensive-X fell by .116 and .274 versus same-seed controls. Neither treatment had any final-five Combined checkpoint at or above .60, so the immutable seed-42 champion remains not opponent-pool ready.",
+          "group": "raise_warmup_performance_3",
+          "period": "Oct 11–13 2026",
+          "run_count": 7
         }
+      ],
+      "historical_summaries": [
+        "extended-heuristic-training, 2 runs, Jul 18–19 2026 — dead end: Early heuristic-heavy training was highly asymmetric and extension did not repair the weak side.",
+        "all-heuristic-curriculum, 2 runs, Jul 20 2026 — dead end: Substantially greater/all-heuristic exposure was a dead end in both variants.",
+        "reproduction-and-forgetting, 3 runs, Jul 20–21 2026 — finding: The original short regimen reproduced strong mean performance, while snapshot continuation sharply forgot offensive-first play; a fresh longer schedule largely recovered the mean but retained a zero worst side.",
+        "potential-reward-shaping, 6 runs, Jul 21–24 2026 — finding: Unshaped training produced the best controlled terminal mean; shaping strength and defensive weighting failed to improve the weakest matchup.",
+        "warmup-duration-control, 2 runs, Jul 24 2026 — finding: The nominal longer reproduction strongly beat the shortened warmup, rejecting the idea that shortening warmup was harmless.",
+        "combined-heuristic-shaping, 3 runs, Jul 26–27 2026 — dead end: Combined-only heuristic training remained brittle; removing shaping modestly improved mean, while defense-biased shaping did not.",
+        "full-combined-defense-weight, 4 runs, Jul 28–31 2026 — finding: At full duration, defense weight 1.5 was the useful shaping setting; weight 2 raised mean slightly but reduced worst-side robustness.",
+        "defensive-opening-curriculum, 4 runs, Aug 1–3 2026 — dead end: The initial opening-curriculum variants did not consistently improve robustness; the no-opening annealed/shaped variant had the best mean in this group.",
+        "fixed-defensive-curriculum-shaping, 2 runs, Aug 3 2026 — finding: After the curriculum fix, slight shaping improved the pair but absolute robustness remained low.",
+        "center-mask-shaping-and-lr, 3 runs, Aug 4 2026 — finding: Annealed learning rate plus slight shaping was a meaningful recovery over both center-masked controls.",
+        "mistake-rate-block-reward-interaction, 6 runs, Aug 4–6 2026 — finding: Without block reward, starting mistake rate 0.7/0.5 beat 0.3; adding block reward 0.5 collapsed performance despite high collected block reward.",
+        "block-reward-coefficient-sweep, 3 runs, Aug 7 2026 — finding: The controlled sweep located a moderate optimum at 0.25; 0.4 collapsed and 0.1 was intermediate.",
+        "long-block25-refinements, 3 runs, Aug 8 2026 — finding: At 0.25 and 15.36M steps, slight shaping hurt while opening probability 0.4 modestly improved the mean.",
+        "block20-opening-retries, 4 runs, Aug 16–17 2026 — finding: Reducing block reward to 0.20 improved long-run robustness, and opening probability 0.4 slightly raised mean but slightly lowered worst side in completed retries."
       ],
       "scope": {
         "chronology_basis": "MLflow meta.yaml start_time; run-name dates are not assumed reliable",
-        "completed_runs": 55,
-        "covered_runs": 61,
+        "completed_runs": 65,
+        "covered_runs": 71,
         "experiment": "ppo-gomoku",
         "experiment_id": "510583218657647424",
         "interrupted_runs": 6
@@ -62,8 +118,6 @@
       ],
       "patterns": [
         {
-          "name": "Mean performance is a poor proxy for robustness",
-          "interpretation": "The highest mean run is side-specialized; the later warmup run sacrifices mean but raises the weakest of six policy/side cells ninefold.",
           "evidence": [
             {
               "run_id": "32b4fcb765d64fb1b967769de1e7fae5",
@@ -72,12 +126,20 @@
             {
               "run_id": "7bbe675725f941eea81ab0fb38675ade",
               "timestamp": "2026-09-12T16:43:19.363Z"
+            },
+            {
+              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+              "timestamp": "2026-10-08T02:38:41.933Z"
+            },
+            {
+              "run_id": "6b767bd3d98e44d1a553591582665a02",
+              "timestamp": "2026-10-11T21:03:21.413Z"
             }
-          ]
+          ],
+          "interpretation": "The highest historical mean run was side-specialized, and the open0.375 run improved Offensive-O while collapsing Combined and Offensive-X; balanced comparisons must inspect every policy/side cell and the weakest Combined side.",
+          "name": "Mean performance is a poor proxy for robustness"
         },
         {
-          "name": "Block reward has a non-monotonic optimum and proxy-reward risk",
-          "interpretation": "Collecting more shaped block reward is negatively associated with game strength at high coefficients; moderate 0.15-0.25 settings are promising, with 0.15 strongest in the later full-warmup regimen.",
           "evidence": [
             {
               "run_id": "d6f58cab1784484aa56b29a8f6452e45",
@@ -94,12 +156,16 @@
             {
               "run_id": "7bbe675725f941eea81ab0fb38675ade",
               "timestamp": "2026-09-12T16:43:19.363Z"
+            },
+            {
+              "run_id": "6b767bd3d98e44d1a553591582665a02",
+              "timestamp": "2026-10-11T21:03:21.413Z"
             }
-          ]
+          ],
+          "interpretation": "Collecting more shaped block reward is negatively associated with game strength at high coefficients; even with coefficient fixed at 0.15, the highest late block-reward mean in the opening sweep belonged to open0.375, whose Combined and aggregate performance was worst. Proxy reward must remain subordinate to external wins.",
+          "name": "Block reward has a non-monotonic optimum and proxy-reward risk"
         },
         {
-          "name": "Potential shaping is context-sensitive and usually negative",
-          "interpretation": "Shaping hurt in clean/near-clean comparisons more often than it helped; the corrected-curriculum improvement coincided with a learning-rate change.",
           "evidence": [
             {
               "run_id": "48afd570381e4f05aa0526d9c9c2e396",
@@ -125,11 +191,11 @@
               "run_id": "bdc81446285c44eb914bee0f54a285d6",
               "timestamp": "2026-08-03T14:47:54.835Z"
             }
-          ]
+          ],
+          "interpretation": "Shaping hurt in clean/near-clean comparisons more often than it helped; the corrected-curriculum improvement coincided with a learning-rate change.",
+          "name": "Potential shaping is context-sensitive and usually negative"
         },
         {
-          "name": "Defense weight 1.5 is better than slight unbiased shaping, but does not solve side brittleness",
-          "interpretation": "Weight 1.5 gives the best robustness of this controlled sequence; weight 2 chases mean at the expense of the weakest cell.",
           "evidence": [
             {
               "run_id": "3288a42374f643b6b81b734bc92edf58",
@@ -143,11 +209,11 @@
               "run_id": "63e6289ec9f847c4ad97e070a05994fd",
               "timestamp": "2026-07-31T14:59:05.628Z"
             }
-          ]
+          ],
+          "interpretation": "Weight 1.5 gives the best robustness of this controlled sequence; weight 2 chases mean at the expense of the weakest cell.",
+          "name": "Defense weight 1.5 is better than slight unbiased shaping, but does not solve side brittleness"
         },
         {
-          "name": "Defensive openings help modestly only after the core regimen is sound",
-          "interpretation": "Probability 0.4 repeatedly adds 0.02-0.045 mean but slightly lowers worst-side rate; it is a mean/robustness tradeoff, not a breakthrough.",
           "evidence": [
             {
               "run_id": "15601a9073d7440f8d2bb2293482f111",
@@ -164,12 +230,20 @@
             {
               "run_id": "9e597a56d86d482bb732733806a084f8",
               "timestamp": "2026-08-17T03:47:39.798Z"
+            },
+            {
+              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
+              "timestamp": "2026-10-11T21:02:04.726Z"
+            },
+            {
+              "run_id": "50165123f87442b889ad546df7e8c15a",
+              "timestamp": "2026-10-11T21:04:45.282Z"
             }
-          ]
+          ],
+          "interpretation": "Older probability-0.4 regimens showed small mean gains, but the controlled wideproj 0.325–0.375 sweep did not beat the open0.30 champion. Open0.35 was closest at seed 42 yet matched seed 43 reduced Combined-O and Offensive-O. Defensive-opening dose is a seed-sensitive mean/side tradeoff, not a reliable weak-side solution.",
+          "name": "Defensive openings help modestly only after the core regimen is sound"
         },
         {
-          "name": "Annealed learning rate can rescue shaped center-mask training",
-          "interpretation": "This is one of the cleaner schedule comparisons, but it needs seed replication and worst-side logging interpretation.",
           "evidence": [
             {
               "run_id": "8dd08ed542594b19976adb99649996f3",
@@ -178,12 +252,16 @@
             {
               "run_id": "f22bb1bdb24c42728292484ee442b4a8",
               "timestamp": "2026-08-04T04:07:23.858Z"
+            },
+            {
+              "run_id": "f1eaf9d418d5488682575b8432de89bd",
+              "timestamp": "2026-10-08T02:36:02.493Z"
             }
-          ]
+          ],
+          "interpretation": "Annealed LR rescued shaped center-mask training historically, but on the block-0.15 warmup regimen true 3e-4→1e-4 decay raised Combined-X/O while lowering aggregate from 0.437 to 0.427 and Offensive-X from 0.726 to 0.520; schedule transfer cannot be assumed.",
+          "name": "Learning-rate schedule effects are regimen-dependent"
         },
         {
-          "name": "Longer or continued training can forget rather than monotonically improve",
-          "interpretation": "Snapshot-pool continuation requires checkpoint selection and anti-forgetting evaluation rather than assuming terminal improvement.",
           "evidence": [
             {
               "run_id": "89720142ec914ccdaec8ade0d6c229fa",
@@ -201,25 +279,111 @@
               "run_id": "6a8ebacf0b4e431887eee888dc3ae04b",
               "timestamp": "2026-07-19T14:28:01.126Z"
             }
-          ]
+          ],
+          "interpretation": "Snapshot-pool continuation requires checkpoint selection and anti-forgetting evaluation rather than assuming terminal improvement.",
+          "name": "Longer or continued training can forget rather than monotonically improve"
+        },
+        {
+          "evidence": [
+            {
+              "run_id": "7bbe675725f941eea81ab0fb38675ade",
+              "timestamp": "2026-09-12T16:43:19.363Z"
+            },
+            {
+              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+              "timestamp": "2026-10-08T02:38:41.933Z"
+            },
+            {
+              "run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
+              "timestamp": "2026-10-11T20:59:38.942Z"
+            }
+          ],
+          "interpretation": "At seed 42, widening only the post-flatten hidden projection 512→1024 raised final-five Combined-X/O/aggregate by +0.146/+0.082/+0.087 and beat baseline 5/5. The exact seed-43 control then scored 0.410/0.182/0.462 versus the champion's 0.504/0.232/0.524, so the gain is promising but seed-sensitive and not a replicated universal architecture effect.",
+          "name": "Projection capacity improved one seed but requires multi-seed confirmation"
+        },
+        {
+          "evidence": [
+            {
+              "run_id": "f1eaf9d418d5488682575b8432de89bd",
+              "timestamp": "2026-10-08T02:36:02.493Z"
+            },
+            {
+              "run_id": "add5ba32cdb748c2a5590fbdc6d7ea1a",
+              "timestamp": "2026-10-08T02:37:20.794Z"
+            },
+            {
+              "run_id": "6b767bd3d98e44d1a553591582665a02",
+              "timestamp": "2026-10-11T21:03:21.413Z"
+            },
+            {
+              "run_id": "50165123f87442b889ad546df7e8c15a",
+              "timestamp": "2026-10-11T21:04:45.282Z"
+            }
+          ],
+          "interpretation": "Corrected decay and batch256 improved selected O-side signals while regressing aggregate/offense; open0.375 improved Offensive-O but collapsed Combined-X/O, and seed43 open0.35 improved aggregate/X cells while reducing both target O cells. Weak-side progress must be gated jointly with Combined-X/O, aggregate, and all six cells.",
+          "name": "Weak-side defensive gains can trade against broad offense"
+        },
+        {
+          "evidence": [
+            {
+              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+              "timestamp": "2026-10-08T02:38:41.933Z"
+            },
+            {
+              "run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
+              "timestamp": "2026-10-11T20:59:38.942Z"
+            },
+            {
+              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
+              "timestamp": "2026-10-11T21:02:04.726Z"
+            },
+            {
+              "run_id": "50165123f87442b889ad546df7e8c15a",
+              "timestamp": "2026-10-11T21:04:45.282Z"
+            }
+          ],
+          "interpretation": "The same architecture/regimen varies by roughly 0.05–0.09 in key final-five means across seeds, while an opening-dose effect can change sign. Promotion decisions require matched seeds and should not treat small single-seed deltas as causal.",
+          "name": "Training-seed variance is decision-scale in late warmup"
+        },
+        {
+          "evidence": [
+            {
+              "run_id": "85bf235c5bd7461b95fb89e304900687",
+              "timestamp": "2026-10-12T18:48:42.508Z"
+            },
+            {
+              "run_id": "bbfd2c71088544debb4d163edf48b197",
+              "timestamp": "2026-10-12T18:50:02.020Z"
+            },
+            {
+              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+              "timestamp": "2026-10-08T02:38:41.933Z"
+            },
+            {
+              "run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
+              "timestamp": "2026-10-11T20:59:38.942Z"
+            }
+          ],
+          "interpretation": "At fixed expected overall opening exposure, moving all designed-opening attempts to O reduced Combined-O at both seeds (-.082/-.086), shortened Combined-O games (-1.140/-.296), damaged Offensive-X (-.116/-.274), and reduced aggregate (-.024/-.085). Side targeting alone does not make the existing generic threat generator an effective weak-side curriculum.",
+          "name": "O-only generic opening exposure amplified side brittleness across matched seeds"
         }
       ]
     },
     "champion": {
-      "run_name": "ppo-gomoku-warmup-block15-15m-2026-08-18",
-      "status": 3,
-      "selection_criterion": "Best completed-run per-policy/per-side robustness: maximize eval/worst_win_rate first, then require competitive eval/average_win_rate and inspect all six policy/side win rates with paired episode lengths. This avoids selecting a high-mean model that collapses on one side.",
       "defining_parameters": {
+        "batch_size": 512,
         "block_reward_coef": 0.15,
         "defensive_opening_prob": 0.3,
         "eval_games_per_side": 100,
-        "final_learning_rate": 0.0001,
-        "final_mistake_rate": 0.1,
+        "feature_extractor": "WideProjectionBoardCnnExtractor",
+        "features_dim": 512,
+        "learning_rate_schedule": "linear_rising_1e-4_to_3e-4_progress_remaining_baseline_expression",
+        "local_mask_radius": 2,
         "mask_learner_until_steps": 15360000,
         "mask_opponent_until_steps": 15360000,
+        "projection_hidden_dim": 1024,
         "reward_shaping_coef": 0,
-        "start_mistake_rate": 0.7,
-        "starting_learning_rate": 0.0003,
+        "seed": 42,
         "total_timesteps": 15360000,
         "warmup_p_heuristics": "[0.9]",
         "warmup_p_random": 0.1,
@@ -227,124 +391,188 @@
       },
       "evidence": [
         {
-          "run_id": "7bbe675725f941eea81ab0fb38675ade",
-          "timestamp": "2026-09-12T16:43:19.363Z"
+          "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+          "timestamp": "2026-10-08T02:38:41.933Z"
         }
       ],
-      "other_strong_comparator": {
-        "reason": "Similar mean but materially weaker combined-policy O-side robustness.",
-        "evidence": [
-          {
-            "run_id": "89aeea1bc5134df18b0dc4d1b700e387",
-            "timestamp": "2026-07-31T02:41:43.762Z"
-          }
+      "late_window_metrics": {
+        "average_win_rate_mean": 0.524,
+        "combined_o_mean": 0.232,
+        "combined_x_mean": 0.504,
+        "defensive_o_mean": 0.574,
+        "defensive_x_mean": 0.658,
+        "offensive_o_mean": 0.404,
+        "offensive_x_mean": 0.772,
+        "steps": [
+          14336000,
+          14592000,
+          14848000,
+          15104000,
+          15360000
         ]
       },
-      "why_not_highest_mean": {
-        "reason": "Its larger mean is driven by extreme matchup/side specialization; its weakest cell is nine times lower than the champion's 0.18.",
+      "prior_champion": {
         "evidence": [
           {
-            "run_id": "32b4fcb765d64fb1b967769de1e7fae5",
-            "timestamp": "2026-07-24T23:45:30.426Z"
+            "run_id": "7bbe675725f941eea81ab0fb38675ade",
+            "timestamp": "2026-09-12T16:43:19.363Z"
           }
-        ]
-      }
+        ],
+        "reason": "Prior robust baseline; final-five Combined-X/O/aggregate means 0.358/0.150/0.437 were all surpassed 5/5 by wideproj1024.",
+        "run_name": "ppo-gomoku-warmup-block15-15m-2026-08-18"
+      },
+      "readiness_caveat": "Champion status is not opponent-pool readiness: Combined-X mean .504 and Combined-O mean .232, with 0/5 checkpoints >=.60 on each side. All seven challengers failed readiness; the final two O-side treatments also had 0/5 Combined checkpoints >=.60.",
+      "rejected_challengers": {
+        "evidence": [
+          {
+            "run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
+            "timestamp": "2026-10-11T20:59:38.942Z"
+          },
+          {
+            "run_id": "107fdc23596540e696b4e4c00cfd6465",
+            "timestamp": "2026-10-11T21:00:52.055Z"
+          },
+          {
+            "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
+            "timestamp": "2026-10-11T21:02:04.726Z"
+          },
+          {
+            "run_id": "6b767bd3d98e44d1a553591582665a02",
+            "timestamp": "2026-10-11T21:03:21.413Z"
+          },
+          {
+            "run_id": "50165123f87442b889ad546df7e8c15a",
+            "timestamp": "2026-10-11T21:04:45.282Z"
+          },
+          {
+            "run_id": "85bf235c5bd7461b95fb89e304900687",
+            "timestamp": "2026-10-12T18:48:42.508Z"
+          },
+          {
+            "run_id": "bbfd2c71088544debb4d163edf48b197",
+            "timestamp": "2026-10-12T18:50:02.020Z"
+          }
+        ],
+        "reason": "All seven raise_warmup_performance_3 challengers had lower aggregate means or failed strict movement. Final O-side reallocation treatments scored Combined-X/O/aggregate .466/.150/.500 at seed 42 and .368/.096/.376 at seed 43; both reduced Combined-O and aggregate versus matched controls and had 0/5 Combined checkpoints >=.60."
+      },
+      "run_name": "ppo-gomoku-warmup-wideproj1024-block15-15m-2026-10-08",
+      "selection_criterion": "Best completed warmup under aligned late-window balanced evidence: require persistent Combined-X, Combined-O, and aggregate improvement, then all six cells with paired lengths. Wideproj1024 remains champion after seven matched-architecture seed/curriculum challengers; the final replicated side-reallocation treatment harmed Combined-O and aggregate at both seeds.",
+      "status": 3
     },
     "promising_directions": {
       "evaluation_requirements": [
-        "Primary metric: eval/worst_win_rate over every logged heuristic/side cell.",
-        "Secondary metric: eval/average_win_rate; report every component win rate rather than aggregate alone.",
-        "Pair each per-policy/side win rate with its *_avg_episode_length where logged.",
-        "Use replicated seeds and confidence intervals before promoting small terminal differences.",
+        "Primary warmup-readiness metrics: aligned final-window Combined-X and Combined-O win rates, each paired with episode length; opponent-pool transition requires final-five mean >=0.60 and at least three checkpoints >=0.60 on both sides.",
+        "Secondary metric: eval/average_win_rate; require higher mean and at least three aligned wins versus the immutable baseline, and report every component rather than aggregate alone.",
+        "Pair each per-policy/side win and loss rate with its *_avg_episode_length where logged; longer games count only when win rate improves.",
+        "Use matched replicated seeds and predeclared all-six gates before promoting small differences because observed seed variance is decision-scale.",
         "Never rank status-1 partial runs against completed terminal results; use them only as trajectory evidence."
       ],
       "prioritized": [
         {
-          "priority": 1,
-          "direction": "Replicate and locally tune the champion's block reward around 0.15 under the exact 15.36M heuristic-only warmup regimen.",
-          "hypothesis": "Coefficients near 0.15 preserve the champion's 0.18 worst-side robustness better than 0.10 or 0.20 while retaining mean strength.",
-          "design": "Run multiple seeds at 0.10, 0.125, 0.15, 0.175, and 0.20 with every other champion parameter fixed; predeclare eval/worst_win_rate as primary and average_win_rate as secondary.",
-          "caveat": "The 0.10 run belongs to attempt 2 and the 0.20 run to attempt 1; exact replication is required before assigning coefficient causality.",
+          "caveat": "Both conserved-dose O-only treatments reduced Combined-O and aggregate and damaged Offensive-X, so neither more generic dose nor the same side gate should be retried as a promotion candidate.",
+          "design": "Keep immutable wideproj1024 controls and matched seeds, but replace the generic block/open-three installer with one separately validated mechanism (for example staged O-to-move threat diversity or explicit offense-preservation balance); retain Combined-X/O, aggregate, all-six, and paired-length gates.",
+          "direction": "Do not reuse the current generic defensive-opening generator as an O-only curriculum; test a qualitatively different weak-side mechanism only with matched controls.",
           "evidence": [
             {
-              "run_id": "7bbe675725f941eea81ab0fb38675ade",
-              "timestamp": "2026-09-12T16:43:19.363Z"
+              "run_id": "85bf235c5bd7461b95fb89e304900687",
+              "timestamp": "2026-10-12T18:48:42.508Z"
             },
             {
-              "run_id": "ac7769166dd64dad8caadd09912da98b",
-              "timestamp": "2026-09-15T18:34:10.159Z"
+              "run_id": "bbfd2c71088544debb4d163edf48b197",
+              "timestamp": "2026-10-12T18:50:02.020Z"
             },
             {
-              "run_id": "0c6ec2937cc74ef4995c31927e066ac7",
-              "timestamp": "2026-09-13T08:20:41.308Z"
+              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
+              "timestamp": "2026-10-11T21:02:04.726Z"
+            },
+            {
+              "run_id": "50165123f87442b889ad546df7e8c15a",
+              "timestamp": "2026-10-11T21:04:45.282Z"
             }
-          ]
+          ],
+          "hypothesis": "The replicated harm from generic O-only openings suggests the state generator or optimization balance, not merely exposure allocation, must change to improve Combined-O without eroding offense.",
+          "priority": 1
         },
         {
-          "priority": 2,
-          "direction": "Optimize directly for the champion's weakest Combined-policy O side without sacrificing its other five cells.",
-          "hypothesis": "A small curriculum reweighting toward combined-policy O-side situations can lift the current 0.18 floor while preserving defensive/offensive strengths.",
-          "design": "Start from the champion, change one opponent/opening mixture knob at a time, and gate checkpoints on the minimum of the six win rates; always log paired episode lengths.",
-          "caveat": "Episode length is descriptive and direction-dependent; longer games are not automatically better without win-rate improvement.",
+          "caveat": "The existing seed-43 control is materially weaker, but two seeds still cannot estimate the full distribution.",
+          "design": "Repeat exact open0.30 wideproj1024 controls at additional predeclared seeds and compare aligned final-five means/confidence intervals for all six cells and aggregate; preserve the 1,024 architecture ceiling.",
+          "direction": "Quantify wideproj1024 baseline variance across additional matched seeds before attributing small treatment effects.",
           "evidence": [
             {
-              "run_id": "7bbe675725f941eea81ab0fb38675ade",
-              "timestamp": "2026-09-12T16:43:19.363Z"
+              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+              "timestamp": "2026-10-08T02:38:41.933Z"
             },
             {
-              "run_id": "89aeea1bc5134df18b0dc4d1b700e387",
-              "timestamp": "2026-07-31T02:41:43.762Z"
+              "run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
+              "timestamp": "2026-10-11T20:59:38.942Z"
             }
-          ]
+          ],
+          "hypothesis": "The seed-42 champion is a favorable draw within a high-variance regimen, so multi-seed distributions are needed to distinguish architecture benefit from seed luck.",
+          "priority": 2
         },
         {
-          "priority": 3,
-          "direction": "Test annealed learning rate on the champion regimen as a clean one-knob experiment.",
-          "hypothesis": "Annealing 0.0003 to 0.0001 may stabilize late warmup competence and reduce side collapse.",
-          "design": "Compare fixed and annealed schedules across seeds with champion reward/curriculum settings unchanged and evaluate checkpoints, not only terminal models.",
-          "caveat": "Evidence is currently one center-mask pair and does not establish transfer to the champion curriculum.",
+          "caveat": "Selection on the same 100-game evaluations can overfit noise, so fresh holdout evaluation is mandatory.",
+          "design": "Evaluate every 256k checkpoint with a predeclared minimum-cell/Pareto rule and validate selected checkpoints with fresh evaluation games; continue to require sustained Combined-X/O >=0.60 before pool training.",
+          "direction": "Use late-window checkpoint/Pareto selection as a research diagnostic, not as permission to begin self-play.",
           "evidence": [
             {
-              "run_id": "8dd08ed542594b19976adb99649996f3",
-              "timestamp": "2026-08-04T04:05:43.452Z"
+              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+              "timestamp": "2026-10-08T02:38:41.933Z"
             },
             {
-              "run_id": "f22bb1bdb24c42728292484ee442b4a8",
-              "timestamp": "2026-08-04T04:07:23.858Z"
+              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
+              "timestamp": "2026-10-11T21:02:04.726Z"
             }
-          ]
+          ],
+          "hypothesis": "Checkpoint selection across minimum Combined side, aggregate, and all-six metrics may reduce terminal sampling/optimization variance while exposing whether proficiency ever co-occurs.",
+          "priority": 3
         },
         {
-          "priority": 4,
-          "direction": "Use defensive-opening probability as a constrained mean/robustness tradeoff rather than maximizing it.",
-          "hypothesis": "A value between 0.30 and 0.40 may retain the 0.30 setting's worst-side rate while capturing part of the 0.40 setting's mean gain.",
-          "design": "Sweep 0.30, 0.325, 0.35, 0.375, 0.40 around an otherwise fixed champion configuration with replicated seeds.",
-          "caveat": "The observed mean gains are small and unreplicated.",
+          "caveat": "The conclusion applies to this architecture/regimen and these two seeds, not every possible curriculum implementation.",
+          "design": "Do not repeat the same narrow dose-only sweep in the next iteration; revisit opening probability only when paired with a separately testable mechanism and matched multi-seed controls.",
+          "direction": "Treat defensive-opening probabilities 0.325–0.375 as negative controls rather than promotion candidates.",
           "evidence": [
             {
-              "run_id": "4c2c75fc8db6427d851ae3aa124fac3b",
-              "timestamp": "2026-08-17T03:45:58.893Z"
+              "run_id": "107fdc23596540e696b4e4c00cfd6465",
+              "timestamp": "2026-10-11T21:00:52.055Z"
             },
             {
-              "run_id": "9e597a56d86d482bb732733806a084f8",
-              "timestamp": "2026-08-17T03:47:39.798Z"
+              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
+              "timestamp": "2026-10-11T21:02:04.726Z"
             },
             {
-              "run_id": "15601a9073d7440f8d2bb2293482f111",
-              "timestamp": "2026-08-08T14:35:00.445Z"
+              "run_id": "6b767bd3d98e44d1a553591582665a02",
+              "timestamp": "2026-10-11T21:03:21.413Z"
             },
             {
-              "run_id": "bffd63073f574705ab3e10b2d86c45fd",
-              "timestamp": "2026-08-08T14:41:34.175Z"
+              "run_id": "50165123f87442b889ad546df7e8c15a",
+              "timestamp": "2026-10-11T21:04:45.282Z"
             }
-          ]
+          ],
+          "hypothesis": "Within the current wideproj regimen, changing generic opening dose alone redistributes side strength and proxy reward rather than solving Combined-O.",
+          "priority": 4
         },
         {
-          "priority": 5,
-          "direction": "Add anti-forgetting checkpoint selection before any self-play continuation.",
-          "hypothesis": "Selecting on the minimum per-policy/side checkpoint and maintaining heuristic rehearsal will prevent the continuation regressions seen after snapshot loading.",
-          "design": "Evaluate every snapshot on all policy/side cells, retain Pareto-optimal checkpoints, and compare continuation with versus without fixed heuristic rehearsal.",
-          "caveat": "Existing continuation runs also changed schedules, so the mechanism needs a controlled test.",
+          "caveat": "One seed cannot prove universal harm, but both mature runs failed aggregate requirements decisively.",
+          "design": "If revisited, use matched seeds and explicit all-six checkpoint selection against wideproj1024 rather than the older baseline.",
+          "direction": "Keep corrected LR decay and batch256 as negative controls unless combined with an explicit offense-preservation mechanism.",
+          "evidence": [
+            {
+              "run_id": "f1eaf9d418d5488682575b8432de89bd",
+              "timestamp": "2026-10-08T02:36:02.493Z"
+            },
+            {
+              "run_id": "add5ba32cdb748c2a5590fbdc6d7ea1a",
+              "timestamp": "2026-10-08T02:37:20.794Z"
+            }
+          ],
+          "hypothesis": "Their isolated weak-side gains are real but the associated aggregate/Offensive-X regressions make either change unsuitable alone.",
+          "priority": 5
+        },
+        {
+          "caveat": "Current warmup champion is not ready for this transition; this is a later-stage safeguard, not permission to begin self-play.",
+          "design": "Only after both Combined sides meet readiness, evaluate every snapshot on all policy/side cells, retain Pareto-optimal checkpoints, and compare continuation with versus without fixed heuristic rehearsal.",
+          "direction": "Add anti-forgetting checkpoint selection before any eventual self-play continuation.",
           "evidence": [
             {
               "run_id": "89720142ec914ccdaec8ade0d6c229fa",
@@ -353,23 +581,15 @@
             {
               "run_id": "045026321f574c0783eb98673bc27531",
               "timestamp": "2026-07-20T20:45:46.827Z"
-            },
-            {
-              "run_id": "3a3858a915ff444e9cf82b9aaaa36704",
-              "timestamp": "2026-07-18T22:34:02.173Z"
-            },
-            {
-              "run_id": "6a8ebacf0b4e431887eee888dc3ae04b",
-              "timestamp": "2026-07-19T14:28:01.126Z"
             }
-          ]
+          ],
+          "hypothesis": "Selecting on the minimum policy/side checkpoint and maintaining heuristic rehearsal will prevent continuation regressions.",
+          "priority": 6
         },
         {
-          "priority": 6,
+          "caveat": "These are regimen-level dead ends; they do not prove every alternative implementation will fail.",
+          "design": "Treat block_reward_coef >=0.4 and all-heuristic schedules as negative controls; monitor block reward jointly with each policy/side win rate.",
           "direction": "Avoid high block-reward and broad all-heuristic regimens unless redesigned with explicit robustness guards.",
-          "hypothesis": "High proxy reward and indiscriminate heuristic exposure divert learning from winning behavior.",
-          "design": "Treat block_reward_coef >=0.4 and all-heuristic schedules as negative controls; if revisited, monitor train/mean_block_reward jointly with each policy/side win rate and stop on proxy divergence.",
-          "caveat": "These are regimen-level dead ends; they do not prove every alternative implementation of broad heuristic exposure will fail.",
           "evidence": [
             {
               "run_id": "d6f58cab1784484aa56b29a8f6452e45",
@@ -382,8 +602,14 @@
             {
               "run_id": "f044a9791f2d48228213462c76ad94db",
               "timestamp": "2026-07-20T14:02:51.965Z"
+            },
+            {
+              "run_id": "6b767bd3d98e44d1a553591582665a02",
+              "timestamp": "2026-10-11T21:03:21.413Z"
             }
-          ]
+          ],
+          "hypothesis": "High proxy reward and indiscriminate heuristic exposure divert learning from winning behavior.",
+          "priority": 7
         }
       ]
     }

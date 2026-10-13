@@ -1,7 +1,7 @@
 # Create proficient warmup model before beginning opponent pool training
 
 type: experiment
-max_iterations: 1
+max_iterations: 2
 
 ## Goal
 The goal is to raise the RL model's warmup performance to an acceptable level before 
@@ -14,23 +14,19 @@ Propose a plan to improve the win rate for both offensive and defensive heuristi
 execute the plan in `train_ppo_gomoku.py`.
 
 ## Constraints
+- `max_parallel_workers` = 5
 - For each run, create a copy of the current `train_ppo_gomoku.py` file with a descriptive name.
-- Apply the plan's stated delta yourself. You **MUST NOT** open, read, cat, diff, copy, or 
-  byte-duplicate any other worker's file or report, only the original `train_ppo_gomoku.py`. 
-- You must set `total_timesteps` equal to `warmup_steps` (no opponent pool training yet). 
-- Set `total_timesteps` to a lower number, such as 1 million.
+- You must set `total_timesteps` equal to `warmup_steps` (no opponent pool training yet).
+- Do not plan experiments which increase the size of the neural network beyond the most successful 
+  attempt's architecture.
 - Change any of the other hyperparameters you deem necessary across all runs you start. If
   code changes are required (ex: a lambda to anneal a hyperparameter), make those changes.
 - Give each run a descriptive `run_name` (e.g. `ppo-gomoku-block-reward-sweep-...`).
-- Verify the code with `python -m pytest tests -q` before launching.
-- Have every worker agent include in its report a section describing what agent tools were used
-  and how they were used.
-- For this specific ticket, DO NOT UPDATE MEMORIES.
 
 ## Hypothesis
 Until the model can consistently win against the combined heuristic as both X and O, it will not 
 be ready for opponent pool training. My estimate is that a 60% win rate against the combined heuristic
-as both X and O is a good threshold.
+as both X and O is a good target.
 
 ## Baseline
 The best performing run with the highest win rate against the combined heuristic, which should 
@@ -43,4 +39,5 @@ also be the run with the highest average win rate.
    - `eval/average_win_rate` trends higher.
 2. The evaluator determines that the model's win rate against the Combined Heuristic Policy is sufficient
    to proceed to opponent pool training.
-Treat a success in the first condition as a success, while simultaneously evaluating the second condition.
+Treat the second condition as the true metric of success, while simultaneously evaluating the first 
+condition.

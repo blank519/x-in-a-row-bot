@@ -1,0 +1,157 @@
+{
+  "schema_version": 3,
+  "experiment": "raise_warmup_performance_2",
+  "conclusion": "Attempt 1 produced one ticket-success candidate: wideproj1024 exceeded the immutable baseline at all five aligned late checkpoints for Combined-X, Combined-O, and aggregate, with final-five means 0.504, 0.232, and 0.524 versus 0.358, 0.150, and 0.437. Corrected LR decay improved both Combined sides but regressed aggregate/offensive strength, while batch256 improved Combined-O and Defensive-O but regressed Combined-X and aggregate. No candidate is opponent-pool ready because neither Combined side achieved the required sustained 0.60 on both sides; wideproj1024 is the best new warmup checkpoint but should be replicated and improved specifically on Combined-O before self-play.",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-warmup-lr-decay-block15-15m-2026-10-08",
+      "timestamp": "2026-10-08T02:36:02.493Z",
+      "modified_params": {
+        "learning_rate_schedule": "linear_3e-4_to_1e-4_progress_remaining",
+        "unit_delta": "corrected_linear_lr_3e-4_to_1e-4_progress_remaining"
+      },
+      "goal_hypothesis": "Correcting the baseline's accidentally rising learning-rate expression to a true 3e-4-to-1e-4 decay would improve late Combined-policy strength on both learner sides while preserving overall heuristic performance.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.488; baseline 0.358; beat baseline 5/5",
+          "insight": "True LR decay materially improved Combined-X throughout the aligned late window."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.204; baseline 0.150; beat baseline 5/5",
+          "insight": "Combined-O also improved, with paired episode length rising from 9.650 to 10.182, consistent with somewhat more contested weak-side play."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.427; baseline 0.437; beat baseline 2/5",
+          "insight": "The candidate failed ticket condition 1 because aggregate performance regressed despite both Combined-side gains."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.520; baseline 0.726",
+          "insight": "The aggregate regression is strongly associated with lost Offensive-X competence, contradicting the preservation part of the hypothesis."
+        }
+      ],
+      "reasoning": [
+        "The run is evidence-ready: MLflow status is FINISHED, all required histories have 60 samples through exactly step 15,360,000, the log reaches that boundary without traceback, and final/best/latest models plus one isolated boundary snapshot exist.",
+        "Core logged parameters match the immutable baseline and warmup-only boundary; source and MLflow provenance isolate the scientific change to LR direction.",
+        "Both Combined trajectories improve persistently, so the schedule affects the desired matchups, but aggregate and offensive regressions show it trades away broad tactical strength rather than producing a net warmup improvement.",
+        "No Combined side has any of the last five checkpoints at or above 0.60, so this model is not opponent-pool ready."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "lr-decay",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "f1eaf9d418d5488682575b8432de89bd",
+      "mlruns_path": "mlruns/510583218657647424/f1eaf9d418d5488682575b8432de89bd"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-batch256-block15-15m-2026-10-08",
+      "timestamp": "2026-10-08T02:37:20.794Z",
+      "modified_params": {
+        "batch_size": 256,
+        "unit_delta": "batch_size_512_to_256"
+      },
+      "goal_hypothesis": "Halving PPO minibatch size from 512 to 256 would extract more tactical and defensive signal from the same warmup data, especially improving weak-side defense without sacrificing X-side offense.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.300; baseline 0.358; beat baseline 2/5",
+          "insight": "Smaller minibatches weakened Combined-X and failed the required aligned improvement."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.192; baseline 0.150; beat baseline 5/5",
+          "insight": "Combined-O improved, with paired length increasing from 9.650 to 10.358, indicating more contested weak-side games."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.3947; baseline 0.4370; beat baseline 0/5",
+          "insight": "Overall strength regressed decisively, so the unit fails ticket condition 1."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.580; baseline 0.476; beat baseline 5/5",
+          "insight": "The change improved Defensive-O, but this local benefit did not transfer to broad offense or Combined-X strength."
+        }
+      ],
+      "reasoning": [
+        "The run is evidence-ready with FINISHED status, complete 60-point histories through exactly 15,360,000, a clean terminal log, three model outputs, an MLflow model artifact, and one boundary snapshot.",
+        "Logged parameters and retained source isolate batch_size 512-to-256 while preserving the historical rising LR, model, curriculum, masking, and warmup boundary.",
+        "The desired O-side defensive signal improved, but Combined-X, Offensive-X, Offensive-O, Defensive-X, and aggregate means regressed, showing excess update reuse was harmful overall.",
+        "Neither Combined side has a late checkpoint at or above 0.60, so the model is not ready for opponent-pool training."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "batch-size",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "add5ba32cdb748c2a5590fbdc6d7ea1a",
+      "mlruns_path": "mlruns/510583218657647424/add5ba32cdb748c2a5590fbdc6d7ea1a"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-block15-15m-2026-10-08",
+      "timestamp": "2026-10-08T02:38:41.933Z",
+      "modified_params": {
+        "feature_extractor": "WideProjectionBoardCnnExtractor",
+        "features_dim": 512,
+        "projection_hidden_dim": 1024,
+        "unit_delta": "projection_hidden_512_to_1024"
+      },
+      "goal_hypothesis": "Widening only the CNN post-flatten hidden projection from 512 to 1024 would retain more simultaneous Gomoku threat and block patterns, improving both Combined sides and overall warmup strength.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.504; baseline 0.358; beat baseline 5/5",
+          "insight": "The wider representation produced a persistent, large Combined-X improvement."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.232; baseline 0.150; beat baseline 5/5",
+          "insight": "Combined-O also improved persistently; paired length increased from 9.650 to 10.948, supporting more contested weak-side play."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.524; baseline 0.437; beat baseline 5/5",
+          "insight": "Broad strength improved at every aligned late checkpoint, satisfying ticket condition 1 together with both Combined sides."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.404; baseline 0.306; beat baseline 5/5",
+          "insight": "The representation gain transfers to weak-side offense, though it remains far below the 0.60 supporting target."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "opponent-pool readiness failed: mean 0.232 and 0/5 checkpoints >=0.60",
+          "insight": "Ticket success does not imply self-play readiness; Combined-O remains the binding weakness."
+        }
+      ],
+      "reasoning": [
+        "The run is evidence-ready: FINISHED status, all 13 required aggregate/rate/paired-length histories contain 60 points through exactly step 15,360,000, logs end cleanly, and all expected final/best/latest, MLflow-artifact, and isolated snapshot files are present.",
+        "Logged parameters and source inspection preserve the warmup curriculum, masking, PPO values, historical rising LR expression, convolution stack, and 512 output features; only the local hidden projection width is scientifically changed.",
+        "All three ticket-condition trajectories beat baseline at 5/5 aligned checkpoints and have higher means, giving robust late-window rather than endpoint-only evidence.",
+        "Supporting Defensive-X/O and Offensive-X/O means are 0.658/0.574 and 0.772/0.404, all improved or near-improved versus baseline but below their predeclared proficiency targets; Combined-O remains especially far from 0.60.",
+        "The model is the best candidate from this batch and a new warmup champion under late balanced/aggregate evidence, but needs replication and targeted weak-side improvement before opponent-pool training."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "wide-projection",
+        "attempt-1",
+        "ticket-success",
+        "not-ready",
+        "champion"
+      ],
+      "mlruns_run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+      "mlruns_path": "mlruns/510583218657647424/d7e2f5e4c48a4bfdbe0bb0e0c5c9460d"
+    }
+  ]
+}

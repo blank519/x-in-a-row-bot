@@ -1,0 +1,381 @@
+{
+  "schema_version": 3,
+  "experiment": "raise_warmup_performance_3",
+  "conclusion": "Final attempt 2 completed two matched-seed O-side threat-reallocation runs, but both mature treatments failed every binding readiness path and moved the central O-side target backward. Seed 42 treatment final-five Combined-X/Combined-O/aggregate means were 0.466/0.150/0.500 versus its control's 0.504/0.232/0.524; seed 43 treatment means were 0.368/0.096/0.376 versus its matched control's 0.410/0.182/0.462. Neither treatment had a single final-five checkpoint at or above 0.60 on either Combined side, neither passed all-six or aggregate proficiency, and neither passed strict higher-mean/three-of-five movement over the immutable baseline. The side reallocation reduced Combined-O at both seeds while shortening those games, eroded Offensive-X materially, and reduced aggregate; it is a replicated dead end for this regimen. The immutable baseline d7e2f5e4c48a4bfdbe0bb0e0c5c9460d remains champion but is itself not opponent-pool ready, so no run is authorized to proceed to opponent-pool training.",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-seed43-open30-block15-15m-2026-10-11",
+      "timestamp": "2026-10-11T20:59:38.942Z",
+      "modified_params": {
+        "seed": 43,
+        "unit_delta": "seed_42_to_43"
+      },
+      "goal_hypothesis": "A seed-43 replication of the exact 1,024-projection, opening-0.30 champion would reproduce broad late strength closely enough to show the prior architecture breakthrough was not seed-42 luck.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.410; baseline 0.504; beat baseline 0/5",
+          "insight": "Combined-X was 0.094 below baseline and outside the predeclared ±0.05 replication band."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.182; baseline 0.232; 0/5 checkpoints >=0.60",
+          "insight": "The binding Combined-O weakness did not improve and opponent-pool readiness failed."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.462; baseline 0.524; beat baseline 0/5",
+          "insight": "Broad performance regressed, contradicting seed replication of the one-seed champion."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.424 with paired length 6.614; baseline 0.404/7.238",
+          "insight": "A small rate gain in one cell came with shorter weak-side games and did not offset broad regressions."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED; all required rate, loss, length, aggregate, and block-reward histories have 60 finite samples through exactly 15,360,000 with no later metric.",
+        "Logged common parameters match the immutable baseline, including the 1,024 projection and four-way warmup/mask boundary; seed 43 is the only scientific delta.",
+        "Final, best, latest, and MLflow model artifacts are non-empty, the log has no traceback, and exactly one allowed equality-boundary snapshot exists.",
+        "Combined-X, Defensive-X/O, Offensive-X, and aggregate all fall materially below the seed-42 baseline, so the prior architecture result has substantial seed sensitivity rather than clean replication."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "wide-projection",
+        "seed-replication",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
+      "mlruns_path": "mlruns/510583218657647424/5a13b6f6e6cb4b0d997324ff6265ef9d"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-open325-block15-15m-2026-10-11",
+      "timestamp": "2026-10-11T21:00:52.055Z",
+      "modified_params": {
+        "defensive_opening_prob": 0.325,
+        "unit_delta": "defensive_opening_prob_0.30_to_0.325"
+      },
+      "goal_hypothesis": "A small opening-dose increase from 0.30 to 0.325 at seed 42 would improve Combined-O and Offensive-O threat recognition without materially damaging X-side offense.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.402; baseline 0.504; beat baseline 0/5",
+          "insight": "The small dose increase substantially damaged Combined-X rather than preserving it."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.162 with paired length 10.574; baseline 0.232/10.948; beat baseline 1/5",
+          "insight": "Combined-O rate and survival both regressed, directly contradicting the mechanism."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.376 with paired length 7.388; baseline 0.404/7.238",
+          "insight": "Longer games did not convert into the required weak-side win gain."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.468; baseline 0.524; beat baseline 0/5",
+          "insight": "The treatment caused a broad aggregate regression and failed the ticket movement gate."
+        }
+      ],
+      "reasoning": [
+        "The run is evidence-ready: status FINISHED, complete 60-point finite histories through exactly the warmup boundary, clean log, required models, and one allowed boundary snapshot.",
+        "Actual params preserve every common baseline control and isolate defensive_opening_prob 0.30-to-0.325 at seed 42; there is no metric or update beyond 15,360,000.",
+        "Both target O-side cells fail their planned gains and Combined-X/aggregate regress sharply, so the opening dose is a mature negative result rather than an immature trajectory.",
+        "Combined-X and Combined-O each have 0/5 checkpoints at or above 0.60, prohibiting opponent-pool training."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "defensive-opening",
+        "open325",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "107fdc23596540e696b4e4c00cfd6465",
+      "mlruns_path": "mlruns/510583218657647424/107fdc23596540e696b4e4c00cfd6465"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-open350-block15-15m-2026-10-11",
+      "timestamp": "2026-10-11T21:02:04.726Z",
+      "modified_params": {
+        "defensive_opening_prob": 0.35,
+        "unit_delta": "defensive_opening_prob_0.30_to_0.35"
+      },
+      "goal_hypothesis": "An opening dose of 0.35 at seed 42 would balance extra forced-block rehearsal with ordinary Combined-policy play, raising Combined-O and Offensive-O while preserving broad strength.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five trajectory 0.45/0.48/0.57/0.56/0.45; mean 0.502 vs baseline 0.504; beat baseline 3/5",
+          "insight": "Three checkpoints improved, but the strict higher-mean condition failed and no checkpoint reached 0.60."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "trajectory 0.22/0.18/0.31/0.19/0.26; mean 0.232 equals baseline 0.232; beat baseline 3/5",
+          "insight": "Checkpoint wins did not produce a higher mean, and paired length fell from 10.948 to 10.608 while the rate remained sub-threshold."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.512 vs baseline 0.524; beat baseline 1/5",
+          "insight": "The aggregate baseline-movement condition failed despite this being the strongest candidate in the dose sweep."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.418 with paired length 7.722 vs baseline 0.404/7.238",
+          "insight": "A small local gain and longer play did not meet the 0.60 target or offset Defensive-O and aggregate regressions."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "final-five mean 0.048777 vs baseline 0.045613",
+          "insight": "More collected proxy reward did not translate into ticket-level win improvement."
+        }
+      ],
+      "reasoning": [
+        "The run is fully evidence-ready with status FINISHED, 60 finite aligned samples for every required history, exact 15,360,000 boundary, clean log, non-empty model artifacts, and one allowed boundary snapshot.",
+        "Actual MLflow params match the immutable baseline except defensive_opening_prob 0.30-to-0.35; architecture and all no-pool constraints are intact.",
+        "This candidate is numerically closest to baseline, but strict three-of-five plus higher-mean movement fails for Combined-X, Combined-O, and aggregate, and all sustained proficiency checks fail.",
+        "Both Combined sides have 0/5 checkpoints at or above 0.60, so the run is not opponent-pool ready."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "defensive-opening",
+        "open350",
+        "seed42",
+        "attempt-1",
+        "not-ready",
+        "closest-candidate"
+      ],
+      "mlruns_run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
+      "mlruns_path": "mlruns/510583218657647424/2b10b38ebb7143c5922efc7fc6e01f11"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-open375-block15-15m-2026-10-11",
+      "timestamp": "2026-10-11T21:03:21.413Z",
+      "modified_params": {
+        "defensive_opening_prob": 0.375,
+        "unit_delta": "defensive_opening_prob_0.30_to_0.375"
+      },
+      "goal_hypothesis": "An opening dose of 0.375 would test whether stronger forced-block rehearsal maximizes O-side defense before broad offense begins to erode.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.318; baseline 0.504; beat baseline 0/5",
+          "insight": "The upper dose severely eroded Combined-X."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.142 with paired length 10.866; baseline 0.232/10.948; beat baseline 1/5",
+          "insight": "The intended Combined-O defense gain reversed despite greater defensive-opening exposure."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.468 with paired length 7.980; baseline 0.404/7.238",
+          "insight": "Offensive-O improved and games lengthened, but the local gain traded against Combined play and Offensive-X."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.600; baseline 0.772",
+          "insight": "Broad X-side offense collapsed, confirming the predicted overexposure tradeoff."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "final-five mean 0.050655, highest in the batch; baseline 0.045613",
+          "insight": "The strongest proxy-reward collection coincided with the worst broad ticket performance, reinforcing proxy-overfit risk."
+        }
+      ],
+      "reasoning": [
+        "The run is mature and complete: FINISHED status, exact 60-boundary histories through 15,360,000 only, clean log, all required models, and one isolated equality snapshot.",
+        "Logged params isolate defensive_opening_prob 0.30-to-0.375 while retaining baseline seed 42, architecture, PPO configuration, masking, and warmup-only boundary.",
+        "The treatment yields a coherent but unacceptable tradeoff: Offensive-O rises while Combined-X/O, Offensive-X, and aggregate fall.",
+        "Combined-X and Combined-O have 0/5 checkpoints at or above 0.60, so the run fails proficiency and opponent-pool readiness."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "defensive-opening",
+        "open375",
+        "attempt-1",
+        "not-ready",
+        "dead-end",
+        "proxy-reward-risk"
+      ],
+      "mlruns_run_id": "6b767bd3d98e44d1a553591582665a02",
+      "mlruns_path": "mlruns/510583218657647424/6b767bd3d98e44d1a553591582665a02"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-seed43-open350-block15-15m-2026-10-11",
+      "timestamp": "2026-10-11T21:04:45.282Z",
+      "modified_params": {
+        "defensive_opening_prob": 0.35,
+        "seed": 43,
+        "unit_delta": "seed_42_to_43_and_defensive_opening_0.30_to_0.35"
+      },
+      "goal_hypothesis": "At matched seed 43, increasing opening probability from 0.30 to 0.35 would replicate O-side defensive gains relative to the seed-43 control without lowering aggregate or other cells.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.158; matched control 0.182 (delta -0.024); baseline 0.232",
+          "insight": "The central target moved in the wrong direction and failed the required +0.05 matched-seed gain."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.532; matched control 0.504 (delta +0.028)",
+          "insight": "The small gain narrowly missed the predeclared +0.03 requirement and remained far below 0.70."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.402; matched control 0.424 (delta -0.022)",
+          "insight": "Offensive-O also regressed despite paired length increasing by 0.646 moves, so longer survival did not convert to wins."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "mean 0.480; matched control 0.462 (delta +0.018); baseline 0.524",
+          "insight": "A small matched aggregate improvement was insufficient and remained below the immutable baseline."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.766; matched control 0.682 (delta +0.084)",
+          "insight": "The treatment mainly shifted strength toward X-side offense rather than solving the intended O-side weakness."
+        }
+      ],
+      "reasoning": [
+        "The run and matched control are both FINISHED with complete finite 60-sample histories at exact aligned steps through the warmup boundary and no later metric.",
+        "Actual params prove opening probability 0.30-to-0.35 is the only scientific treatment relative to the seed-43 control; architecture, seed, PPO, masks, and no-pool boundary match.",
+        "Combined-O length increased only 0.332 moves, below the required +0.5 while sub-threshold; Offensive-O length met the survival requirement but its win rate fell, so neither paired signal supports the mechanism.",
+        "Both Combined sides have 0/5 checkpoints at or above 0.60 and all strict baseline-movement conditions fail, prohibiting opponent-pool training."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "defensive-opening",
+        "open350",
+        "seed43",
+        "matched-control",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "50165123f87442b889ad546df7e8c15a",
+      "mlruns_path": "mlruns/510583218657647424/50165123f87442b889ad546df7e8c15a"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-oside-open60-seed42-block15-15m-2026-10-12",
+      "timestamp": "2026-10-12T18:48:42.508Z",
+      "modified_params": {
+        "curriculum_mechanism": "o_side_threat_reallocation",
+        "defensive_opening_prob": 0.6,
+        "expected_overall_defensive_opening_prob": 0.3,
+        "o_defensive_opening_prob": 0.6,
+        "seed": 42,
+        "x_defensive_opening_prob": 0
+      },
+      "goal_hypothesis": "Reallocating unchanged expected 30% designed-opening exposure from equal X/O gates to X=0.00 and O=0.60 would concentrate threat-state rehearsal on the weak O side, raising Combined-O and Offensive-O without sacrificing X-side or aggregate performance.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.466 versus control 0.504; 0/5 checkpoints >=0.60; beat immutable baseline 1/5",
+          "insight": "Combined-X regressed and failed both readiness and strict baseline movement."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.150 with paired length 9.808 versus control 0.232/10.948; delta -0.082 win and -1.140 moves; 0/5 >=0.60",
+          "insight": "The binding O-side target moved strongly backward and games became shorter, directly contradicting the side-aware curriculum mechanism."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.656 versus control 0.772; delta -0.116",
+          "insight": "Concentrating openings on O incurred a large broad X-offense cost rather than preserving other proficiency cells."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.500 versus immutable/matched control 0.524; beat baseline 1/5; 0/5 >=0.6833",
+          "insight": "Aggregate performance regressed and failed the ticket's absolute and relative gates."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED; every required rate, loss, length, aggregate, and block-reward history has exactly 60 finite samples through 15,360,000 with no later metric.",
+        "Actual params and retained source prove the planned X=0/O=0.60 side gate at conserved expected exposure 0.30, seed 42, the 1,024 architecture ceiling, and four-way no-pool boundary.",
+        "The run has clean terminal logs, non-empty best/latest/final and MLflow models, and only one isolated equality-boundary snapshot, so this is mature evidence rather than HOLD.",
+        "Combined-X, Combined-O, Offensive-X, and aggregate all regress; Combined-O survival also shortens, so the mechanism is contradicted behaviorally as well as by the formal gates."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "side-aware-curriculum",
+        "o-side-threat-reallocation",
+        "seed42",
+        "attempt-2",
+        "final-attempt",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "85bf235c5bd7461b95fb89e304900687",
+      "mlruns_path": "mlruns/510583218657647424/85bf235c5bd7461b95fb89e304900687"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-oside-open60-seed43-block15-15m-2026-10-12",
+      "timestamp": "2026-10-12T18:50:02.020Z",
+      "modified_params": {
+        "curriculum_mechanism": "o_side_threat_reallocation",
+        "defensive_opening_prob": 0.6,
+        "expected_overall_defensive_opening_prob": 0.3,
+        "o_defensive_opening_prob": 0.6,
+        "seed": 43,
+        "x_defensive_opening_prob": 0
+      },
+      "goal_hypothesis": "At matched seed 43, the same conserved-dose X=0.00/O=0.60 threat-state reallocation would replicate O-side gains relative to the exact seed-43 open0.30 control without sacrificing X-side or aggregate performance.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.368 versus matched control 0.410 and immutable baseline 0.504; 0/5 checkpoints >=0.60",
+          "insight": "Combined-X regressed against both controls and failed readiness."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.096 with paired length 9.706 versus matched control 0.182/10.002; delta -0.086 win and -0.296 moves; 0/5 >=0.60",
+          "insight": "The weak-side target again moved backward, replicating the seed-42 treatment's negative direction rather than the hypothesized benefit."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.392 with length 18.434 versus matched control 0.504/15.854; delta -0.112 win and +2.580 moves",
+          "insight": "Much longer defensive games did not convert to wins, illustrating why episode length is credited only with a rate gain."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.408 versus matched control 0.682; delta -0.274",
+          "insight": "The treatment caused a severe X-offense collapse."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.376 versus matched control 0.462 and immutable baseline 0.524; 0/5 >=0.6833",
+          "insight": "Aggregate performance regressed materially and failed every absolute/relative promotion gate."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED; all required six-cell and aggregate histories have 60 finite aligned samples through exactly 15,360,000 and no later metric.",
+        "Logged params, retained source, and the matched control establish seed 43 with the planned side-gate reallocation as the sole scientific treatment, unchanged architecture, masking, PPO controls, and no opponent-pool learning.",
+        "Clean logs, non-empty required models, and the single allowed equality-boundary snapshot make the evidence complete and mature.",
+        "Combined-O declines at both seeds, while seed 43 also shows longer Defensive-O games with fewer wins and a severe Offensive-X/aggregate collapse; the mechanism is directionally replicated only as harm."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "side-aware-curriculum",
+        "o-side-threat-reallocation",
+        "seed43",
+        "matched-control",
+        "attempt-2",
+        "final-attempt",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "bbfd2c71088544debb4d163edf48b197",
+      "mlruns_path": "mlruns/510583218657647424/bbfd2c71088544debb4d163edf48b197"
+    }
+  ]
+}
