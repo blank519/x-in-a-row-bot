@@ -45,6 +45,9 @@ or training configuration; however, you **may and must** record findings as memo
 5. On a PASS/FAIL verdict, record findings as experiment memories, then update
    `_TRENDS` sections if established findings are affected or new ones emerge.
    Do NOT send your `worker_done` message until memory recording is finished.
+5.5. On a FAIL verdict, explain in the memory's reasoning why the planned 
+   hypothesis was incorrect. Do not simply restate the results; suggest reasons 
+   WHY you saw those results instead of what was hypothesized.
 
 Write `artifacts/<ticket_name>/evaluate_<attempt>.md`. Its final two lines must be:
 

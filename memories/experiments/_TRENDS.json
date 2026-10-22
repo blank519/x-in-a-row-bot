@@ -78,10 +78,50 @@
               "timestamp": "2026-10-12T18:50:02.020Z"
             }
           ],
-          "finding": "Across both final-attempt matched seeds, reallocating conserved expected opening exposure from (.30 X,.30 O) to (.00 X,.60 O) was a replicated dead end: Combined-O fell by .082 and .086, aggregate fell by .024 and .085, and Offensive-X fell by .116 and .274 versus same-seed controls. Neither treatment had any final-five Combined checkpoint at or above .60, so the immutable seed-42 champion remains not opponent-pool ready.",
+          "finding": "Across both final-attempt matched seeds, reallocating conserved expected opening exposure from (.30 X,.30 O) to (.00 X,.60 O) was a replicated dead end: Combined-O fell by .082 and .086, aggregate fell by .024 and .085, and Offensive-X fell by .116 and .274 versus same-seed controls. Neither treatment had any final-five Combined checkpoint at or above .60, so the immutable seed-42 champion remained not opponent-pool ready.",
           "group": "raise_warmup_performance_3",
           "period": "Oct 11–13 2026",
           "run_count": 7
+        },
+        {
+          "evidence": [
+            {
+              "run_id": "f807f87b005b468f92000f641c3c08b0",
+              "timestamp": "2026-10-14T15:49:38.547Z"
+            },
+            {
+              "run_id": "f0bfd25873d54806973327d59a320b1c",
+              "timestamp": "2026-10-14T15:51:02.815Z"
+            },
+            {
+              "run_id": "08f8373b455742feae774e862ff11c72",
+              "timestamp": "2026-10-14T15:52:27.952Z"
+            },
+            {
+              "run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+              "timestamp": "2026-10-14T15:53:55.420Z"
+            },
+            {
+              "run_id": "74b68ee991644ad7aad3ca585f642576",
+              "timestamp": "2026-10-14T15:55:27.089Z"
+            },
+            {
+              "run_id": "e74b361cbcf94532b8b0d2ab41405368",
+              "timestamp": "2026-10-15T14:38:28.416Z"
+            },
+            {
+              "run_id": "a76580216c79499297baad3e1c0fbaff",
+              "timestamp": "2026-10-15T14:39:52.293Z"
+            },
+            {
+              "run_id": "fa335f524fe34ecd90f7242d904164a3",
+              "timestamp": "2026-10-16T08:05:13.476Z"
+            }
+          ],
+          "finding": "Persistent entropy 0.010 remains a single-seed breakthrough and diagnostic champion (Combined-X/O/aggregate 0.604/0.558/0.650667), but it is not opponent-pool ready and loses Offensive-X. Fixed entropy 0.0075, a 0.010-through-75%-then-0.005 schedule, and the final 0.010-through-90%-then-0.0075 schedule were mature dead ends; the final schedule scored 0.042/0.046/0.287 and trailed both baseline and entropy010 0/5 at every aligned primary trajectory. Both scheduled runs lacked parent-like Combined capability before annealing began, reinforcing sharply nonlinear/GPU-sensitive optimization paths rather than smooth entropy interpolation. Max_iterations=3 is exhausted without a ready model.",
+          "group": "raise_warmup_performance_4",
+          "period": "Oct 14–17 2026",
+          "run_count": 8
         }
       ],
       "historical_summaries": [
@@ -102,8 +142,8 @@
       ],
       "scope": {
         "chronology_basis": "MLflow meta.yaml start_time; run-name dates are not assumed reliable",
-        "completed_runs": 65,
-        "covered_runs": 71,
+        "completed_runs": 73,
+        "covered_runs": 79,
         "experiment": "ppo-gomoku",
         "experiment_id": "510583218657647424",
         "interrupted_runs": 6
@@ -374,9 +414,11 @@
         "batch_size": 512,
         "block_reward_coef": 0.15,
         "defensive_opening_prob": 0.3,
+        "ent_coef": 0.01,
         "eval_games_per_side": 100,
         "feature_extractor": "WideProjectionBoardCnnExtractor",
         "features_dim": 512,
+        "gae_lambda": 0.95,
         "learning_rate_schedule": "linear_rising_1e-4_to_3e-4_progress_remaining_baseline_expression",
         "local_mask_radius": 2,
         "mask_learner_until_steps": 15360000,
@@ -391,18 +433,18 @@
       },
       "evidence": [
         {
-          "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
-          "timestamp": "2026-10-08T02:38:41.933Z"
+          "run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+          "timestamp": "2026-10-14T15:53:55.420Z"
         }
       ],
       "late_window_metrics": {
-        "average_win_rate_mean": 0.524,
-        "combined_o_mean": 0.232,
-        "combined_x_mean": 0.504,
-        "defensive_o_mean": 0.574,
-        "defensive_x_mean": 0.658,
-        "offensive_o_mean": 0.404,
-        "offensive_x_mean": 0.772,
+        "average_win_rate_mean": 0.6506666666666667,
+        "combined_o_mean": 0.558,
+        "combined_x_mean": 0.604,
+        "defensive_o_mean": 0.736,
+        "defensive_x_mean": 0.778,
+        "offensive_o_mean": 0.564,
+        "offensive_x_mean": 0.664,
         "steps": [
           14336000,
           14592000,
@@ -414,65 +456,141 @@
       "prior_champion": {
         "evidence": [
           {
-            "run_id": "7bbe675725f941eea81ab0fb38675ade",
-            "timestamp": "2026-09-12T16:43:19.363Z"
+            "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+            "timestamp": "2026-10-08T02:38:41.933Z"
           }
         ],
-        "reason": "Prior robust baseline; final-five Combined-X/O/aggregate means 0.358/0.150/0.437 were all surpassed 5/5 by wideproj1024.",
-        "run_name": "ppo-gomoku-warmup-block15-15m-2026-08-18"
+        "reason": "Entropy010 beat the immutable champion at all five aligned late checkpoints on Combined-X, Combined-O, and aggregate, raising means from 0.504/0.232/0.524 to 0.604/0.558/0.650667; five of six cell means improved.",
+        "run_name": "ppo-gomoku-warmup-wideproj1024-block15-15m-2026-10-08"
       },
-      "readiness_caveat": "Champion status is not opponent-pool readiness: Combined-X mean .504 and Combined-O mean .232, with 0/5 checkpoints >=.60 on each side. All seven challengers failed readiness; the final two O-side treatments also had 0/5 Combined checkpoints >=.60.",
+      "readiness_caveat": "Champion status is not opponent-pool readiness. Combined-X sustained >=0.60 (mean 0.604; 4/5 checkpoints), but Combined-O did not (mean 0.558; 1/5). Aggregate mean 0.650667 had only 1/5 checkpoints >=0.6833; Offensive-X 0.664 and Offensive-O 0.564 also missed their 0.90/0.60 gates. Attempt-2 entropy refinements and the final 90%-hold/0.0075 schedule were mature regressions, so max_iterations=3 is exhausted with no model authorized for opponent-pool training.",
       "rejected_challengers": {
         "evidence": [
           {
-            "run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
-            "timestamp": "2026-10-11T20:59:38.942Z"
+            "run_id": "f807f87b005b468f92000f641c3c08b0",
+            "timestamp": "2026-10-14T15:49:38.547Z"
           },
           {
-            "run_id": "107fdc23596540e696b4e4c00cfd6465",
-            "timestamp": "2026-10-11T21:00:52.055Z"
+            "run_id": "f0bfd25873d54806973327d59a320b1c",
+            "timestamp": "2026-10-14T15:51:02.815Z"
           },
           {
-            "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
-            "timestamp": "2026-10-11T21:02:04.726Z"
+            "run_id": "08f8373b455742feae774e862ff11c72",
+            "timestamp": "2026-10-14T15:52:27.952Z"
           },
           {
-            "run_id": "6b767bd3d98e44d1a553591582665a02",
-            "timestamp": "2026-10-11T21:03:21.413Z"
+            "run_id": "74b68ee991644ad7aad3ca585f642576",
+            "timestamp": "2026-10-14T15:55:27.089Z"
           },
           {
-            "run_id": "50165123f87442b889ad546df7e8c15a",
-            "timestamp": "2026-10-11T21:04:45.282Z"
+            "run_id": "e74b361cbcf94532b8b0d2ab41405368",
+            "timestamp": "2026-10-15T14:38:28.416Z"
           },
           {
-            "run_id": "85bf235c5bd7461b95fb89e304900687",
-            "timestamp": "2026-10-12T18:48:42.508Z"
+            "run_id": "a76580216c79499297baad3e1c0fbaff",
+            "timestamp": "2026-10-15T14:39:52.293Z"
           },
           {
-            "run_id": "bbfd2c71088544debb4d163edf48b197",
-            "timestamp": "2026-10-12T18:50:02.020Z"
+            "run_id": "fa335f524fe34ecd90f7242d904164a3",
+            "timestamp": "2026-10-16T08:05:13.476Z"
           }
         ],
-        "reason": "All seven raise_warmup_performance_3 challengers had lower aggregate means or failed strict movement. Final O-side reallocation treatments scored Combined-X/O/aggregate .466/.150/.500 at seed 42 and .368/.096/.376 at seed 43; both reduced Combined-O and aggregate versus matched controls and had 0/5 Combined checkpoints >=.60."
+        "reason": "Attempt-1 sideaware-xmist20, dilated-rf13, block125, and gae098 failed baseline movement. Attempt-2 entropy0075 and entlate010to005 were below both immutable baseline and entropy010 at all five aligned late checkpoints for Combined-X, Combined-O, and aggregate. The final 90%-hold/0.0075 schedule also trailed both references 0/5 on all three primaries, with means 0.042/0.046/0.287 and Offensive-X 0.678 below the >=0.742 refinement guard."
       },
-      "run_name": "ppo-gomoku-warmup-wideproj1024-block15-15m-2026-10-08",
-      "selection_criterion": "Best completed warmup under aligned late-window balanced evidence: require persistent Combined-X, Combined-O, and aggregate improvement, then all six cells with paired lengths. Wideproj1024 remains champion after seven matched-architecture seed/curriculum challengers; the final replicated side-reallocation treatment harmed Combined-O and aggregate at both seeds.",
+      "run_name": "ppo-gomoku-warmup-wideproj1024-entropy010-block15-15m-2026-10-14",
+      "selection_criterion": "Best completed warmup under aligned balanced evidence: persistent Combined-X/O and aggregate movement first, then all six paired rate/length cells. Entropy010 remains the diagnostic champion after three failed entropy refinements because its primary gains are large and 5/5 aligned, although it remains a one-seed result, failed readiness, and is not authorized for opponent-pool training.",
       "status": 3
     },
     "promising_directions": {
       "evaluation_requirements": [
-        "Primary warmup-readiness metrics: aligned final-window Combined-X and Combined-O win rates, each paired with episode length; opponent-pool transition requires final-five mean >=0.60 and at least three checkpoints >=0.60 on both sides.",
-        "Secondary metric: eval/average_win_rate; require higher mean and at least three aligned wins versus the immutable baseline, and report every component rather than aggregate alone.",
-        "Pair each per-policy/side win and loss rate with its *_avg_episode_length where logged; longer games count only when win rate improves.",
-        "Use matched replicated seeds and predeclared all-six gates before promoting small differences because observed seed variance is decision-scale.",
-        "Never rank status-1 partial runs against completed terminal results; use them only as trajectory evidence."
+        "Primary warmup-readiness metrics remain aligned final-window Combined-X and Combined-O win rates paired with avg_episode_length; opponent-pool transition requires final-five mean >=0.60 and at least three checkpoints >=0.60 on both sides.",
+        "Secondary aggregate floor remains eval/average_win_rate >=0.6833 as both final-five mean and at least three checkpoints; report all six component cells rather than aggregate alone.",
+        "Preserve Offensive-X >=0.90 for full proficiency and require >=0.742 for any entropy refinement's mechanism guard; longer games count only when win rate improves.",
+        "A candidate's Combined-X, Combined-O, and aggregate means must exceed immutable baseline 0.504/0.232/0.524 and beat it at least 3/5 aligned late checkpoints.",
+        "Use matched replicated seeds only after a candidate passes the predeclared promising gate; observed training-seed and optimization-path variance is decision-scale.",
+        "Never rank partial runs against completed terminal results, and treat the shared 59-point mistake-rate history as a documented equality-boundary logger omission rather than a 15.36M value."
       ],
       "prioritized": [
         {
-          "caveat": "Both conserved-dose O-only treatments reduced Combined-O and aggregate and damaged Offensive-X, so neither more generic dose nor the same side gate should be retried as a promotion candidate.",
-          "design": "Keep immutable wideproj1024 controls and matched seeds, but replace the generic block/open-three installer with one separately validated mechanism (for example staged O-to-move threat diversity or explicit offense-preservation balance); retain Combined-X/O, aggregate, all-six, and paired-length gates.",
-          "direction": "Do not reuse the current generic defensive-opening generator as an O-only curriculum; test a qualitatively different weak-side mechanism only with matched controls.",
+          "caveat": "Entropy010 is still the strongest observed diagnostic run but failed Combined-O, Offensive-X/O, and aggregate proficiency and was not replication-eligible.",
+          "design": "Any continuation requires a new ticket with a new hypothesis and unchanged readiness gates, not a fourth retry or weakened threshold.",
+          "direction": "Close raise_warmup_performance_4 without another automated retry and do not begin opponent-pool training; max_iterations=3 is exhausted and entropy010 remains diagnostic-only.",
           "evidence": [
+            {
+              "run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+              "timestamp": "2026-10-14T15:53:55.420Z"
+            },
+            {
+              "run_id": "fa335f524fe34ecd90f7242d904164a3",
+              "timestamp": "2026-10-16T08:05:13.476Z"
+            }
+          ],
+          "hypothesis": "None of the three iterations produced sustained >=0.60 Combined proficiency on both sides. The final candidate's 0.042/0.046/0.287 primary means and 0/5 relative checkpoint wins provide mature negative evidence, not an immature run that warrants HOLD.",
+          "priority": 1
+        },
+        {
+          "caveat": "These are single realized GPU trajectories, so they decisively reject promotion but do not identify a universal entropy law.",
+          "design": "Predeclare multiple matched seeds or deterministic settings, compare capability at schedule-change boundaries, log all entropy values, and avoid claiming a terminal anneal caused an earlier divergence.",
+          "direction": "If future entropy research is opened under a new ticket, first design matched replications or deterministic diagnostics that can separate schedule effects from optimization-path variance.",
+          "evidence": [
+            {
+              "run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+              "timestamp": "2026-10-14T15:53:55.420Z"
+            },
+            {
+              "run_id": "a76580216c79499297baad3e1c0fbaff",
+              "timestamp": "2026-10-15T14:39:52.293Z"
+            },
+            {
+              "run_id": "fa335f524fe34ecd90f7242d904164a3",
+              "timestamp": "2026-10-16T08:05:13.476Z"
+            }
+          ],
+          "hypothesis": "The successful persistent-0.010 run and two schedule runs shared nominal 0.010 entropy before their anneal boundaries, yet both schedule runs lacked Combined competence before annealing began; nonlinear/GPU-sensitive trajectory divergence dominates simple dose interpolation.",
+          "priority": 2
+        },
+        {
+          "caveat": "The results reject these realized configurations for promotion but not every possible entropy schedule.",
+          "design": "Do not perform another nearby fixed-dose or schedule sweep without a qualitatively new variance-control or mechanism-identification design.",
+          "direction": "Keep fixed entropy 0.0075, 0.010-through-75%-then-0.005, and 0.010-through-90%-then-0.0075 as negative controls rather than nearby sweep candidates.",
+          "evidence": [
+            {
+              "run_id": "e74b361cbcf94532b8b0d2ab41405368",
+              "timestamp": "2026-10-15T14:38:28.416Z"
+            },
+            {
+              "run_id": "a76580216c79499297baad3e1c0fbaff",
+              "timestamp": "2026-10-15T14:39:52.293Z"
+            },
+            {
+              "run_id": "fa335f524fe34ecd90f7242d904164a3",
+              "timestamp": "2026-10-16T08:05:13.476Z"
+            }
+          ],
+          "hypothesis": "All three mature refinements failed relative and absolute Combined gates; the two scheduled candidates had no parent-like broad capability at their anneal boundaries, and the fixed midpoint almost eliminated Combined wins.",
+          "priority": 3
+        },
+        {
+          "caveat": "Qualitatively redesigned curricula or architectures are not ruled out, but must be isolated and cannot exceed the successful architecture ceiling.",
+          "design": "Restore role-neutral 0.7→0.1 mistakes, undilated convolutions, block 0.15, and GAE 0.95 in any future isolated mechanism test.",
+          "direction": "Keep role-aware easier-opponent mistakes, RF13 dilation, block reward 0.125, GAE 0.98, and O-only generic defensive openings as negative controls rather than retry candidates.",
+          "evidence": [
+            {
+              "run_id": "f807f87b005b468f92000f641c3c08b0",
+              "timestamp": "2026-10-14T15:49:38.547Z"
+            },
+            {
+              "run_id": "f0bfd25873d54806973327d59a320b1c",
+              "timestamp": "2026-10-14T15:51:02.815Z"
+            },
+            {
+              "run_id": "08f8373b455742feae774e862ff11c72",
+              "timestamp": "2026-10-14T15:52:27.952Z"
+            },
+            {
+              "run_id": "74b68ee991644ad7aad3ca585f642576",
+              "timestamp": "2026-10-14T15:55:27.089Z"
+            },
             {
               "run_id": "85bf235c5bd7461b95fb89e304900687",
               "timestamp": "2026-10-12T18:48:42.508Z"
@@ -480,99 +598,36 @@
             {
               "run_id": "bbfd2c71088544debb4d163edf48b197",
               "timestamp": "2026-10-12T18:50:02.020Z"
-            },
-            {
-              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
-              "timestamp": "2026-10-11T21:02:04.726Z"
-            },
-            {
-              "run_id": "50165123f87442b889ad546df7e8c15a",
-              "timestamp": "2026-10-11T21:04:45.282Z"
             }
           ],
-          "hypothesis": "The replicated harm from generic O-only openings suggests the state generator or optimization balance, not merely exposure allocation, must change to improve Combined-O without eroding offense.",
-          "priority": 1
-        },
-        {
-          "caveat": "The existing seed-43 control is materially weaker, but two seeds still cannot estimate the full distribution.",
-          "design": "Repeat exact open0.30 wideproj1024 controls at additional predeclared seeds and compare aligned final-five means/confidence intervals for all six cells and aggregate; preserve the 1,024 architecture ceiling.",
-          "direction": "Quantify wideproj1024 baseline variance across additional matched seeds before attributing small treatment effects.",
-          "evidence": [
-            {
-              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
-              "timestamp": "2026-10-08T02:38:41.933Z"
-            },
-            {
-              "run_id": "5a13b6f6e6cb4b0d997324ff6265ef9d",
-              "timestamp": "2026-10-11T20:59:38.942Z"
-            }
-          ],
-          "hypothesis": "The seed-42 champion is a favorable draw within a high-variance regimen, so multi-seed distributions are needed to distinguish architecture benefit from seed luck.",
-          "priority": 2
-        },
-        {
-          "caveat": "Selection on the same 100-game evaluations can overfit noise, so fresh holdout evaluation is mandatory.",
-          "design": "Evaluate every 256k checkpoint with a predeclared minimum-cell/Pareto rule and validate selected checkpoints with fresh evaluation games; continue to require sustained Combined-X/O >=0.60 before pool training.",
-          "direction": "Use late-window checkpoint/Pareto selection as a research diagnostic, not as permission to begin self-play.",
-          "evidence": [
-            {
-              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
-              "timestamp": "2026-10-08T02:38:41.933Z"
-            },
-            {
-              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
-              "timestamp": "2026-10-11T21:02:04.726Z"
-            }
-          ],
-          "hypothesis": "Checkpoint selection across minimum Combined side, aggregate, and all-six metrics may reduce terminal sampling/optimization variance while exposing whether proficiency ever co-occurs.",
-          "priority": 3
-        },
-        {
-          "caveat": "The conclusion applies to this architecture/regimen and these two seeds, not every possible curriculum implementation.",
-          "design": "Do not repeat the same narrow dose-only sweep in the next iteration; revisit opening probability only when paired with a separately testable mechanism and matched multi-seed controls.",
-          "direction": "Treat defensive-opening probabilities 0.325–0.375 as negative controls rather than promotion candidates.",
-          "evidence": [
-            {
-              "run_id": "107fdc23596540e696b4e4c00cfd6465",
-              "timestamp": "2026-10-11T21:00:52.055Z"
-            },
-            {
-              "run_id": "2b10b38ebb7143c5922efc7fc6e01f11",
-              "timestamp": "2026-10-11T21:02:04.726Z"
-            },
-            {
-              "run_id": "6b767bd3d98e44d1a553591582665a02",
-              "timestamp": "2026-10-11T21:03:21.413Z"
-            },
-            {
-              "run_id": "50165123f87442b889ad546df7e8c15a",
-              "timestamp": "2026-10-11T21:04:45.282Z"
-            }
-          ],
-          "hypothesis": "Within the current wideproj regimen, changing generic opening dose alone redistributes side strength and proxy reward rather than solving Combined-O.",
+          "hypothesis": "Their mature primary regressions indicate weakened realistic pressure/local tactical features/defensive credit, increased estimator noise, or ineffective side targeting.",
           "priority": 4
         },
         {
-          "caveat": "One seed cannot prove universal harm, but both mature runs failed aggregate requirements decisively.",
-          "design": "If revisited, use matched seeds and explicit all-six checkpoint selection against wideproj1024 rather than the older baseline.",
-          "direction": "Keep corrected LR decay and batch256 as negative controls unless combined with an explicit offense-preservation mechanism.",
+          "caveat": "The omission does not make otherwise complete FINISHED runs immature.",
+          "design": "If production changes are later in scope, log the terminal scheduled rate before boundary return; meanwhile never reinterpret 0.11 as a 15.36M sample.",
+          "direction": "Fix or explicitly account for equality-boundary mistake-rate logging in future evidence contracts.",
           "evidence": [
             {
-              "run_id": "f1eaf9d418d5488682575b8432de89bd",
-              "timestamp": "2026-10-08T02:36:02.493Z"
+              "run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+              "timestamp": "2026-10-08T02:38:41.933Z"
             },
             {
-              "run_id": "add5ba32cdb748c2a5590fbdc6d7ea1a",
-              "timestamp": "2026-10-08T02:37:20.794Z"
+              "run_id": "a76580216c79499297baad3e1c0fbaff",
+              "timestamp": "2026-10-15T14:39:52.293Z"
+            },
+            {
+              "run_id": "fa335f524fe34ecd90f7242d904164a3",
+              "timestamp": "2026-10-16T08:05:13.476Z"
             }
           ],
-          "hypothesis": "Their isolated weak-side gains are real but the associated aggregate/Offensive-X regressions make either change unsuitable alone.",
+          "hypothesis": "Baseline, entropy010, both attempt-2 runs, and the attempt-3 candidate have 59 train/mistake_rate points ending at 15.104M while target evaluation and block reward have 60 through 15.36M, establishing callback ordering rather than missing training.",
           "priority": 5
         },
         {
-          "caveat": "Current warmup champion is not ready for this transition; this is a later-stage safeguard, not permission to begin self-play.",
-          "design": "Only after both Combined sides meet readiness, evaluate every snapshot on all policy/side cells, retain Pareto-optimal checkpoints, and compare continuation with versus without fixed heuristic rehearsal.",
-          "direction": "Add anti-forgetting checkpoint selection before any eventual self-play continuation.",
+          "caveat": "Checkpoint selection is not permission to begin self-play and can overfit the same 100-game evaluations.",
+          "design": "Evaluate every snapshot on all policy/side cells, retain Pareto-optimal checkpoints, and compare continuation with versus without fixed heuristic rehearsal.",
+          "direction": "Only after both Combined sides meet readiness, add anti-forgetting checkpoint selection before self-play continuation.",
           "evidence": [
             {
               "run_id": "89720142ec914ccdaec8ade0d6c229fa",
@@ -583,33 +638,8 @@
               "timestamp": "2026-07-20T20:45:46.827Z"
             }
           ],
-          "hypothesis": "Selecting on the minimum policy/side checkpoint and maintaining heuristic rehearsal will prevent continuation regressions.",
+          "hypothesis": "Minimum-cell checkpoint selection plus heuristic rehearsal may prevent the offensive forgetting seen in prior snapshot continuation.",
           "priority": 6
-        },
-        {
-          "caveat": "These are regimen-level dead ends; they do not prove every alternative implementation will fail.",
-          "design": "Treat block_reward_coef >=0.4 and all-heuristic schedules as negative controls; monitor block reward jointly with each policy/side win rate.",
-          "direction": "Avoid high block-reward and broad all-heuristic regimens unless redesigned with explicit robustness guards.",
-          "evidence": [
-            {
-              "run_id": "d6f58cab1784484aa56b29a8f6452e45",
-              "timestamp": "2026-08-07T17:34:38.529Z"
-            },
-            {
-              "run_id": "7de8435281814b42a4baa3beed4ce961",
-              "timestamp": "2026-07-20T02:33:47.646Z"
-            },
-            {
-              "run_id": "f044a9791f2d48228213462c76ad94db",
-              "timestamp": "2026-07-20T14:02:51.965Z"
-            },
-            {
-              "run_id": "6b767bd3d98e44d1a553591582665a02",
-              "timestamp": "2026-10-11T21:03:21.413Z"
-            }
-          ],
-          "hypothesis": "High proxy reward and indiscriminate heuristic exposure divert learning from winning behavior.",
-          "priority": 7
         }
       ]
     }

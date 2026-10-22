@@ -1,0 +1,558 @@
+{
+  "schema_version": 3,
+  "experiment": "raise_warmup_performance_4",
+  "conclusion": "Attempt 3 exhausts max_iterations=3 with a mature FAIL. Final candidate fa335f524fe34ecd90f7242d904164a3 finished cleanly at the exact 15.36M warmup-only boundary and has 60 finite samples for every six-cell evaluation history, aggregates, mean block reward, and entropy coefficient; the shared mistake diagnostic comparably has 59 points ending at 15.104M. Its final-five Combined-X/Combined-O/aggregate means were 0.042/0.046/0.287, trailing immutable baseline 0.504/0.232/0.524 and entropy010 0.604/0.558/0.650667 at all 5/5 aligned checkpoints. No absolute sustained gate passed: Combined-X/O had 0/5 checkpoints at or above 0.60, aggregate had 0/5 at or above 0.6833, and Offensive-X mean 0.678 missed both the 0.90 proficiency threshold and 0.742 refinement guard. The 90%-hold schedule did execute exactly, but the run had already failed to reproduce entropy010's capability before annealing began (at 13.824M candidate Combined-X/O/aggregate 0.08/0.03/0.336667 versus entropy010 0.59/0.43/0.606667), so the realized failure is best explained by nonlinear, GPU-sensitive PPO optimization-path divergence rather than the final 10% anneal alone. Entropy010 remains only the diagnostic champion and is not opponent-pool ready. The ticket has no further automated retry; do not begin opponent-pool training or promote any candidate from this ticket.",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-block15-15m-2026-10-08",
+      "timestamp": "2026-10-08T02:38:41.933Z",
+      "modified_params": {
+        "control": "immutable_baseline",
+        "projection_hidden_dim": 1024,
+        "seed": 42
+      },
+      "goal_hypothesis": "Serve as the strongest completed comparable warmup control: challengers must sustainably improve Combined-X, Combined-O, and aggregate without hiding side/policy regressions.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five [0.44,0.52,0.49,0.48,0.59], mean 0.504",
+          "insight": "The baseline was below the sustained 0.60 readiness threshold on the learner-X side."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five [0.19,0.28,0.26,0.21,0.22], mean 0.232",
+          "insight": "Combined-O was the binding baseline weakness and had 0/5 readiness checkpoints."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five [0.481667,0.535,0.536667,0.526667,0.54], mean 0.524",
+          "insight": "This is the immutable aggregate movement reference for attempt 1."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.772 with avg_episode_length 6.426",
+          "insight": "Fast first-player offense was the strongest baseline cell and an explicit preservation constraint."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "final-five mean 0.045613",
+          "insight": "Provides the proxy-reward reference; external evaluation remains the decision metric."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED and all six-cell win/loss/reward/avg_episode_length histories, aggregate histories, and block reward have 60 finite samples through step 15,360,000 with no later sample.",
+        "Logged total_timesteps, warmup_steps, mask_learner_until_steps, and mask_opponent_until_steps all equal 15,360,000, establishing the warmup-only control.",
+        "The non-empty MLflow model and retained source establish reproducible control evidence; baseline Combined-X/O are themselves not sufficient for opponent-pool training.",
+        "The shared train/mistake_rate history has 59 points ending at 15,104,000, a logging-boundary omission also present in every candidate rather than evidence of pool training."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "immutable-baseline",
+        "wide-projection",
+        "seed42",
+        "attempt-1",
+        "not-ready"
+      ],
+      "mlruns_run_id": "d7e2f5e4c48a4bfdbe0bb0e0c5c9460d",
+      "mlruns_path": "mlruns/510583218657647424/d7e2f5e4c48a4bfdbe0bb0e0c5c9460d"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-sideaware-xmist20-block15-15m-2026-10-14",
+      "timestamp": "2026-10-14T15:49:38.547Z",
+      "modified_params": {
+        "o_opponent_final_mistake_rate": 0.1,
+        "role_aware_opponent": true,
+        "unit_delta": "role_aware_x_opponent_mistake_0.7_to_0.2_o_0.7_to_0.1",
+        "x_opponent_final_mistake_rate": 0.2
+      },
+      "goal_hypothesis": "Keeping the X opponent more fallible late in warmup would scaffold learner-O responses and raise Combined-O and Offensive-O without weakening learner-X or aggregate performance.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.498 vs baseline 0.504; beat baseline 3/5",
+          "insight": "Checkpoint movement was mixed and the required higher mean failed."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.204 with avg_episode_length 10.240 vs baseline 0.232/10.948; beat baseline 1/5",
+          "insight": "The binding target regressed and games shortened, directly contradicting improved second-player scaffolding."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.450 with avg_episode_length 7.000 vs baseline 0.404/7.238",
+          "insight": "A local +0.046 gain missed the planned +0.05 and came with shorter sub-threshold games."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.658 vs baseline 0.772",
+          "insight": "The role schedule materially eroded the fast X-side offense it was supposed to preserve."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "mean 0.520667 vs baseline 0.524; beat baseline 1/5",
+          "insight": "Aggregate performance did not improve."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED; target evaluation histories and block reward have 60 finite samples through 15,360,000, all required models are non-empty, the log is clean, and exactly one boundary snapshot exists.",
+        "Logged baseline common controls and four-way 15.36M equality match; role-aware X-opponent 0.7→0.2 versus O-opponent 0.7→0.1 is the sole scientific mechanism.",
+        "The hypothesis was incorrect because a deliberately weaker X opponent reduced realistic late-threat pressure and shifted the state distribution without teaching robust O conversion; Combined-O fell and its episodes shortened.",
+        "Next iteration should not repeat easier role-conditioned heuristic mistakes; use an exploration mechanism with explicit Offensive-X preservation or richer validated O-response states while keeping the opponent's terminal difficulty realistic."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "role-aware-opponent",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "f807f87b005b468f92000f641c3c08b0",
+      "mlruns_path": "mlruns/510583218657647424/f807f87b005b468f92000f641c3c08b0"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-dilated-rf13-block15-15m-2026-10-14",
+      "timestamp": "2026-10-14T15:51:02.815Z",
+      "modified_params": {
+        "conv_receptive_field": 13,
+        "dilated_conv_index": 3,
+        "dilation": 2,
+        "unit_delta": "conv3_padding1_dilation1_to_padding2_dilation2"
+      },
+      "goal_hypothesis": "A parameter-count-neutral 11→13 receptive-field increase would represent distant simultaneous threats better and improve both Combined sides, especially learner-O.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.294 with avg_episode_length 11.718 vs baseline 0.504/12.552; beat baseline 0/5",
+          "insight": "Combined-X collapsed and episodes shortened below threshold."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.156 with avg_episode_length 10.330 vs baseline 0.232/10.948; beat baseline 0/5",
+          "insight": "Combined-O also regressed, directly contradicting the context hypothesis."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.520 vs baseline 0.574",
+          "insight": "Longer-range context did not improve the defensive weak side."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.570 vs baseline 0.772",
+          "insight": "The local tactical attack cell suffered a large decline."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "mean 0.414667 vs baseline 0.524; beat baseline 0/5",
+          "insight": "The damage was broad, not a single-cell tradeoff."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED with 60 finite target-evaluation and block-reward samples through the exact 15.36M boundary, clean log, all required non-empty models, and one allowed snapshot.",
+        "Source and logged params show the middle convolution alone uses padding 2/dilation 2, receptive field 13, unchanged channels/projection, and the same warmup-only controls; list formatting is the only apparent common-param serialization difference.",
+        "The hypothesis was incorrect because the flattened wide projection already supplies global integration, while dilation can introduce gridding and weaken contiguous five-in-a-row/local-threat feature extraction.",
+        "Do not increase dilation again; restore undilated convolutions and direct the next attempt toward controlled exploration or a validated local-plus-global branch that preserves contiguous tactical filters without exceeding the architecture ceiling."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "dilated-convolution",
+        "receptive-field",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "f0bfd25873d54806973327d59a320b1c",
+      "mlruns_path": "mlruns/510583218657647424/f0bfd25873d54806973327d59a320b1c"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-block125-15m-2026-10-14",
+      "timestamp": "2026-10-14T15:52:27.952Z",
+      "modified_params": {
+        "block_reward_coef": 0.125,
+        "unit_delta": "block_reward_coef_0.15_to_0.125"
+      },
+      "goal_hypothesis": "Reducing block shaping from 0.15 to 0.125 would reduce over-blocking and improve O-side counterattack/Combined conversion while preserving useful defense.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.334 with avg_episode_length 11.340 vs baseline 0.504/12.552; beat baseline 0/5",
+          "insight": "Combined-X regressed sharply and games shortened."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.086 with avg_episode_length 8.916 vs baseline 0.232/10.948; beat baseline 0/5",
+          "insight": "The binding target collapsed into faster losses."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.264 with avg_episode_length 6.082 vs baseline 0.404/7.238",
+          "insight": "Reduced shaping did not unlock O counterattack; both rate and survival deteriorated."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "mean 0.384667 vs baseline 0.524; beat baseline 0/5",
+          "insight": "Every primary ticket trajectory failed."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "final-five mean 0.027717 vs baseline 0.045613",
+          "insight": "The proxy fell as expected, but external wins fell with it, proving the reduction was harmful rather than less overfit."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED with mature 60-point evaluation/block histories at the exact boundary, a clean log, non-empty models, and one isolated equality snapshot.",
+        "Actual common params match the baseline except block_reward_coef 0.15→0.125, and all four no-pool boundary params equal 15,360,000.",
+        "The hypothesis was incorrect because coefficient 0.15 appears to provide necessary threat-blocking credit in this sparse-reward regimen; reducing it weakened defense before any counterattack benefit emerged.",
+        "Keep 0.15 as the local optimum/negative-control boundary for this regimen and do not spend another attempt below it unless paired with a separately validated dense tactical signal and strict all-six safeguards."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "block-reward",
+        "block125",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "08f8373b455742feae774e862ff11c72",
+      "mlruns_path": "mlruns/510583218657647424/08f8373b455742feae774e862ff11c72"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-entropy010-block15-15m-2026-10-14",
+      "timestamp": "2026-10-14T15:53:55.420Z",
+      "modified_params": {
+        "ent_coef": 0.01,
+        "unit_delta": "ent_coef_0.005_to_0.010"
+      },
+      "goal_hypothesis": "Doubling entropy from 0.005 to 0.010 would sustain response diversity and improve O-side play without altering reward, curriculum, capacity, or established fast X offense.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "trajectory [0.59,0.60,0.62,0.60,0.61], mean 0.604; 4/5 >=0.60; beat baseline 5/5",
+          "insight": "Combined-X achieved the sustained readiness threshold and improved decisively."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "trajectory [0.50,0.59,0.50,0.57,0.63], mean 0.558; 1/5 >=0.60; beat baseline 5/5",
+          "insight": "This is a major weak-side gain but still fails the binding sustained 0.60 readiness gate despite the final 0.63."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "trajectory [0.615,0.63,0.641667,0.686667,0.68], mean 0.650667; 1/5 >=0.6833; beat baseline 5/5",
+          "insight": "Broad performance improved strongly but remains below the predeclared all-six aggregate floor."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.664 with avg_episode_length 9.424 vs baseline 0.772/6.426 and target 0.90",
+          "insight": "Exploration traded away 0.108 of fast first-player offense, violating the no-supporting-cell-drop and mechanism-preservation gates."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.736 with avg_episode_length 12.504 vs baseline 0.574/17.684",
+          "insight": "Defensive-O became both stronger and more decisive, supporting entropy as a useful direction rather than a complete solution."
+        },
+        {
+          "metric": "train/mean_block_reward",
+          "outcome": "final-five mean 0.049028 vs baseline 0.045613",
+          "insight": "The external gains are not explained by reduced block-reward collection."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED; all six-cell and aggregate target histories and block reward have 60 finite aligned samples through 15,360,000, logs/models are complete, and only one equality snapshot exists.",
+        "Actual params isolate ent_coef 0.005→0.010 with unchanged seed, wide architecture, reward/curriculum, historical LR expression, and four-way warmup-only boundary.",
+        "The hypothesis was partly right about O-side diversity—five of six cell means improved—but wrong that fast X offense would be preserved; excess persistent exploration lengthened Offensive-X games by about 3 moves while lowering its win mean by 0.108.",
+        "Do not run the plan's predeclared new-seed replication yet: despite all primary means/steps passing, Offensive-X dropped more than the allowed 0.03, so the promising gate fails. Use attempt 2 for a midpoint coefficient such as 0.0075 or an entropy schedule that is high early and returns toward 0.005 late, with explicit Offensive-X >=0.742 and sustained Combined-O >=0.60 gates."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "entropy",
+        "entropy010",
+        "attempt-1",
+        "new-champion",
+        "promising-but-gate-failed",
+        "not-ready"
+      ],
+      "mlruns_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+      "mlruns_path": "mlruns/510583218657647424/b9299ce03cdf46da8b0f9b969396c15f"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-gae098-block15-15m-2026-10-14",
+      "timestamp": "2026-10-14T15:55:27.089Z",
+      "modified_params": {
+        "gae_lambda": 0.98,
+        "unit_delta": "gae_lambda_0.95_to_0.98"
+      },
+      "goal_hypothesis": "Raising GAE lambda from 0.95 to 0.98 would propagate delayed tactical consequences farther through sparse-reward games and improve Combined defense/conversion, especially as O.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.366 with avg_episode_length 11.228 vs baseline 0.504/12.552; beat baseline 0/5",
+          "insight": "Combined-X deteriorated rather than receiving better delayed credit."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.142 with avg_episode_length 9.446 vs baseline 0.232/10.948; beat baseline 0/5",
+          "insight": "Combined-O suffered faster failures, directly contradicting the target mechanism."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.630 vs baseline 0.574",
+          "insight": "A local defensive gain did not convert into Combined or aggregate proficiency."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.642 vs baseline 0.772",
+          "insight": "Higher-lambda credit estimates eroded established offensive strength."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "mean 0.464 vs baseline 0.524; beat baseline 0/5",
+          "insight": "The treatment broadly regressed."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED with complete 60-point target histories and block reward through 15.36M, clean logs, non-empty required models, and one boundary snapshot.",
+        "Logged scientific params isolate gae_lambda 0.95→0.98 while all four warmup/mask boundaries and the champion architecture/curriculum remain fixed.",
+        "The hypothesis was incorrect because the higher lambda likely increased long-horizon return variance/noise more than it improved credit assignment; shorter Combined games and lower wins show faster failure, not useful stalling.",
+        "Restore gae_lambda 0.95 and do not spend another iteration increasing it; focus on entropy control, which produced direct external gains, while explicitly protecting Offensive-X."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "gae-lambda",
+        "gae098",
+        "attempt-1",
+        "not-ready",
+        "dead-end"
+      ],
+      "mlruns_run_id": "74b68ee991644ad7aad3ca585f642576",
+      "mlruns_path": "mlruns/510583218657647424/74b68ee991644ad7aad3ca585f642576"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-entropy0075-block15-15m-2026-10-15",
+      "timestamp": "2026-10-15T14:38:28.416Z",
+      "modified_params": {
+        "attempt": 2,
+        "ent_coef": 0.0075,
+        "parent_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+        "unit_delta": "ent_coef_0.005_to_0.0075"
+      },
+      "goal_hypothesis": "An intermediate fixed entropy coefficient of 0.0075 would retain enough of entropy010's second-player exploration gain to sustain both Combined sides while recovering Offensive-X to at least 0.742.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five [0.00,0.01,0.00,0.01,0.02], mean 0.008; 0/5 >=0.60; beat baseline and entropy010 0/5",
+          "insight": "The midpoint entropy treatment never learned usable Combined-X play and missed both absolute and relative gates."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five [0.00,0.00,0.00,0.00,0.01], mean 0.002; 0/5 >=0.60; beat baseline and entropy010 0/5",
+          "insight": "The binding weak-side target collapsed essentially to zero rather than interpolating between baseline and entropy010."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five [0.145,0.146667,0.165,0.180,0.163333], mean 0.160; 0/5 >=0.6833; beat baseline and entropy010 0/5",
+          "insight": "The failure was broad and mature rather than a noisy Combined-only endpoint."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.710 with avg_episode_length 6.988; below baseline 0.772/6.426, below preservation guard 0.742, above entropy010 0.664/9.424",
+          "insight": "The run retained a narrow, relatively fast X-side attack better than entropy010 but failed even the relaxed mechanism guard and did not transfer that skill to other cells."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.054 with avg_episode_length 27.516 versus baseline 0.658/15.932 and entropy010 0.778/11.964",
+          "insight": "Much longer games paired with near-zero wins are stalling, not improved defense."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.050 with avg_episode_length 25.830 versus baseline 0.574/17.684 and entropy010 0.736/12.504",
+          "insight": "The same stalling pattern appears as O and confirms that length alone cannot rescue the treatment."
+        },
+        {
+          "metric": "train/mistake_rate",
+          "outcome": "59 samples from 0.256M through 15.104M; final value 0.11",
+          "insight": "This is the known shared callback boundary omission, comparable with both references and not evidence immaturity."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED; all 24 six-cell rate/reward/length histories, four aggregate histories, and mean block reward contain 60 finite points ending at 15,360,000 with no later metric, while source/params prove the exact warmup-only four-way boundary.",
+        "The retained source and logged params isolate fixed ent_coef 0.005→0.0075 with the champion architecture, reward, curriculum, rising learning-rate expression, masks, seed, and GAE unchanged; clean log, three non-empty output models, non-empty MLflow model, and exactly one equality snapshot establish complete evidence.",
+        "The hypothesis was incorrect because PPO training response did not interpolate smoothly with entropy dose: 0.0075 preserved mostly the easy fast Offensive-X specialization but was apparently below the exploration pressure needed in the successful 0.010 trajectory to discover broad Combined/defensive state coverage.",
+        "The enormous defensive episode-length increases paired with win means near 0.05 suggest indecisive survival/stalling rather than productive threat handling, so they cannot be treated as latent mechanism success.",
+        "Because this is one stochastic GPU trajectory, the sharp non-monotonicity may also reflect optimization-path sensitivity rather than a universal coefficient threshold; it nevertheless decisively rejects this realized candidate for promotion and makes another midpoint fixed-dose sweep poor use of the final attempt."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "entropy",
+        "entropy0075",
+        "attempt-2",
+        "not-ready",
+        "dead-end",
+        "mature-fail"
+      ],
+      "mlruns_run_id": "e74b361cbcf94532b8b0d2ab41405368",
+      "mlruns_path": "mlruns/510583218657647424/e74b361cbcf94532b8b0d2ab41405368"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-entlate010to005-block15-15m-2026-10-15",
+      "timestamp": "2026-10-15T14:39:52.293Z",
+      "modified_params": {
+        "attempt": 2,
+        "constructor_ent_coef": 0.005,
+        "entropy_schedule": "hold_0.010_first_75pct_then_linear_to_0.005_final_25pct",
+        "entropy_schedule_anneal_end_step": 15360000,
+        "entropy_schedule_anneal_start_step": 11520000,
+        "parent_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+        "unit_delta": "script_local_entropy_schedule_hold0.010_first_75pct_linear_anneal_to_0.005_final_25pct"
+      },
+      "goal_hypothesis": "Holding entropy at 0.010 through 75% of warmup and annealing to baseline 0.005 over the final 25% would retain entropy010's early broad response diversity and recover late Offensive-X exploitation precision.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five [0.04,0.04,0.10,0.05,0.10], mean 0.066; 0/5 >=0.60; beat baseline and entropy010 0/5",
+          "insight": "The schedule failed to retain the parent's Combined-X capability."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five [0.01,0.02,0.02,0.04,0.07], mean 0.032; 0/5 >=0.60; beat baseline and entropy010 0/5",
+          "insight": "Combined-O remained near zero despite a small upward terminal slope and failed every readiness/movement condition."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five [0.240,0.243333,0.266667,0.268333,0.246667], mean 0.253; 0/5 >=0.6833; beat baseline and entropy010 0/5",
+          "insight": "The full six-cell average confirms a broad mature regression."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.704 with avg_episode_length 7.730; below baseline 0.772/6.426 and preservation guard 0.742, above entropy010 0.664/9.424",
+          "insight": "Late annealing partially preserved attack relative to the parent but did not meet the planned safeguard or compensate for broad collapse."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.272 with avg_episode_length 9.826 versus baseline 0.404/7.238 and entropy010 0.564/9.436",
+          "insight": "Longer games paired with fewer wins indicate delayed losses rather than useful O-side response diversity."
+        },
+        {
+          "metric": "train/entropy_coef",
+          "outcome": "60 samples from step 0.256M through 15.36M; final-five [0.006333,0.006000,0.005667,0.005333,0.005000]",
+          "insight": "Direct runtime evidence proves the intended schedule executed through its exact terminal clamp."
+        },
+        {
+          "metric": "train/mistake_rate",
+          "outcome": "59 samples from 0.256M through 15.104M; final value 0.11",
+          "insight": "The known shared missing equality sample is comparable and does not make the complete evaluation evidence immature."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED; all six-cell evaluation, aggregate, and block-reward histories have exactly 60 finite points ending at 15,360,000 with none later, and train/entropy_coef independently has the planned 60-point schedule history.",
+        "Logged params/source isolate a callback that changes only model.ent_coef, with the immutable champion architecture/reward/curriculum/masks and all four warmup boundaries unchanged; the clean log, non-empty best/latest/final and MLflow models, and single equality snapshot complete readiness evidence.",
+        "The central hypothesis was false in this realized run because there was no strong early parent capability to retain: at the 11.52M anneal start, Combined-X/O were 0.00/0.00 and aggregate was 0.138333, versus entropy010's 0.48/0.28/0.51 at the same step.",
+        "Once the schedule entered its final quarter without Combined competence, reducing exploration could sharpen the surviving Offensive-X behavior but could not create missing broad threat-response features; the final-five defensive lengths around 25–27 moves with low wins are stalling rather than recovered exploitation.",
+        "Matching entropy010's nominal early coefficient did not reproduce its optimization basin, showing that the planned causal assumption ignored PPO/GPU trajectory sensitivity; any final schedule test should stay substantially closer to persistent 0.010 and change only a narrow terminal window, while retaining strict no-promotion gates."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "entropy",
+        "entropy-schedule",
+        "late-anneal",
+        "attempt-2",
+        "not-ready",
+        "dead-end",
+        "mature-fail"
+      ],
+      "mlruns_run_id": "a76580216c79499297baad3e1c0fbaff",
+      "mlruns_path": "mlruns/510583218657647424/a76580216c79499297baad3e1c0fbaff"
+    },
+    {
+      "run_name": "ppo-gomoku-warmup-wideproj1024-entlate010to0075-90pct-block15-15m-2026-10-16",
+      "timestamp": "2026-10-16T08:05:13.476Z",
+      "modified_params": {
+        "attempt": 3,
+        "constructor_ent_coef": 0.005,
+        "entropy_schedule": "hold_0.010_first_90pct_then_linear_to_0.0075_final_10pct",
+        "entropy_schedule_anneal_end_step": 15360000,
+        "entropy_schedule_anneal_start_step": 13824000,
+        "entropy_schedule_final_coef": 0.0075,
+        "entropy_schedule_hold_coef": 0.01,
+        "parent_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+        "unit_delta": "script_local_entropy_schedule_hold0.010_first_90pct_linear_anneal_to_0.0075_final_10pct"
+      },
+      "goal_hypothesis": "Holding entropy at 0.010 through 90% of warmup and annealing only to 0.0075 over the final 10% would stay close enough to the diagnostic champion to preserve broad Combined response diversity while recovering Offensive-X exploitation precision.",
+      "results_insights": [
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five [0.05,0.07,0.03,0.03,0.03], mean 0.042; 0/5 >=0.60; beat baseline and entropy010 0/5",
+          "insight": "The candidate failed both absolute readiness and required relative movement on learner-X."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five [0.06,0.03,0.02,0.07,0.05], mean 0.046; 0/5 >=0.60; beat baseline and entropy010 0/5",
+          "insight": "The binding learner-O target remained near zero and was not sufficient for opponent-pool training."
+        },
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five [0.326667,0.285,0.266667,0.285,0.271667], mean 0.287; 0/5 >=0.6833; beat baseline and entropy010 0/5",
+          "insight": "The broad aggregate trajectory confirms mature regression rather than a single-cell tradeoff."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.252 with avg_episode_length 27.060 versus baseline 0.658/15.932 and entropy010 0.778/11.964",
+          "insight": "Much longer defensive games paired with sharply lower wins are stalling, not improved threat handling."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.244 with avg_episode_length 25.498 versus baseline 0.574/17.684 and entropy010 0.736/12.504",
+          "insight": "The same stalling pattern on learner-O confirms that length cannot rescue the failed rate trajectory."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "mean 0.678 with avg_episode_length 8.438; below baseline 0.772/6.426, entropy010 0.664/9.424, refinement guard 0.742, and proficiency 0.90",
+          "insight": "The schedule recovered only 0.014 over entropy010 and did not preserve the planned attack guard."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/o_win_rate",
+          "outcome": "mean 0.460 with avg_episode_length 10.238 versus baseline 0.404/7.238 and entropy010 0.564/9.436",
+          "insight": "A local gain over baseline paired with longer games did not reach 0.60 and could not offset Combined/defensive collapse."
+        },
+        {
+          "metric": "train/entropy_coef",
+          "outcome": "60 samples through 15.36M; final-five [0.009167,0.008750,0.008333,0.007917,0.007500]",
+          "insight": "Direct runtime evidence proves the intended 90%-hold and narrow terminal anneal executed exactly."
+        },
+        {
+          "metric": "train/mistake_rate",
+          "outcome": "59 samples from 0.256M through 15.104M; final value 0.11",
+          "insight": "This is the known shared callback boundary omission and does not make complete FINISHED evaluation evidence immature."
+        }
+      ],
+      "reasoning": [
+        "MLflow status is FINISHED; all 24 six-cell rate/reward/length histories, four aggregate histories, mean block reward, and entropy coefficient contain 60 finite points ending at 15,360,000 with none later, while source/params prove four-way boundary equality and no pool update.",
+        "The retained source, logged params, clean log, non-empty best/latest/final and MLflow models, and exactly one equality snapshot isolate the script-local 0.010-through-90%-then-0.0075 entropy schedule on the champion controls.",
+        "The hypothesis was incorrect for this realized trajectory because capability had already diverged before the treatment's annealing phase: at the 13.824M schedule boundary the candidate scored Combined-X/O/aggregate 0.08/0.03/0.336667 versus entropy010 0.59/0.43/0.606667 under the same nominal 0.010 coefficient.",
+        "Because the final 10% anneal began after broad Combined competence was absent, it could not recover missing threat-response features; longer 25–27 move defensive games with win means near 0.25 show stalling rather than latent proficiency.",
+        "The early divergence despite the same nominal coefficient reinforces nonlinear/GPU-sensitive PPO path dependence and means this single run cannot causally blame the narrow late anneal alone; nevertheless its mature realized evidence decisively rejects promotion.",
+        "This is iteration 3 of 3, so no further automated retry is available. Preserve entropy010 only as a diagnostic reference, do not authorize opponent-pool training, and require a new ticket with explicit replication/determinism design for any future entropy research."
+      ],
+      "tags": [
+        "warmup",
+        "gomoku",
+        "entropy",
+        "entropy-schedule",
+        "90pct-hold",
+        "attempt-3",
+        "not-ready",
+        "dead-end",
+        "mature-fail",
+        "max-iterations-exhausted"
+      ],
+      "mlruns_run_id": "fa335f524fe34ecd90f7242d904164a3",
+      "mlruns_path": "mlruns/510583218657647424/fa335f524fe34ecd90f7242d904164a3"
+    }
+  ]
+}
