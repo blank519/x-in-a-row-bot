@@ -13,9 +13,10 @@ Read `.orca/pipelines/common.md` and `.pi/skills/code-changes/SKILL.md`.
    the complete suite, and does not modify production code.
 6. PASS/FAIL follows the common gate/retry loop. HOLD is invalid for code tickets.
 
-On FAIL, preserve evaluator-authored tests for the next attempt. The next
-implementer fixes production behavior and must not weaken those tests. Escalate a
-test that demonstrably contradicts the ticket instead of silently changing it.
+On FAIL, preserve evaluator-authored tests for the next attempt. The planner
+should instruct the implementer(s) to adjust production behavior and must not weaken 
+those tests. Escalate a test that demonstrably contradicts the ticket instead of 
+silently changing it.
 
 ## Model Configuration
 

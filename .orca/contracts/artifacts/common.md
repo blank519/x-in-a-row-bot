@@ -28,10 +28,7 @@ artifacts/<ticket_name>/
 
 Permitted files include:
 
-- `plan.md`
-- `implement_<unit_id>_<attempt>.md`
-- `launch_attempt_<attempt>.md` (for experiments)
-- `evaluate_<attempt>.md`
+- worker reports, as described in the respective worker's artifact contract.
 - evaluator diagnostic scripts, extracted evidence, plots, and comparison tables
   whose names identify their purpose and attempt
 
@@ -62,104 +59,6 @@ Use `artifacts/<ticket_name>/tmp/` for ticket-local scratch data. Do not leave
 scratch scripts in the repository root, `tests/`, or source directories. Remove
 the `tmp/` contents before PASS unless a file is promoted to named evaluation
 evidence and listed in the report.
-
-## Planner artifact
-
-Write `artifacts/<ticket_name>/plan.md`:
-
-```markdown
-## Goal
-## Type
-## Acceptance criteria
-## Plan
-## Work units
-- id: <stable-id>
-  independent: yes|no
-  inputs/dependencies: ...
-  files read: ...
-  files created or modified: ...
-  runtime artifacts: ...
-## Risks and assumptions
-## Done when
-```
-
-For code units, enumerate exact writable repository paths. For experiment units,
-name the root-level script copy, log path pattern, run name, and expected model /
-snapshot destinations. Two units are independent only when all writable paths
-and runtime names are disjoint.
-
-## Implementer artifact
-
-Write `artifacts/<ticket_name>/implement_<unit_id>_<attempt>.md`:
-
-```markdown
-## Completed
-## Files created
-- <path> — <purpose; permanent|runtime|temporary>
-## Files modified
-- <path> — <change>
-## Verification done
-## Cleanup / outstanding files
-## Notes / handoff
-```
-
-List files even when they are gitignored. `git diff` is not a substitute because
-it omits logs, MLflow runs, models, snapshots, and other runtime output. Report
-unexpected partial files and failed-launch artifacts rather than silently leaving
-them behind.
-
-For experiments, the handoff must include run name, exact configuration difference,
-and known model/snapshot destinations.
-
-## Launch report artifact
-
-Write `artifacts/<ticket_name>/launch_attempt_<attempt>.md` after launching
-runs:
-
-```markdown
-## Launch statuses per run
-- <launched, deferred_insufficient_vram, or failed per run>
-- <if failed, the reason why>
-## Baseline run's ID per run
-## Run name and MLflow run ID per run
-## WSL PID/process group per run
-## Log path and PID-record path per run 
-## Launch time per run
-## Script path per run
-## Configuration difference from baseline per run
-## Model/snapshot destination per run
-## Duplicate kill evidence
-## Suggested recheck time
-- <estimated with `estimate_run_completion` tool>
-```
-
-## Evaluator artifact
-
-Write `artifacts/<ticket_name>/evaluate_<attempt>.md`:
-
-```markdown
-## Evidence
-## Files created
-- <test, diagnostic, plot, table, or none>
-## Files modified
-- <test path and reason, or none>
-## Runtime artifacts inspected
-- <run/log/model/metric paths, or none>
-## Cleanup / retained evidence
-## Assessment
-## Verdict
-VERDICT: PASS|FAIL|HOLD
-FEEDBACK: <blank for PASS; actionable correction or missing evidence otherwise>
-```
-
-Evaluator-created permanent tests belong under `tests/`; temporary diagnostics
-belong under the ticket artifact directory. The evaluator lists, but never
-modifies, experiment runtime artifacts. On retries, update an existing stable
-acceptance-test file when appropriate rather than creating duplicate attempt
-files.
-
-The `VERDICT:` and `FEEDBACK:` lines must be the final two lines. HOLD is valid
-only for experiment tickets.
 
 ## Cost Reporting
 

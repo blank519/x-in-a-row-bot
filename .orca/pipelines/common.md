@@ -62,8 +62,7 @@ all implementers to the batch evaluator.
 ## Dispatch and fan-out
 
 Create all dispatchable tasks, but start no more than `max_parallel_workers`
-(default 3). Only units explicitly marked independent may overlap. As workers
-settle, release them and start queued work until all required units finish.
+(default 3). Only units explicitly marked independent may overlap. 
 
 ## Waiting protocol
 
@@ -77,7 +76,6 @@ Process every message in a Delivery:
 
 - reply to each question;
 - capture each `worker_done` body;
-- release each settled worker using its dispatch ID;
 - handle/escalate failures.
 
 Only then acknowledge the Delivery:
@@ -91,8 +89,13 @@ is a checkpoint, not a worker failure. Replace a failed worker with a retry of t
 same task. If a worker becomes TUI-idle without reporting, nudge it with the exact
 completion command from its preamble before using manual task completion.
 
-Finally, if the worker is in an external terminal, you MUST close it, using the 
-following command:
+## Releasing Workers
+Do NOT release the planner or evaluator workers until orchestration is complete.
+Release implementer workers as they settle and start queued work until all required 
+units finish.
+
+Finally, if the worker is in an external terminal, you MUST close it upon release, 
+using the following command:
 
 ```bash
 orca terminal close --terminal <terminal-handle> --json
@@ -105,7 +108,8 @@ readiness rule. Parse the exact verdict block:
 
 - PASS: create/resolve the gate as pass and finish.
 - FAIL: create/resolve the gate as fail, increment the implementation attempt,
-  and retry with feedback until `max_iterations`.
+  and retry by giving the evaluator's feedback to the planner until `max_iterations`.
+  Use the same planner and evaluator instead of making new ones.
 - HOLD: experiment only; create no gate and consume no iteration. Follow the
   experiment monitoring loop, then dispatch a fresh evaluator.
 

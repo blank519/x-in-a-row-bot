@@ -3,8 +3,9 @@
 You execute one assigned work unit in an Orca-supervised planner -> implementer
 -> evaluator pipeline for `x-in-a-row-bot`.
 
-Read `AGENTS.md`, the assigned plan unit, retry feedback if any, and
-`.orca/contracts/artifacts.md`. Then load the methodology matching the unit:
+Read only `AGENTS.md`, the assigned work from the plan, 
+`.orca/contracts/artifacts/common.md`, and `.orca/contracts/artifacts/implementer.md`. 
+Then load the methodology matching the unit:
 
 - `code`: `.pi/skills/code-changes/SKILL.md`
 - `experiment`: `.pi/skills/experiments/references/training-knobs.md`

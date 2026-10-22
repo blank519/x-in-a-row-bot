@@ -37,11 +37,11 @@ Read `.orca/pipelines/common.md`, the experiment skill, and especially its
 5. Dispatch one batch evaluator only when every run is complete or converged. It
    compares each candidate with its baseline using per-(heuristic, side) rate and
    episode-length trajectories.
-6. Evaluator should record experiment memories by appending per-run entries and
-   updating trends memory if applicable. The worker should not be released until 
-   memory recording is finished.
+6. Evaluator should record experiment memories by appending per-run entries. If this
+   is the last iteration or a PASS, the evaluator should also update trends memory. 
+   The worker should not send `worker_done` until memory recording is finished.
 7. PASS/FAIL follows the common gate/retry loop. HOLD creates no gate, launches no
-   replacement run, and consumes no iteration: monitor and reevaluate.
+   replacement run, and consumes no iteration: monitor and reevaluate. 
 8. A dead run with no usable evidence is FAIL. A live but stuck run is bounded by
    expected duration plus a grace period, then escalated.
 
