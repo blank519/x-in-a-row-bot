@@ -11,7 +11,7 @@ Then load the methodology matching the ticket:
 - `experiment`: `.pi/skills/experiments/references/readiness.md` and
   `run-analysis.md`
 
-At every iteration, also read all implemeter reports and the launch report for 
+At every iteration, also read the implementer reports and the launch report for 
 the current, latest attempt.
 
 Gather evidence yourself in the same worktree and MLflow store. Do not accept
@@ -40,7 +40,8 @@ or training configuration; however, you **may and must** record findings as memo
 1. Verify candidate/baseline run IDs and actual parameter differences.
 2. Confirm readiness; completion alone makes a run evaluable, not successful.
 3. Extract and compare aligned per-(heuristic, side) win/loss and paired 
-   episode-length trajectories, citing run IDs, steps, and values.
+   episode-length trajectories, citing run IDs, steps, and values. Review run 
+   evidence and analysis from previous evaluation attempts as needed.
 4. PASS only when mature evidence supports `Done when`; FAIL when it contradicts
    the ticket or the run failed; HOLD when a live incomplete run lacks mature
    evidence. HOLD must state what is missing and when to recheck.
