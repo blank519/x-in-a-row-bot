@@ -59,7 +59,7 @@ Use the following models for each role:
   - Model ID: openai/gpt-5.6-sol
 - **Implementer**: 
   - Model Name: GLM 5.3 Flash
-  - Model ID: openrouter/z-ai/glm-5.3-flash
+  - Model ID: hyper/glm-5.3-flash
 - **Evaluator**: 
   - Model Name: GPT 5.6 Sol
   - Model ID: openai/gpt-5.6-sol

@@ -22,9 +22,9 @@ edits. Concretely, you are empowered to:
 Work like a scientist: state the hypothesis and the metric you expect to move,
 change one thing at a time where practical, give runs descriptive `run_name`s,
 compare against the relevant baseline run, and report what the evidence shows
-(including negative results). Prefer conclusions grounded in `mlruns/` data over
-intuition. Keep code correct along the way (see the **code-changes** skill), but
-the deliverable is *insight and a better agent*, not just compiling code.
+(including negative results). Ground your conclusions in `mlruns/` data. Keep 
+code correct along the way (see the **code-changes** skill), but the deliverable 
+is *insight and a better agent*, not just compiling code.
 
 ## Project overview
 
@@ -69,11 +69,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-- Do **not** install `requirements_webapp.txt`; that is for the out-of-scope
-  webapp.
-- `.venv/`, `__pycache__/`, `mlruns/`, and `*.zip` files are gitignored. Trained
-  models (`.zip`) and MLflow runs (`mlruns/`) are local artifacts - do not commit
-  them.
+- Do **not** install `requirements_webapp.txt`.
+- `.venv/`, `__pycache__/`, and run artifacts (`*.zip` files, `mlruns/`, 
+  `outputs/`, and `artifacts/`) are gitignored.
 
 ## Architecture
 
@@ -125,8 +123,7 @@ python play_rendered_game.py --gif out.gif --fps 2
 ### Models & experiment tracking
 - Trained models are saved as `.zip` (SB3 `MaskablePPO`) under `outputs/`;
   opponent snapshots go under `self_play_snapshots/`.
-- Metrics/params are logged to MLflow under `mlruns/` (local file store, tracking
-  URI `file:./mlruns` - you can view the logs directly from the folder).
+- Metrics/params are logged to MLflow under `mlruns/`.
 - MLflow experiments: `ppo-gomoku` (used by `train_ppo_gomoku.py` **and**
   `finetune_ppo_persistent_pool.py`), `ppo-gomoku-finetune` (`finetune_ppo.py`),
   and `ppo-tic-tac-toe` (`train_ppo_tic_tac_toe.py`, overridable via env vars).
@@ -135,24 +132,11 @@ python play_rendered_game.py --gif out.gif --fps 2
 
 ### Reading `mlruns/` directly (no browser)
 
-You almost certainly **cannot open the MLflow web UI** and do not need to.
-The MLflow store is just a plain directory tree of text files - you can read it 
-directly with your normal file tools (`read`, `grep`, `find`, small scripts). 
-The layout is:
-
-```
-mlruns/
-  <experiment_id>/                     # e.g. 510583218657647424 == "ppo-gomoku"
-    meta.yaml                          # experiment-level: has `name: ppo-gomoku`
-    <run_id>/
-      meta.yaml                        # run_name, start_time/end_time (ms epoch), status (3 = finished)
-      tags/mlflow.runName              # the run's descriptive name
-      params/<param_name>              # one file per param; contents = the value (e.g. params/block_reward_coef -> "0.2")
-      metrics/eval/<Heuristic>/<side>_<suffix>   # one file per metric; runs may contain older metrics that are no longer used or newer metrics that were added later
-      metrics/eval/average_win_rate    # aggregate metrics
-      metrics/train/mean_block_reward  # training diagnostics (average block reward, heuristic mistake rate)
-      artifacts/                       # logged model zips
-```
+Prioritize using project tools over manually parsing the mlruns directory. If 
+necessary, you may directly inspect `mlruns/` only to debug a tool or 
+investigate a malformed/incomplete store. The MLflow store is just a plain 
+directory tree of text files - you can read it directly with your normal file 
+tools (`read`, `grep`, `find`, small scripts). 
 
 ## Gotchas / conventions
 
@@ -170,8 +154,7 @@ mlruns/
   not affect the Tic-Tac-Toe training path.
 - Action masking is central: the env exposes legal-move masks and training uses
   `MaskablePPO`. Preserve masking behavior when touching the env or policy.
-- Board conventions differ per game (3x3 / win_con=3 vs. 15x15 / win_con=5). See
-  `settings.txt` for the reference hyperparameters and env/snapshot settings.
+- NEVER modify board conventions (3x3 / win_con=3 vs. 15x15 / win_con=5).
 - Keep changes idiomatic to the existing flat module layout and match the
   surrounding numpy/SB3 style.
 

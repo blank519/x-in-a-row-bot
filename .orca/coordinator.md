@@ -52,7 +52,8 @@ terminals, using Pi subagent. Default to `orca` as the main command.
 - Evaluators gather evidence independently. Code evaluators may add tests but may
   not edit production code; experiment evaluators may not edit MLflow evidence.
 - Every Delivery is processed fully before ACK.
-- Settled planner and evaluator are reused, while settled implementers are released.
+- Settled planner and evaluator are reused, while settled implementers are immediately
+  acknowledged and released.
 - Child worktrees are exceptional because tickets, `.venv/`, `mlruns/`, and
   artifacts are gitignored or worktree-local.
 - Handoffs contain artifacts, feedback, and IDs—not full transcripts.

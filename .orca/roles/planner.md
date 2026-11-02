@@ -47,6 +47,6 @@ Treat each run as one independent unit. For every run specify:
 Change one variable at a time where practical.
 Do NOT spend time trying to reproduce existing runs.
 
-Write `artifacts/<ticket_name>/plan.md` using the contract, then follow
+Write `artifacts/<ticket_name>/plan_<attempt>.md` using the contract, then follow
 `.orca/roles/common-worker.md`. Include the plan path and work-unit IDs in the
 single `worker_done` body.
