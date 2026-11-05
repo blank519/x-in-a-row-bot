@@ -21,7 +21,8 @@ only as needed to make a concrete plan.
 
 - Preserve the ticket's goal, constraints, and `Done when`; make acceptance
   criteria observable without weakening them.
-- Produce atomic work units and identify dependencies. Mark a unit independent
+- Plan and produce atomic steps to accomplish acceptance criteria. 
+- Divide steps into work units and identify dependencies. Mark a unit independent 
   only when it has no ordering dependency or shared-write conflict.
 - Identify risks, assumptions, and evidence required for evaluation.
 - Describe behavior and edge cases requiring verification, but leave independent
@@ -29,9 +30,20 @@ only as needed to make a concrete plan.
 
 ### Code plans
 
-Name exact production files and intended behavior. Group ordered or shared-file
-changes into one unit. Parallel units must touch disjoint files. Do not direct
-the implementer to write acceptance tests; those are evaluator-owned.
+Perform ALL architectural planning and design decisions that are required for the task. 
+This includes:
+
+- Specifying file names to be modified or created;
+- Defining exact names and signatures if new variables, functions, classes, or modules 
+  are being created;
+- Giving exact parameter names if existing structures are being referenced;
+- Specifying the exact behavior required or changes to make in each step.
+
+Each step should define a single clear modification or addition to the codebase.
+Group ordered or shared-file changes into one unit. Parallel units must touch 
+disjoint files. 
+
+Do not direct the implementer to write acceptance tests; those are evaluator-owned.
 
 ### Experiment plans
 
