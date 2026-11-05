@@ -21,6 +21,8 @@ only as needed to make a concrete plan.
 
 - Preserve the ticket's goal, constraints, and `Done when`; make acceptance
   criteria observable without weakening them.
+  - If the ticket's requirements are impossible or contradictory, immediately send 
+    an Escalation message with an explanation and suggested changes to the requirements.
 - Plan and produce atomic steps to accomplish acceptance criteria. 
 - Divide steps into work units and identify dependencies. Mark a unit independent 
   only when it has no ordering dependency or shared-write conflict.

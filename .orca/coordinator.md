@@ -29,6 +29,8 @@ terminals, using Pi subagent. Default to `orca` as the main command.
 
 1. Create a Run whose objective names the ticket and type.
 2. Dispatch one planner and wait using the common Delivery/release/ACK protocol.
+   - If the planner flags the ticket requirements as impossible, immediately terminate 
+     the loop and report the issue.
 3. Read its artifact and dispatch work units in dependency-respecting,
    concurrency-limited waves.
 4. Wait until every implementation unit settles.
@@ -48,6 +50,9 @@ terminals, using Pi subagent. Default to `orca` as the main command.
 
 ## Invariants
 
+- NEVER chain multiple commands together at the same time, especially if the following 
+  command depends on the output of the previous command.
+- Do not use placeholder or fabricated IDs.
 - Launch is not experiment completion or evidence readiness.
 - Evaluators gather evidence independently. Code evaluators may add tests but may
   not edit production code; experiment evaluators may not edit MLflow evidence.
