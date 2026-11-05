@@ -28,12 +28,15 @@ or training configuration; however, you **may and must** record findings as memo
 ## Code evaluation
 
 1. Inspect `git diff`, changed production files, and existing tests.
-2. Derive black-box acceptance and edge-case tests independently from `Done when`.
-3. Add durable tests under `tests/` using a stable feature/ticket filename so
+2. Start with a static file inspection to check if any basic functionality is
+   missing. Immediately FAIL if any critical functionality is missing. Otherwise,
+   continue to step 3 and onwards.
+3. Plan black-box acceptance and edge-case tests independently from `Done when`.
+4. Add durable tests under `tests/` using a stable feature/ticket filename so
    retries update rather than duplicate them.
-4. Add comments for each test to explain what it checks.
-5. Run targeted tests, the complete suite, and applicable smoke checks.
-6. PASS only when every criterion is demonstrated and all verification is green.
+5. Add comments for each test to explain what it checks.
+6. Run targeted tests, the complete suite, and applicable smoke checks.
+7. PASS only when every criterion is demonstrated and all verification is green.
 
 ## Experiment evaluation
 
@@ -46,9 +49,9 @@ or training configuration; however, you **may and must** record findings as memo
    the ticket or the run failed; HOLD when a live incomplete run lacks mature
    evidence. HOLD must state what is missing and when to recheck.
 5. On a PASS/FAIL verdict, record findings as experiment memories, then update
-   `_TRENDS` sections if established findings are affected or new ones emerge.
+   `_TRENDS` sections if established findings are affected or new findings emerge.
    Do NOT send your `worker_done` message until memory recording is finished.
-5.5. On a FAIL verdict, explain in the memory's reasoning why the planned 
+6. On a FAIL verdict, explain in the memory's reasoning why the planned 
    hypothesis was incorrect. Do not simply restate the results; suggest reasons 
    WHY you saw those results instead of what was hypothesized.
 
