@@ -59,9 +59,19 @@ class BoardCnnExtractor(BaseFeaturesExtractor):
             nn.Flatten(),
         )
 
-        with th.no_grad():
-            sample = th.as_tensor(observation_space.sample()[None]).float()
-            n_flatten = self.cnn(sample).shape[1]
+        # Shape probe on a zero tensor, never observation_space.sample(): an
+        # unseeded space RNG and a training-mode probe would both perturb the
+        # BatchNorm running statistics, making same-seed constructions unequal.
+        # Eval mode during the no-grad probe keeps every running statistic at
+        # its initial value; the prior training flag is restored afterwards.
+        was_training = self.cnn.training
+        self.cnn.eval()
+        try:
+            with th.no_grad():
+                probe = th.zeros((1, *observation_space.shape), dtype=th.float32)
+                n_flatten = self.cnn(probe).shape[1]
+        finally:
+            self.cnn.train(was_training)
 
         self.linear = nn.Sequential(
             nn.Linear(n_flatten, 512),
@@ -177,6 +187,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         mask_learner_until_steps: int | None = None,
         mask_opponent_until_steps: int | None = None,
         eval_games_per_side = 100,
+        eval_seed: int = 0,
         best_model_path = "best_vs_heuristic",
         latest_model_path = "outputs/latest_model",
         verbose = 0,
@@ -188,6 +199,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         self._snapshot_idx = 0
 
         self.k = k
+        self.eval_seed = int(eval_seed)
         self.warmup_steps = warmup_steps
         self.warmup_p_random = warmup_p_random
         self.warmup_p_heuristics = warmup_p_heuristics
@@ -237,7 +249,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
             n_games_per_side=eval_games_per_side,
             best_model_path=best_model_path,
             deterministic=True,
-            seed=0,
+            seed=self.eval_seed,
             verbose=verbose,
         )
 

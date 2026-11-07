@@ -14,6 +14,11 @@ from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv
 from heuristic_policy import XInARowHeuristicPolicy
 from vs_heuristic_eval import HeuristicEvaluator
+from reproducibility import (
+    configure_reproducibility,
+    log_reproducibility_metadata,
+    policy_state_sha256,
+)
 
 import mlflow
 
@@ -31,7 +36,10 @@ class BoardCnnExtractor(BaseFeaturesExtractor):
         )
 
         with th.no_grad():
-            sample = th.as_tensor(observation_space.sample()[None]).float()
+            # Shape probe only: a fixed zero tensor instead of an RNG-driven
+            # space sample, so extractor construction never consumes or
+            # perturbs any seeded RNG state.
+            sample = th.zeros(1, *observation_space.shape, dtype=th.float32)
             n_flatten = self.cnn(sample).shape[1]
 
         self.linear = nn.Sequential(
@@ -121,6 +129,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         p_random = 0.20,
         p_heuristic = 0.25,
         eval_games_per_side = 50,
+        eval_seed = 0,
         best_model_path = "best_vs_heuristic",
         verbose = 0,
     ):
@@ -133,6 +142,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
         self.k = int(k)
         self.warmup_steps = int(warmup_steps)
         self.heuristic_start_steps = int(heuristic_start_steps)
+        self.eval_seed = int(eval_seed)
 
         self.pool = OpponentPoolPolicy(
             height=height,
@@ -152,7 +162,7 @@ class SelfPlaySnapshotCallback(BaseCallback):
             n_games_per_side=eval_games_per_side,
             best_model_path=best_model_path,
             deterministic=True,
-            seed=0,
+            seed=self.eval_seed,
             verbose=verbose,
         )
 
@@ -224,13 +234,31 @@ def main():
     snapshot_freq = 25_000
     num_timesteps = 500_000
 
+    seed = 42
+    eval_seed = 0
+
+    # Strict deterministic configuration must happen before environment
+    # creation or any CUDA query.
+    configure_reproducibility(seed)
+
     n_envs = 8
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
+    env.seed(seed)
+
+    # Derive the device only after deterministic configuration.
+    device = "cuda" if th.cuda.is_available() else "cpu"
 
     mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns"))
     mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "ppo-tic-tac-toe"))
 
     with mlflow.start_run():
+        log_reproducibility_metadata(
+            seed=seed,
+            eval_seed=eval_seed,
+            device=device,
+            entrypoint_path=__file__,
+        )
+
         mlflow.log_params({
             "n_envs": n_envs,
             "n_steps": 64,
@@ -258,6 +286,8 @@ def main():
             gae_lambda=0.95,
             ent_coef=0.01,
             clip_range=0.2,
+            device=device,
+            seed=seed,
         )
 
         self_play_cb = SelfPlaySnapshotCallback(
@@ -273,11 +303,18 @@ def main():
             p_random=0.2,
             p_heuristic=0.3,
             eval_games_per_side=50,
+            eval_seed=eval_seed,
             best_model_path="outputs/best_vs_heuristic",
             verbose=1,
         )
 
         model.learn(total_timesteps=num_timesteps, callback=self_play_cb)
+
+        mlflow.log_params({
+            "final_policy_state_sha256": policy_state_sha256(model),
+            "final_num_timesteps": int(model.num_timesteps),
+        })
+
         model.save("outputs/ppo_tic_tac_toe")
         final_model_zip = "outputs/ppo_tic_tac_toe.zip"
         mlflow.log_artifact(final_model_zip, artifact_path="models")

@@ -5,13 +5,17 @@ import torch as th
 import torch.nn as nn
 
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.utils import set_random_seed
 
 from sb3_contrib import MaskablePPO
 
 import mlflow
 import datetime as dt
 
+from reproducibility import (
+    configure_reproducibility,
+    log_reproducibility_metadata,
+    policy_state_sha256,
+)
 from self_play_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfPlaySnapshotCallback
 from x_in_a_row_sb3_env import SingleAgentSelfPlayEnv, CurriculumMaskedSelfPlayEnv
 
@@ -49,9 +53,9 @@ def make_env(height: int, width: int, win_con: int):
 _SNAPSHOT_RE = re.compile(r"^opponent_snapshot_(\d+)\.zip$")
 
 
-def load_snapshot_pool(snapshot_dir: str, k: int):
+def load_snapshot_pool(snapshot_dir: str, k: int, device: str) -> tuple[list, int, list[str]]:
     if not os.path.isdir(snapshot_dir):
-        return [], 0
+        return [], 0, []
 
     snapshots = []
     max_idx = 0
@@ -61,18 +65,20 @@ def load_snapshot_pool(snapshot_dir: str, k: int):
             continue
         idx = int(m.group(1))
         max_idx = max(max_idx, idx)
-        stem = os.path.join(snapshot_dir, fname[:-4])
-        snapshots.append((idx, stem))
+        zip_path = os.path.join(snapshot_dir, fname)
+        snapshots.append((idx, zip_path))
 
     snapshots.sort(key=lambda t: t[0])
-    if k is not None and k > 0:
+    if k > 0:
         snapshots = snapshots[-k:]
 
     models = []
-    for _idx, stem in snapshots:
-        models.append(MaskablePPO.load(stem))
+    zip_paths = []
+    for _idx, zip_path in snapshots:
+        models.append(MaskablePPO.load(zip_path, device=device))
+        zip_paths.append(zip_path)
 
-    return models, max_idx
+    return models, max_idx, zip_paths
 
 
 def main():
@@ -81,7 +87,8 @@ def main():
     win_con = 5
 
     seed = 42
-    set_random_seed(seed, using_cuda = th.cuda.is_available())
+    eval_seed = 0
+    configure_reproducibility(seed)
     base_model_path = "outputs/ppo_gomoku_reproduce_og_results"
     finetuned_model_path = "outputs/ppo_gomoku_og_results_extended_training"
 
@@ -92,7 +99,6 @@ def main():
     env = DummyVecEnv([make_env(height, width, win_con) for _ in range(n_envs)])
     env.seed(seed)
     device = "cuda" if th.cuda.is_available() else "cpu"
-
     print(
         f"[Train] device={device} "
         f"cuda_available={th.cuda.is_available()} "
@@ -123,11 +129,27 @@ def main():
     mask_learner_until_steps = random_warmup_steps + mixed_warmup_steps  # mask learner during warmup only
     mask_opponent_until_steps = mask_learner_until_steps + 0  # keep opponent local slightly longer than learner
     eval_games_per_side = 100
+    k = 50 # max snapshot pool size
+
+    # Select and load the numeric last-k snapshots exactly once, on the
+    # explicit device, before any MLflow logging so the provenance record can
+    # hash the exact immutable inputs this continuation actually loads.
+    os.makedirs(snapshot_dir, exist_ok=True)
+    snapshot_models, max_idx, snapshot_input_paths = load_snapshot_pool(
+        snapshot_dir, k, device
+    )
 
     mlflow.set_tracking_uri("file:./mlruns")
     mlflow.set_experiment("ppo-gomoku")
 
     with mlflow.start_run(run_name=f"ppo-gomoku-og-results-extended-training-{dt.datetime.now().strftime('%Y-%m-%d-%H:%M')}"):
+        log_reproducibility_metadata(
+            seed=seed,
+            eval_seed=eval_seed,
+            device=device,
+            entrypoint_path=__file__,
+            input_artifacts=(f"{base_model_path}.zip", *snapshot_input_paths),
+        )
         mlflow.log_params({
             "n_envs": n_envs,
             "n_steps": n_steps,
@@ -149,7 +171,6 @@ def main():
             "mask_opponent_until_steps": mask_opponent_until_steps, # keep opponent local slightly longer than learner
             "eval_games_per_side": eval_games_per_side,
             "total_timesteps": total_timesteps, # Entire run will be warmup
-            "device": device,
         })
 
         model = MaskablePPO.load(
@@ -159,7 +180,6 @@ def main():
             seed=seed,
         )
 
-        k=50
         self_play_cb = SelfPlaySnapshotCallback(
             vec_env=env,
             snapshot_dir=snapshot_dir,
@@ -178,13 +198,13 @@ def main():
             mask_learner_until_steps=mask_learner_until_steps, # mask learner during warmup only
             mask_opponent_until_steps=mask_opponent_until_steps, # keep opponent local slightly longer than learner
             eval_games_per_side=eval_games_per_side,
+            eval_seed=eval_seed,
             best_model_path="outputs/best_vs_heuristic",
             latest_model_path="outputs/latest_vs_heuristic",
             verbose=1,
         )
 
-        os.makedirs(snapshot_dir, exist_ok=True)
-        snapshot_models, max_idx = load_snapshot_pool(snapshot_dir=snapshot_dir, k=k)
+        # Install the already loaded snapshot pool; do not re-scan or reload.
         self_play_cb._snapshot_models = snapshot_models
         self_play_cb._snapshot_idx = max_idx
         mlflow.log_params({
@@ -195,6 +215,12 @@ def main():
         self_play_cb._best_saver.maybe_save(model, 0)
 
         model.learn(total_timesteps=total_timesteps, callback=self_play_cb)
+
+        mlflow.log_params({
+            "final_policy_state_sha256": policy_state_sha256(model),
+            "final_num_timesteps": int(model.num_timesteps),
+        })
+
         model.save(finetuned_model_path)
         mlflow.log_artifact(f"{finetuned_model_path}.zip", artifact_path="models")
 

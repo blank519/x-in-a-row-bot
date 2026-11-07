@@ -261,7 +261,9 @@ class SingleAgentSelfPlayEnv(gym.Env):
                     if self._env.board[rr][cc] is not None:
                         continue
                     cells.add((rr, cc))
-        return list(cells)
+        # Sorted so the later RNG permutation maps canonical indices to cells
+        # deterministically regardless of set iteration/hash order.
+        return sorted(cells)
 
     def _set_turn_to_learner(self):
         """Hand the move to the learner. The underlying env keeps the invariant

@@ -1,12 +1,12 @@
 import torch as th
 
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.utils import set_random_seed
 
 from sb3_contrib import MaskablePPO
 
 from x_in_a_row_sb3_env import CurriculumMaskedSelfPlayEnv
 from self_play_gomoku import BoardCnnExtractor, MaskableActorCriticPolicy, SelfPlaySnapshotCallback
+from reproducibility import configure_reproducibility, log_reproducibility_metadata, policy_state_sha256
 
 import mlflow
 
@@ -43,7 +43,8 @@ def main():
     win_con = 5
 
     seed = 42
-    set_random_seed(seed, using_cuda=th.cuda.is_available())
+    eval_seed = 0
+    configure_reproducibility(seed)
 
     snapshot_dir = "self_play_snapshots"
     snapshot_freq = 256_000 # Close to 250k, multiple of batch_size * n_environments
@@ -118,6 +119,13 @@ def main():
     mlflow.set_experiment("ppo-gomoku")
 
     with mlflow.start_run(run_name=f"ppo-gomoku-block-reward-sweep-40p-{dt.datetime.now().strftime('%Y-%m-%d-%H:%M')}"):
+        log_reproducibility_metadata(
+            seed=seed,
+            eval_seed=eval_seed,
+            device=device,
+            entrypoint_path=__file__,
+        )
+
         mlflow.log_params({
             "n_envs": n_envs,
             "n_steps": n_steps,
@@ -145,7 +153,6 @@ def main():
             "reward_shaping_gamma": reward_shaping_gamma,
             "block_reward_coef": block_reward_coef,
             "defensive_opening_prob": defensive_opening_prob,
-            "device": device,
         })
 
         model = MaskablePPO(
@@ -186,12 +193,17 @@ def main():
             mask_learner_until_steps=mask_learner_until_steps, # mask learner during warmup only
             mask_opponent_until_steps=mask_opponent_until_steps, # keep opponent local slightly longer than learner
             eval_games_per_side=eval_games_per_side,
+            eval_seed=eval_seed,
             best_model_path=f"outputs/best_vs_heuristic_block_reward_sweep_40p",
             latest_model_path=f"outputs/latest_vs_heuristic_block_reward_sweep_40p",
             verbose=1,
         )
 
         model.learn(total_timesteps=total_timesteps, callback=self_play_cb)
+        mlflow.log_params({
+            "final_policy_state_sha256": policy_state_sha256(model),
+            "final_num_timesteps": int(model.num_timesteps),
+        })
         model.save(f"outputs/ppo_gomoku_block_reward_sweep_40p")
         final_model_zip = f"outputs/ppo_gomoku_block_reward_sweep_40p.zip"
         mlflow.log_artifact(final_model_zip, artifact_path="models")
