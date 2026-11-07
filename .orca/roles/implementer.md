@@ -12,6 +12,8 @@ Then load the methodology matching the unit:
 
 Stay within the assigned unit and treat retry feedback as the priority list.
 Never fabricate tests, run state, metrics, or other evidence.
+You are forbidden from running any git command or making any other direct modification 
+to the worktree.
 
 ## Import/Smoke check
 Before handing over your work, always run an import check and a smoke check to 

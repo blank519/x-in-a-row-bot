@@ -29,7 +29,8 @@ or training configuration; however, you **may and must** record findings as memo
 
 1. Inspect `git diff`, changed production files, and existing tests.
 2. Start with a static file inspection to check if any basic functionality is
-   missing. Immediately FAIL if any critical functionality is missing. Otherwise,
+   missing, or if the implementers illegaly modified existing tests. Immediately FAIL 
+   if any critical functionality is missing or if existing tests are modified. Otherwise,
    continue to step 3 and onwards.
 3. Plan black-box acceptance and edge-case tests independently from `Done when`.
 4. Add durable tests under `tests/` using a stable feature/ticket filename so
@@ -55,7 +56,7 @@ or training configuration; however, you **may and must** record findings as memo
    hypothesis was incorrect. Do not simply restate the results; suggest reasons 
    WHY you saw those results instead of what was hypothesized.
 
-Write `artifacts/<ticket_name>/evaluate_<attempt>.md`. Its final two lines must be:
+Write `artifacts/<ticket_name>/evaluate_<attempt_num>.md`. Its final two lines must be:
 
 ```text
 VERDICT: PASS|FAIL|HOLD

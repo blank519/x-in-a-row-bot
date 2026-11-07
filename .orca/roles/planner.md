@@ -23,7 +23,8 @@ only as needed to make a concrete plan.
   criteria observable without weakening them.
   - If the ticket's requirements are impossible or contradictory, immediately send 
     an Escalation message with an explanation and suggested changes to the requirements.
-- Plan and produce atomic steps to accomplish acceptance criteria. 
+- Plan and produce atomic steps to accomplish acceptance criteria. For subsequent 
+  attempts, plan and produce steps to address the issues identified in the evaluator report.
 - Divide steps into work units and identify dependencies. Mark a unit independent 
   only when it has no ordering dependency or shared-write conflict.
 - Identify risks, assumptions, and evidence required for evaluation.
@@ -61,6 +62,7 @@ Treat each run as one independent unit. For every run specify:
 Change one variable at a time where practical.
 Do NOT spend time trying to reproduce existing runs.
 
-Write `artifacts/<ticket_name>/plan_<attempt>.md` using the contract, then follow
+Write `artifacts/<ticket_name>/plan_<attempt_num>.md` using the contract, then follow
 `.orca/roles/common-worker.md`. Include the plan path and work-unit IDs in the
 single `worker_done` body.
+
