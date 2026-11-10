@@ -1,2 +1,8 @@
 *.zip
+.venv/
+artifacts/
+logs/
+outputs/
+mlruns/
+self_play_snapshots/
 __pycache__/
