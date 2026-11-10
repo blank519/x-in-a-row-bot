@@ -1,0 +1,277 @@
+{
+  "schema_version": 3,
+  "experiment": "reestablish_baseline",
+  "conclusion": "Attempt 1 is a mature negative result: five FINISHED, evidence-ready post-fix reconstructions at seeds 42–46 produced 0/5 qualifiers against the required 3/5. Every run failed both Combined-side floors and the aggregate >=0.550667 floor, and each passed only Offensive-X among the six cell floors; no run is eligible for the predeclared selection rule and no new baseline is promoted. The repeated near-zero Combined performance, long but losing Defensive games, and retained Offensive-X skill indicate a robust asymmetric/degenerate policy under this regimen, making the historical pre-fix champion initialization-path dependent rather than configuration-level reproducible. A later iteration should change one mechanism at a time to restore balanced defense/second-player play—preferably reduce late optimization pressure (entropy and/or rising LR) or revise the Combined-only curriculum—while preserving the strict post-fix provenance controls and the same external per-side gates.",
+  "runs": [
+    {
+      "run_name": "ppo-gomoku-rebaseline-ent010-seed42-2026-11-07",
+      "timestamp": "2026-11-08T00:26:15.342Z",
+      "modified_params": {
+        "eval_seed": 0,
+        "feature_extractor": "wide_projection_1024_to_512",
+        "immutable_baseline_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+        "reproducibility_impl": "strict_post_fix_zero_probe",
+        "seed": 42
+      },
+      "goal_hypothesis": "The strongest pre-fix warmup configuration will retain broadly similar balanced proficiency under corrected deterministic initialization and provenance at seed 42.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.236000 < 0.550667 floor",
+          "insight": "The aggregate similarity gate failed by 0.314667."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.010 < 0.504 floor",
+          "insight": "Combined-X proficiency collapsed despite a paired length mean of 10.406 within the expected range; normal-length games were losses, not evidence of similarity."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.020 < 0.458 floor",
+          "insight": "Combined-O also collapsed, with complementary loss mean 0.980."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.602 >= 0.564 floor",
+          "insight": "Offensive-X was the sole passing cell; one of six cell floors cannot satisfy the four-cell or Combined gates."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "final-five mean 23.886 > 14.964 range ceiling",
+          "insight": "The paired Defensive-X win mean was only 0.264, so longer games indicate stalling before defeat rather than improved defense."
+        }
+      ],
+      "reasoning": [
+        "The corrected deterministic zero-probe initialization removes the historical space-sample RNG consumption, exposing that the old seed-42 trajectory was likely initialization-path dependent rather than a robust property of the scientific configuration.",
+        "Combined-only warmup with the local mask and this reward setup appears to learn a narrow Offensive-X tactic while failing balanced play across side and opponent, as shown by the sole Offensive-X floor pass.",
+        "The rising learning rate and entropy 0.010 may destabilize broadly useful behavior late in training; the near-zero Combined rates and long losing defensive games are consistent with convergence to a degenerate asymmetric policy rather than mere evaluation noise."
+      ],
+      "tags": [
+        "reestablish_baseline",
+        "attempt_1",
+        "post_fix",
+        "seed_42",
+        "mature_fail",
+        "not_eligible"
+      ],
+      "mlruns_run_id": "9279e859a251439e9a377fe68a4763a3",
+      "mlruns_path": "mlruns/510583218657647424/9279e859a251439e9a377fe68a4763a3"
+    },
+    {
+      "run_name": "ppo-gomoku-rebaseline-ent010-seed43-2026-11-07",
+      "timestamp": "2026-11-08T00:27:39.771Z",
+      "modified_params": {
+        "eval_seed": 0,
+        "feature_extractor": "wide_projection_1024_to_512",
+        "immutable_baseline_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+        "reproducibility_impl": "strict_post_fix_zero_probe",
+        "seed": 43
+      },
+      "goal_hypothesis": "Performance similar to the pre-fix diagnostic champion will persist beyond its original seed under corrected deterministic initialization at seed 43.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.152667 < 0.550667 floor",
+          "insight": "The aggregate similarity gate failed by 0.398000."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.000 < 0.504 floor",
+          "insight": "The learner lost every Combined-X evaluation game throughout the decision window while episode length remained in range."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.000 < 0.458 floor",
+          "insight": "The learner also lost every Combined-O evaluation game; complementary loss mean was 1.000."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.726 >= 0.564 floor and > 0.664 historical mean",
+          "insight": "The paired length mean 6.130 was below range, but the real rate gain supports faster winning in this one cell only."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "final-five mean 24.360 > 14.964 range ceiling",
+          "insight": "With Defensive-X win mean only 0.024, the extended games represent stalling before almost-certain loss."
+        }
+      ],
+      "reasoning": [
+        "The cross-seed collapse supports the ticket hypothesis that the historical best result was not configuration-level reproducible and likely depended on the pre-fix initialization path.",
+        "The regimen repeatedly preserves or improves only Offensive-X, suggesting a strong side/opponent specialization induced by Combined-only warmup and the local action mask rather than balanced tactical learning.",
+        "Entropy 0.010 combined with a learning rate rising to 3e-4 may keep late updates too disruptive for stable defense, producing zero Combined wins and very long but losing defensive games."
+      ],
+      "tags": [
+        "reestablish_baseline",
+        "attempt_1",
+        "post_fix",
+        "seed_43",
+        "mature_fail",
+        "not_eligible"
+      ],
+      "mlruns_run_id": "982ce99ca17b466db62a86ac5efb9601",
+      "mlruns_path": "mlruns/510583218657647424/982ce99ca17b466db62a86ac5efb9601"
+    },
+    {
+      "run_name": "ppo-gomoku-rebaseline-ent010-seed44-2026-11-07",
+      "timestamp": "2026-11-08T00:28:59.055Z",
+      "modified_params": {
+        "eval_seed": 0,
+        "feature_extractor": "wide_projection_1024_to_512",
+        "immutable_baseline_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+        "reproducibility_impl": "strict_post_fix_zero_probe",
+        "seed": 44
+      },
+      "goal_hypothesis": "A third independent seed will show whether the historical balanced proficiency was a robust configuration-level result under corrected reproducibility.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.132333 < 0.550667 floor",
+          "insight": "This was the cohort's lowest aggregate mean and failed the similarity gate by 0.418334."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.000 < 0.504 floor",
+          "insight": "Combined-X produced no wins at any aligned decision checkpoint despite in-range episode lengths."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.000 < 0.458 floor",
+          "insight": "Combined-O likewise produced no wins, with complementary loss mean 1.000."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.730 >= 0.564 floor and > 0.664 historical mean",
+          "insight": "The below-range length mean 6.140 is supportive as faster winning only for Offensive-X; the other five rate floors failed."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/o_avg_episode_length",
+          "outcome": "final-five mean 23.162 > 15.504 range ceiling",
+          "insight": "With Defensive-O win mean 0.006, the extra moves are severe stalling rather than useful defensive proficiency."
+        }
+      ],
+      "reasoning": [
+        "A third seed reproducing the same broad collapse rules out ordinary 100-game evaluation fluctuation as an explanation for the gap to the historical champion.",
+        "The persistent Offensive-X exception indicates policy specialization, plausibly because the training opponent/mask distribution rewards an aggressive first-player line without teaching defense or second-player recovery.",
+        "The pre-fix run's apparent balance was likely a favorable RNG-consumption trajectory; strict deterministic construction samples a different initialization sequence and reveals that the hyperparameter configuration itself is not robust."
+      ],
+      "tags": [
+        "reestablish_baseline",
+        "attempt_1",
+        "post_fix",
+        "seed_44",
+        "mature_fail",
+        "not_eligible"
+      ],
+      "mlruns_run_id": "df88a1038ff54408a47b8e8ccfc44704",
+      "mlruns_path": "mlruns/510583218657647424/df88a1038ff54408a47b8e8ccfc44704"
+    },
+    {
+      "run_name": "ppo-gomoku-rebaseline-ent010-seed45-2026-11-07",
+      "timestamp": "2026-11-08T00:30:21.506Z",
+      "modified_params": {
+        "eval_seed": 0,
+        "feature_extractor": "wide_projection_1024_to_512",
+        "immutable_baseline_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+        "reproducibility_impl": "strict_post_fix_zero_probe",
+        "seed": 45
+      },
+      "goal_hypothesis": "A fourth distinct seed will demonstrate stable dispersion around the historical balanced warmup behavior under corrected reproducibility.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.145667 < 0.550667 floor",
+          "insight": "The aggregate similarity gate failed by 0.405000."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.000 < 0.504 floor",
+          "insight": "Combined-X remained at zero wins across all five aligned checkpoints even as game lengths increased."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.000 < 0.458 floor",
+          "insight": "Combined-O also remained at zero wins with complementary loss mean 1.000."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.648 >= 0.564 floor",
+          "insight": "Offensive-X was the only passing cell, with paired length mean 7.190 in range."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "final-five mean 27.476 > 14.964 range ceiling",
+          "insight": "The paired Defensive-X win mean was 0.008, so this cohort-maximum length is stalling before defeat."
+        }
+      ],
+      "reasoning": [
+        "The fourth seed again converged to the same asymmetric failure pattern, showing the corrected regimen's dispersion is centered far below the historical champion rather than around it.",
+        "The environment/reward combination appears to permit long defensive survival without converting survival into wins, while retaining one aggressive Offensive-X capability.",
+        "The historical balanced result is therefore more plausibly a favorable pre-fix RNG/init trajectory than an effect reliably caused by entropy 0.010, block reward 0.15, and the wide projection architecture."
+      ],
+      "tags": [
+        "reestablish_baseline",
+        "attempt_1",
+        "post_fix",
+        "seed_45",
+        "mature_fail",
+        "not_eligible"
+      ],
+      "mlruns_run_id": "b69de40a7e8844688749419d005fa25b",
+      "mlruns_path": "mlruns/510583218657647424/b69de40a7e8844688749419d005fa25b"
+    },
+    {
+      "run_name": "ppo-gomoku-rebaseline-ent010-seed46-2026-11-07",
+      "timestamp": "2026-11-08T00:31:48.929Z",
+      "modified_params": {
+        "eval_seed": 0,
+        "feature_extractor": "wide_projection_1024_to_512",
+        "immutable_baseline_run_id": "b9299ce03cdf46da8b0f9b969396c15f",
+        "reproducibility_impl": "strict_post_fix_zero_probe",
+        "seed": 46
+      },
+      "goal_hypothesis": "A fifth independent seed will supply a majority-denominator confirmation that the pre-fix champion's balanced behavior is reproducible under corrected initialization.",
+      "results_insights": [
+        {
+          "metric": "eval/average_win_rate",
+          "outcome": "final-five mean 0.269000 < 0.550667 floor",
+          "insight": "Although best in the post-fix cohort, the aggregate rate still failed by 0.281667 and declined from 0.306667 to 0.251667 over the window."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.026 < 0.504 floor",
+          "insight": "Combined-X stayed near zero with in-range length mean 11.988, indicating normal-duration losses."
+        },
+        {
+          "metric": "eval/GomokuCombinedHeuristicPolicy/o_win_rate",
+          "outcome": "final-five mean 0.028 < 0.458 floor",
+          "insight": "Combined-O also stayed near zero, with complementary loss mean 0.972."
+        },
+        {
+          "metric": "eval/GomokuOffensiveHeuristicPolicy/x_win_rate",
+          "outcome": "final-five mean 0.690 >= 0.564 floor",
+          "insight": "Offensive-X was again the only passing cell and had an in-range length mean 8.046."
+        },
+        {
+          "metric": "eval/GomokuDefensiveHeuristicPolicy/x_avg_episode_length",
+          "outcome": "final-five mean 26.478 > 14.964 range ceiling",
+          "insight": "With Defensive-X win mean only 0.260, longer games indicate stalling rather than similarity."
+        }
+      ],
+      "reasoning": [
+        "Even the strongest corrected seed is less than half as successful in aggregate as the historical final-five mean, so the majority confirmation hypothesis is decisively false.",
+        "The repeated cohort-wide Offensive-X-only success points to a mechanism-level side/opponent specialization, not isolated bad seeds or noisy evaluation.",
+        "The old run likely benefited from the pre-fix RNG/space-sample initialization path; the high-entropy, rising-learning-rate schedule may then amplify initialization sensitivity and fail to preserve balanced skills under the corrected path."
+      ],
+      "tags": [
+        "reestablish_baseline",
+        "attempt_1",
+        "post_fix",
+        "seed_46",
+        "mature_fail",
+        "not_eligible"
+      ],
+      "mlruns_run_id": "22870174d0004c3687797248ab0c1796",
+      "mlruns_path": "mlruns/510583218657647424/22870174d0004c3687797248ab0c1796"
+    }
+  ]
+}
